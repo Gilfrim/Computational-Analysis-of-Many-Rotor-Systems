@@ -1,0 +1,49 @@
+Main files 
+
+hamiltonian.py
+-exact diagonalization code 
+
+Peridoic.py
+input.txt
+testing.txt
+-periodic CC system code with txt files for changing parameters
+
+functions
+-contains functions that both Hamiltonian or periodic could use such as p to m conversion
+
+Non_Periodic
+-non periodic CC system code uses same txt files
+
+Other files
+
+ham_no_csv
+-alternate way to make Hamiltonian that calls shaeer's rotor code instead of using csv files
+
+ham pandas test
+-uses pandas instead of csv to go trough files
+-doesn't seem to make a difference
+
+transform_test
+-basis transformation for Hamiltonian
+
+ham_new_basis
+-seems to be similar to transform test
+-not 100% what i used it for
+
+braket Hamiltonian 
+-creates pqrs states and p'q'r's states Hamiltonian
+
+plot_points_generator
+-creates csv files from CC code for plot points to use
+
+plot points
+-uses csv files from generator 
+
+g_finder
+-finds value of g for which periodic diverges
+
+cc_txt_gen
+-automates collecting energy values from different g values
+
+dmrg_csv_gen
+-creates csv files containing g and energy values for various sites and basis size
