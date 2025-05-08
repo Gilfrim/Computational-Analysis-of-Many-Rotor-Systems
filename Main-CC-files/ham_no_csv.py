@@ -54,16 +54,18 @@ def hamiltonian(site_total:int, state_total:int, g:float = 1, onesite:bool = Tru
 
 
 if __name__ == "__main__":
-    site = 5
-    state = 5
+    site = 7
+    state = 7
     g = 1
     hami = hamiltonian(site, state, timer = False)
+
+    print(hami)
 
     #vals, vecs = np.linalg.eigh(hami)
     #print(vals)
 
-    what = ham.hamiltonian(site, state, timer = False)
-    print(np.all(hami == what))
+    # what = ham.hamiltonian(site, state, timer = False)
+    # print(np.all(hami == what))
 
     # thing = state ** (site - 1)
     # diag = np.diag(ham)

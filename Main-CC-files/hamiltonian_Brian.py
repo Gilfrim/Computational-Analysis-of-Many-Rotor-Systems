@@ -71,7 +71,7 @@ def hamiltonian(sites:int, states:int, mix_factor:float = 0, g:float = 1,  onesi
                     #shaeer's code shifts m values to 0 to 2 * m_max, this shifts it back to -m_max to m_max
                     h_dict_1[((int(row_h[0]) - m_max_shaeer), (int(row_h[1]) - m_max_shaeer))] = float(row_h[2])
                     #his code only does upper diagonal elements however it is currently only diagonal elements so this could be simplified
-
+        print(h_dict_1)
         #goes through onesitees to plot poin dictionarits in matrix
         for onesite_hamiltonian_term in range(sites):
             for keys_1, points_1 in location_dict_1[onesite_hamiltonian_term].items():
@@ -132,9 +132,9 @@ def hamiltonian(sites:int, states:int, mix_factor:float = 0, g:float = 1,  onesi
     return H
 
 if __name__ == "__main__":
-    site = 3
-    state = 3
-    gee = 10
+    site = 7
+    state = 5
+    gee = 1
     mix = -0.05
     ham = hamiltonian(site, state, mix, gee)
     print(ham)
