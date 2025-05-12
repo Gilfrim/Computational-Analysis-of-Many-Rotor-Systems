@@ -28,7 +28,7 @@ errors = []
 values = {}
 
 #goes through input.txt to find variables
-file_path_input = "input.txt"
+file_path_input = "/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files/input.txt"
 with open(file_path_input, "r") as input_file:
     for line in input_file:
         line = line.strip().lower()
@@ -71,7 +71,7 @@ del key
 del value
 
 #goes through testing.txt for variables
-file_path_testing = "testing.txt"
+file_path_testing = "/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files/testing.txt"
 with open(file_path_testing, "r") as testing_file:
     for line_testing in testing_file:
         line_testing = line_testing.strip()
@@ -202,6 +202,8 @@ for h_row in range(p):
 #h_dict is no longer needed due to h_full
 del h_dict
 
+print(h_full)
+
 #dictionary for v values from shaeer's code
 v_dict = dict()
 with open(file_path_V, mode = "r",newline = "") as csvfile_v:
@@ -227,6 +229,8 @@ for v_axis_0 in range(p):
 
 #v_dict no longer needed due to v_full
 del v_dict
+
+print(v_full)
 
 #starting point using sin needs complex values
 if HF and start_point == "sin":

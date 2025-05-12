@@ -88,6 +88,11 @@ def hamiltonian(sites:int, states:int, mix_factor:float = 0, g:float = 1,  onesi
                         else:
                             H[row_1[0], col_1[0]] += h_dict_1.get((func.p_to_m(row_1[1]), func.p_to_m(col_1[1])), 0)
 
+    print("Here is H:")
+    print(H)
+
+    H_New = np.zeros(H.shape)
+
     if twosite:
         location_dict_2 = list(defaultdict(list) for _ in range(sites))
 
@@ -99,7 +104,7 @@ def hamiltonian(sites:int, states:int, mix_factor:float = 0, g:float = 1,  onesi
                 location_dict_2[twosite_index][key_2].append((index_2, state_2[twosite_index], state_2[(twosite_index + 1) % sites]))
 
                 # key_2 = tuple(state_2[j] for j in range(sites) if j != twosite_index and (sites > twosite_index + 1 != j))
-                # if twosite_index + 1 != sites:
+                # if twosite_index + 1 != sites:Ok 
                 #     location_dict_2[twosite_index][key_2].append((index_2, state_2[twosite_index], state_2[(twosite_index + 1)]))
 
         # dictionary for all non-zero values from shaeer V tensor
@@ -123,17 +128,20 @@ def hamiltonian(sites:int, states:int, mix_factor:float = 0, g:float = 1,  onesi
             for keys_2, points_2 in location_dict_2[twosite_hamiltonian_terms].items():
                 for row_2 in points_2:
                     for col_2 in points_2:
-                        H[row_2[0], col_2[0]] += g*(h_dict_2.get((func.p_to_m(row_2[1]), func.p_to_m(row_2[2]), func.p_to_m(col_2[1]), func.p_to_m(col_2[2])), 0))
+                        H_New[row_2[0], col_2[0]] += g*(h_dict_2.get((func.p_to_m(row_2[1]), func.p_to_m(row_2[2]), func.p_to_m(col_2[1]), func.p_to_m(col_2[2])), 0))
+    print("This is H_New:")
+    print(H_New)
+
 
     end = time.perf_counter()
     if timer:
         print(f"The time of execution of above program is: {end - start}s")
 
-    return H
+    return H + H_New
 
 if __name__ == "__main__":
-    site = 7
-    state = 5
+    site = 3
+    state = 2
     gee = 1
     mix = -0.05
     ham = hamiltonian(site, state, mix, gee)
