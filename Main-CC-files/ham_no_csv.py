@@ -4,12 +4,12 @@ from collections import defaultdict
 import time
 import functions as func
 import hamiltonianGenerator as hG
-import hamiltonian_Brian as ham
+import hamiltonian_Bryan as ham
 
 #alternate version for hamiltonian that doesn't use csv files and directly calls shaeer's rotor functions
 
-#printout formatting for large matrices
-np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 6)
+# #printout formatting for large matrices
+# np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 6)
 
 def hamiltonian(site_total:int, state_total:int, g:float = 1, onesite:bool = True, twosite:bool = True, timer:bool = True)->np.array:
     """Docstring"""
@@ -54,12 +54,12 @@ def hamiltonian(site_total:int, state_total:int, g:float = 1, onesite:bool = Tru
 
 
 if __name__ == "__main__":
-    site = 7
-    state = 7
+    site = 3
+    state = 3
     g = 1
     hami = hamiltonian(site, state, timer = False)
 
-    print(hami)
+    print(hami[1])
 
     #vals, vecs = np.linalg.eigh(hami)
     #print(vals)

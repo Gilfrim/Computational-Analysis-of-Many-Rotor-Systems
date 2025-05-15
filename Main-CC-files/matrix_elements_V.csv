@@ -1,5 +1,5 @@
 Potential 2 body Matrix Elements
-m1,m2,m3,m4,<m1,m2|V|m3,m4>
+m1,m2,m3,m4,V
 0,0,0,0,0.0
 0,0,0,1,0.0
 0,0,0,2,0.0

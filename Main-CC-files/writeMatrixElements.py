@@ -5,7 +5,7 @@ import pandas as pd
 
 def write_matrix_elements(m_max, fpath):
 
-    file_dir = os.path.join(fpath, "matrix_elements_K.csv")
+    file_dir = os.path.join(fpath, "matrix_elements_K_6.csv")
     d = 2*m_max + 1
     K = np.zeros((d,d))
     with open(file_dir, 'w') as f:
@@ -17,7 +17,7 @@ def write_matrix_elements(m_max, fpath):
                 f.write(str(i) + "," + str(j) + "," + str(K[i,j]) + "\n")
 
     V = np.zeros((d**2, d**2))
-    file_dir = os.path.join(fpath, "matrix_elements_V.csv")
+    file_dir = os.path.join(fpath, "matrix_elements_V_6.csv")
     with open(file_dir, 'w') as f:
         f.write("Potential 2 body Matrix Elements\n")
         f.write("m1,m2,m3,m4,<m1,m2|V|m3,m4>\n")
@@ -34,4 +34,4 @@ def write_matrix_elements(m_max, fpath):
     return 0
 
 if __name__ == "__main__":
-    write_matrix_elements(5, r"/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files")
+    write_matrix_elements(6, r"/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files")
