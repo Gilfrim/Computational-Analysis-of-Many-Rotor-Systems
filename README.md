@@ -1,1 +1,1 @@
-# Quantum-Chemistry-Coop
+# Computational_Analisis_of_Many_Rotor_Systems
