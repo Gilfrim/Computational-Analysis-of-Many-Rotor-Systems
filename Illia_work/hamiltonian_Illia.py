@@ -5,6 +5,32 @@ import hamiltonianGenerator as hg
 
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 9)
 
+
+def create_inverse_index_map(total_num_states: int) -> np.ndarray:
+    # map m → p
+    m_vals = np.arange(-total_num_states, total_num_states + 1)
+    p_vals = np.vectorize(func.m_to_p)(m_vals)
+
+    # Create inverse: map p → position in m-sorted order
+    inverse_index_map = np.zeros_like(p_vals)
+    for i, p in enumerate(p_vals):
+        inverse_index_map[p] = i
+
+    return inverse_index_map
+
+def basis_m_to_p_matrix_conversion(V: np.ndarray)->np.ndarray:
+
+    dim = V.ndim
+    index_map = create_inverse_index_map((V.shape[0]-1)//2)
+
+    index_maps = []
+    for i in range(dim):
+        index_maps.append(index_map)
+
+    V = V[np.ix_(*index_maps)]
+
+    return V
+
 def H_kinetic(states: int, sites: int, h_pp: np.ndarray) -> np.ndarray:
 
     K = np.zeros((states**sites, states**sites))
@@ -25,9 +51,9 @@ def H_kinetic(states: int, sites: int, h_pp: np.ndarray) -> np.ndarray:
                         K[i, j] += val
     return K
 
-def H_potential(states: int, sites: int, h_pp_qq: np.ndarray) -> np.ndarray:
+def H_potential(states: int, sites: int, h_pp_qq: np.ndarray, g_val: float) -> np.ndarray:
 
-    K = np.zeros((states**sites, states**sites))
+    V = np.zeros((states**sites, states**sites))
 
     for x in range(sites):
         y = (x+1) % sites
@@ -50,8 +76,8 @@ def H_potential(states: int, sites: int, h_pp_qq: np.ndarray) -> np.ndarray:
                                     
                                     i = mu + q*n_mu + nu*states*n_mu + p*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
                                     j = mu + q_prime*n_mu + nu*states*n_mu + p_prime*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
-                                    K[i, j] += val
-    return K
+                                    V[i, j] += val * g_val
+    return V
 
 def write_matrix_elements(m_max, fpath):
     d = 2 * m_max + 1
@@ -79,32 +105,7 @@ def write_matrix_elements(m_max, fpath):
 
     return K, V  # optionally return them for immediate use
 
-def create_inverse_index_map(total_num_states: int) -> np.ndarray:
-    # map m → p
-    m_vals = np.arange(-total_num_states, total_num_states + 1)
-    p_vals = np.vectorize(func.m_to_p)(m_vals)
-
-    # Create inverse: map p → position in m-sorted order
-    inverse_index_map = np.zeros_like(p_vals)
-    for i, p in enumerate(p_vals):
-        inverse_index_map[p] = i
-
-    return inverse_index_map
-
-def basis_m_to_p_matrix_conversion(V: np.ndarray)->np.ndarray:
-
-    dim = V.ndim
-    index_map = create_inverse_index_map((V.shape[0]-1)//2)
-
-    index_maps = []
-    for i in range(dim):
-        index_maps.append(index_map)
-
-    V = V[np.ix_(*index_maps)]
-
-    return V
-
-def hamiltonian(state: int, site: int)->np.ndarray:
+def hamiltonian(state: int, site: int, g_val: float=1)->np.ndarray:
 
     f_path =  r"/Users/gilfrim/Desktop/QuantumChemistryCoop/Illia_work"
 
@@ -112,8 +113,6 @@ def hamiltonian(state: int, site: int)->np.ndarray:
 
     K_path = os.path.join(f_path, "K_matrix.npy")
     V_path = os.path.join(f_path, "V_matrix.npy")
-
-    print("Looking for:", K_path)
 
     K_from_csv = np.load(K_path)
     V_from_csv = np.load(V_path)
@@ -125,7 +124,7 @@ def hamiltonian(state: int, site: int)->np.ndarray:
     V_in_p = basis_m_to_p_matrix_conversion(V_tensor)
 
     K_final = H_kinetic(state, site, K_in_p)
-    V_final = H_potential(state, site, V_in_p)
+    V_final = H_potential(state, site, V_in_p, g_val)
     H_final = K_final + V_final
 
     try:
