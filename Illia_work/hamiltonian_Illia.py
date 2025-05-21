@@ -107,7 +107,7 @@ def write_matrix_elements(m_max, fpath):
 
 def hamiltonian(state: int, site: int, g_val: float=1)->np.ndarray:
 
-    f_path =  r"/Users/gilfrim/Desktop/QuantumChemistryCoop/Illia_work"
+    f_path =  r"/Users/gilfrim/Desktop/Computational_Analisis_of_Many_Rotor_Systems/Illia_work"
 
     write_matrix_elements((state-1) // 2, f_path)
 
