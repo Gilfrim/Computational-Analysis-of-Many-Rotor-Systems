@@ -7,7 +7,7 @@ import writeMatrixElements as wME
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
 
 #location of folder for code and such
-file_path_folder = r"/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files"
+file_path_folder = r"/Users/gilfrim/Desktop/Computational_Analisis_of_Many_Rotor_Systems/Main-CC-files"
 file_path_K = file_path_folder + r"/matrix_elements_K.csv"
 file_path_V = file_path_folder + r"/matrix_elements_V.csv"
 

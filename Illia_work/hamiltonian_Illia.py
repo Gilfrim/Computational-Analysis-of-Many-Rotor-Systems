@@ -33,7 +33,7 @@ def basis_m_to_p_matrix_conversion(V: np.ndarray)->np.ndarray:
 
 def H_kinetic(states: int, sites: int, h_pp: np.ndarray) -> np.ndarray:
 
-    K = np.zeros((states**sites, states**sites))
+    K = np.zeros((states**sites, states**sites), dtype=complex)
 
     for x in range(sites):
         n_lambda = states**(x)
@@ -53,7 +53,7 @@ def H_kinetic(states: int, sites: int, h_pp: np.ndarray) -> np.ndarray:
 
 def H_potential(states: int, sites: int, h_pp_qq: np.ndarray, g_val: float) -> np.ndarray:
 
-    V = np.zeros((states**sites, states**sites))
+    V = np.zeros((states**sites, states**sites), dtype=complex)
 
     for x in range(sites):
         y = (x+1) % sites
@@ -105,35 +105,42 @@ def write_matrix_elements(m_max, fpath):
 
     return K, V  # optionally return them for immediate use
 
-def hamiltonian(state: int, site: int, g_val: float=1)->np.ndarray:
+def hamiltonian(state: int, site: int, g_val: float=1, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False)->np.ndarray:
+    if Import == False:
+        f_path =  r"/Users/gilfrim/Desktop/Computational_Analisis_of_Many_Rotor_Systems/Illia_work"
 
-    f_path =  r"/Users/gilfrim/Desktop/Computational_Analisis_of_Many_Rotor_Systems/Illia_work"
+        write_matrix_elements((state-1) // 2, f_path)
 
-    write_matrix_elements((state-1) // 2, f_path)
+        K_path = os.path.join(f_path, "K_matrix.npy")
+        V_path = os.path.join(f_path, "V_matrix.npy")
 
-    K_path = os.path.join(f_path, "K_matrix.npy")
-    V_path = os.path.join(f_path, "V_matrix.npy")
+        K_from_csv = np.load(K_path)
+        V_from_csv = np.load(V_path)
 
-    K_from_csv = np.load(K_path)
-    V_from_csv = np.load(V_path)
+        V_from_csv = V_from_csv + V_from_csv.T - np.diag(np.diag(V_from_csv))
+        V_tensor = V_from_csv.reshape(state, state, state, state)  # Adjust if needed
 
-    V_from_csv = V_from_csv + V_from_csv.T - np.diag(np.diag(V_from_csv))
-    V_tensor = V_from_csv.reshape(state, state, state, state)  # Adjust if needed
+        K_in_p = basis_m_to_p_matrix_conversion(K_from_csv)
+        V_in_p = basis_m_to_p_matrix_conversion(V_tensor)
 
-    K_in_p = basis_m_to_p_matrix_conversion(K_from_csv)
-    V_in_p = basis_m_to_p_matrix_conversion(V_tensor)
+        try:
+            os.remove(K_path)
+            os.remove(V_path)
+        except FileNotFoundError as e:
+            print(f"File not found during deletion: {e.filename}")
+
+    else:
+        K_in_p = K_import
+        V_in_p = V_import
+        state = K_import.shape[0]
 
     K_final = H_kinetic(state, site, K_in_p)
     V_final = H_potential(state, site, V_in_p, g_val)
     H_final = K_final + V_final
 
-    try:
-        os.remove(K_path)
-        os.remove(V_path)
-    except FileNotFoundError as e:
-        print(f"File not found during deletion: {e.filename}")
 
-    return H_final
+
+    return H_final, K_in_p, V_in_p
 
 if __name__ == "__main__":
     site = 3
