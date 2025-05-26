@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 from quant_rotor.models import functions as func
+import quant_rotor.core.hamiltonian_Illia as h
 from importlib.resources import files
 
 #printout settings for large matrices
@@ -158,46 +159,17 @@ m_max_shaeer = 5
 
 #for states > 11 would need to have shaeers code generate csv files with m_max > 5
 #gets h values from csv files made with Shaeer's code and puts them into a dictionary
-h_dict = dict()
-with open(files("quant_rotor.data") / "matrix_elements_K.csv", mode = "r",newline = "") as csvfile_h:
-    reader_h = csv.reader(csvfile_h, delimiter = ",")
-    next(reader_h)
-    next(reader_h)
-    for row_h in reader_h:
-        if float(row_h[2]) != 0.0:
-            h_dict[((int(row_h[0]) - m_max_shaeer), (int(row_h[1]) - m_max_shaeer))] = float(row_h[2])
 
-#creates h term of size (p, p) so that it can be sliced
-h_full = np.zeros((p, p))
-for h_row in range(p):
-    for h_col in range(p):
-        h_full[h_row, h_col] = h_dict.get((func.p_to_m(h_row), func.p_to_m(h_col)), 0)
+# Load .npy matrices directly from the package
+data_dir = files("quant_rotor.data")
+K = np.load(data_dir / "K_matrix.npy")
+V = np.load(data_dir / "V_matrix.npy")
 
-#h_dict is no longer needed due to h_full
-del h_dict
+V = V + V.T - np.diag(np.diag(V))
+V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
 
-#gets v values from csv file made Shaeer's code and puts them into a dictionary
-v_dict = dict()
-with open(files("quant_rotor.data") / "matrix_elements_V.csv", mode = "r",newline = "") as csvfile_v:
-    reader_v = csv.reader(csvfile_v, delimiter = ",")
-    next(reader_v)
-    next(reader_v)
-    for row_v in reader_v:
-        if float(row_v[4]) != 0.0:
-            v_dict[((int(row_v[0]) - m_max_shaeer), (int(row_v[1]) - m_max_shaeer), (int(row_v[2]) - m_max_shaeer), (int(row_v[3]) - m_max_shaeer))] = float(row_v[4])
-            if int(row_v[0]) != int(row_v[2]) and int(row_v[1]) != int(row_v[3]):
-                v_dict[((int(row_v[2]) - m_max_shaeer), (int(row_v[3]) - m_max_shaeer), (int(row_v[0]) - m_max_shaeer), (int(row_v[1]) - m_max_shaeer))] = float(row_v[4])
-
-#creates maximum size v term (p, p, p, p) so that it can be sliced
-v_full = np.zeros((p, p, p, p))
-for v_axis_0 in range(p):
-    for v_axis_1 in range(p):
-        for v_axis_2 in range(p):
-            for v_axis_3 in range(p):
-                v_full[v_axis_0, v_axis_1, v_axis_2, v_axis_3] = g * v_dict.get((func.p_to_m(v_axis_0), func.p_to_m(v_axis_1), func.p_to_m(v_axis_2), func.p_to_m(v_axis_3)), 0)
-
-#v_dict no longer needed due to v_full
-del v_dict
+h_full = h.basis_m_to_p_matrix_conversion(K)
+v_full = h.basis_m_to_p_matrix_conversion(V_tensor)
 
 #t1 and t2 amplitude tensors
 t_a_i_tensor = np.full((sites, a, i), initial)

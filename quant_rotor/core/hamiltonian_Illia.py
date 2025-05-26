@@ -80,7 +80,7 @@ def H_potential(states: int, sites: int, h_pp_qq: np.ndarray, g_val: float) -> n
                                     V[i, j] += val * g_val
     return V
 
-def write_matrix_elements(m_max, fpath):
+def write_matrix_elements(m_max):
     d = 2 * m_max + 1
 
     # Generate Kinetic Energy Matrix
@@ -89,46 +89,42 @@ def write_matrix_elements(m_max, fpath):
         for j in range(i, d):
             K[i, j] = hg.free_one_body(i, j, m_max)
 
-    # Save K as a NumPy binary file
-    np.save(os.path.join(fpath, "K_matrix.npy"), K)
-
-    # Generate Potential Energy Matrix (flattened 2-body operator)
+    # Generate Potential Energy Matrix
     V = np.zeros((d**2, d**2))
     for i in range(d):
         for j in range(d):
             for k in range(d):
                 for l in range(d):
-                    if k * d + l >= i * d + j:  # upper triangular only
+                    if k * d + l >= i * d + j:
                         V[i*d + j, k*d + l] = hg.interaction_two_body_coplanar(i, j, k, l)
 
-    # Save V as a NumPy binary file
-    np.save(os.path.join(fpath, "V_matrix.npy"), V)
+    # Write to package's data directory
+    data_dir = files("quant_rotor.data")
+    np.save(os.path.join(data_dir, "K_matrix.npy"), K)
+    np.save(os.path.join(data_dir, "V_matrix.npy"), V)
 
-    return K, V  # optionally return them for immediate use
+    return K, V
 
-def hamiltonian(state: int, site: int, g_val: float=1, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False)->np.ndarray:
+def hamiltonian(state: int, site: int, g_val: float=1, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False, clean: bool=False)->np.ndarray:
     if Import == False:
-        f_path =  files("quant_rotor.data")
+        write_matrix_elements((state-1) // 2)
 
-        write_matrix_elements((state-1) // 2, f_path)
+        data_dir = files("quant_rotor.data")
+        K_from_npy = np.load(data_dir / "K_matrix.npy")
+        V_from_npy = np.load(data_dir / "V_matrix.npy")
 
-        K_path = os.path.join(f_path, "K_matrix.npy")
-        V_path = os.path.join(f_path, "V_matrix.npy")
+        V_from_npy = V_from_npy + V_from_npy.T - np.diag(np.diag(V_from_npy))
+        V_tensor = V_from_npy.reshape(state, state, state, state)  # Adjust if needed
 
-        K_from_csv = np.load(K_path)
-        V_from_csv = np.load(V_path)
-
-        V_from_csv = V_from_csv + V_from_csv.T - np.diag(np.diag(V_from_csv))
-        V_tensor = V_from_csv.reshape(state, state, state, state)  # Adjust if needed
-
-        K_in_p = basis_m_to_p_matrix_conversion(K_from_csv)
+        K_in_p = basis_m_to_p_matrix_conversion(K_from_npy)
         V_in_p = basis_m_to_p_matrix_conversion(V_tensor)
 
-        try:
-            os.remove(K_path)
-            os.remove(V_path)
-        except FileNotFoundError as e:
-            print(f"File not found during deletion: {e.filename}")
+        if clean:
+            try:
+                os.remove(data_dir / "K_matrix.npy")
+                os.remove(data_dir / "V_matrix.npy")
+            except FileNotFoundError as e:
+                print(f"File not found during deletion: {e.filename}")
 
     else:
         K_in_p = K_import
