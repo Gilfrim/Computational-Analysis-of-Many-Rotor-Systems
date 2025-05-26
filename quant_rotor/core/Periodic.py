@@ -1,7 +1,7 @@
 import numpy as np
 import csv
-import functions as func
-import writeMatrixElements as wME
+from quant_rotor.models import functions as func
+from quant_rotor.models import writeMatrixElements as wME
 
 #printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
@@ -638,9 +638,9 @@ def t_2_amplitude_csv():
 
 if __name__ == "__main__":
 
-    file_path_energy = "energy.csv"
-    file_path_t_1_amplitudes = "t_1 amplitudes.csv"
-    file_path_t_2_amplitudes = "t_2 amplitudes.csv"
+    file_path_energy = "energy_periodic.csv"
+    file_path_t_1_amplitudes = "t_1_amplitudes_periodic.csv"
+    file_path_t_2_amplitudes = "t_2_amplitudes_periodic.csv"
 
     with open(file_path_energy, "w", encoding = "utf-8") as energy_file, \
          open(file_path_t_1_amplitudes, "w") as t_1_amplitudes_file, \

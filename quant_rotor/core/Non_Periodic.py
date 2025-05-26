@@ -1,6 +1,7 @@
 import numpy as np
 import csv
-import functions as func
+from quant_rotor.models import functions as func
+from importlib.resources import files
 
 #printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
@@ -23,7 +24,7 @@ errors = []
 values = {}
 
 #reads through the input file for variables
-file_path_input = "/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files/input.txt"
+file_path_input = files("quant_rotor.data") / "input.txt"
 with open(file_path_input, "r") as input_file:
     for line in input_file:
         line = line.strip().lower()
@@ -65,7 +66,7 @@ del key
 del value
 
 #reads through the testing file for variables
-file_path_testing = "/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files/testing.txt"
+file_path_testing = files("quant_rotor.data") / "testing.txt"
 with open(file_path_testing, "r") as testing_file:
     for line_testing in testing_file:
         line_testing = line_testing.strip()
@@ -158,7 +159,7 @@ m_max_shaeer = 5
 #for states > 11 would need to have shaeers code generate csv files with m_max > 5
 #gets h values from csv files made with Shaeer's code and puts them into a dictionary
 h_dict = dict()
-with open(r"/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files/matrix_elements_K.csv", mode = "r",newline = "") as csvfile_h:
+with open(files("quant_rotor.data") / "matrix_elements_K.csv", mode = "r",newline = "") as csvfile_h:
     reader_h = csv.reader(csvfile_h, delimiter = ",")
     next(reader_h)
     next(reader_h)
@@ -177,7 +178,7 @@ del h_dict
 
 #gets v values from csv file made Shaeer's code and puts them into a dictionary
 v_dict = dict()
-with open(r"/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files/matrix_elements_V.csv", mode = "r",newline = "") as csvfile_v:
+with open(files("quant_rotor.data") / "matrix_elements_V.csv", mode = "r",newline = "") as csvfile_v:
     reader_v = csv.reader(csvfile_v, delimiter = ",")
     next(reader_v)
     next(reader_v)

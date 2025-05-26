@@ -1,7 +1,8 @@
 import numpy as np
-import functions as func
+import quant_rotor.models.functions as func
 import os
-import hamiltonianGenerator as hg
+import quant_rotor.models.hamiltonianGenerator as hg
+from importlib.resources import files
 
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 9)
 
@@ -107,7 +108,7 @@ def write_matrix_elements(m_max, fpath):
 
 def hamiltonian(state: int, site: int, g_val: float=1, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False)->np.ndarray:
     if Import == False:
-        f_path =  r"/Users/gilfrim/Desktop/Computational_Analisis_of_Many_Rotor_Systems/Illia_work"
+        f_path =  files("quant_rotor.data")
 
         write_matrix_elements((state-1) // 2, f_path)
 
