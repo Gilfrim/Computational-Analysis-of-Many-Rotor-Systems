@@ -2,14 +2,15 @@ import numpy as np
 import csv
 from quant_rotor.models import functions as func
 from quant_rotor.models import writeMatrixElements as wME
+from importlib.resources import files
 
 #printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
 
 #location of folder for code and such
-file_path_folder = r"/Users/gilfrim/Desktop/Computational_Analisis_of_Many_Rotor_Systems/Main-CC-files"
-file_path_K = file_path_folder + r"/matrix_elements_K.csv"
-file_path_V = file_path_folder + r"/matrix_elements_V.csv"
+file_path_folder = files("quant_rotor.data")
+file_path_K = files("quant_rotor.data") / "matrix_elements_K.csv"
+file_path_V = files("quant_rotor.data") / "matrix_elements_V.csv"
 
 #expected data type of input variables and file location
 expected_types = {"sites": [int, "file_path_input"],
@@ -28,7 +29,7 @@ errors = []
 values = {}
 
 #goes through input.txt to find variables
-file_path_input = "/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files/input.txt"
+file_path_input = files("quant_rotor.data") / "input.txt"
 with open(file_path_input, "r") as input_file:
     for line in input_file:
         line = line.strip().lower()
@@ -71,7 +72,7 @@ del key
 del value
 
 #goes through testing.txt for variables
-file_path_testing = "/Users/gilfrim/Desktop/QuantumChemistryCoop/Main-CC-files/testing.txt"
+file_path_testing = files("quant_rotor.data") / "testing.txt"
 with open(file_path_testing, "r") as testing_file:
     for line_testing in testing_file:
         line_testing = line_testing.strip()
@@ -391,60 +392,6 @@ if HF:
     h_full = fock_final_vec.conj().T @ h_full @ fock_final_vec
     v_full = np.einsum("pi, qj, pqrs, rk, sl->ijkl", fock_final_vec, fock_final_vec, v_full, fock_final_vec, fock_final_vec)
 
-    #Should maybe make these some functions that you call instead
-    #more test stuff
-    #u_pj = fock_final_vec
-
-    #i_pq = np.einsum("pj, qj ->pq", u_pj, u_pj)
-    #print(f"U pj U qj unitary test: {np.allclose(i_pq, np.identity(states))}")
-
-    #i_ij = np.einsum("pj, pi ->ij", u_pj, u_pj)
-    #print(f"U pj U pi unitary test: {np.allclose(i_ij, np.identity(states))}")
-
-    #d_pq = density_final.copy()
-
-    #d_ij = np.einsum("pi, pq, qj->ij",u_pj, d_pq, u_pj)
-    #print(f"D ij\n{d_ij}")
-
-    #d_ij_check = np.zeros((states, states))
-    #d_ij_check[0, 0] = 1
-    #print(f"D ij test: {np.allclose(d_ij, d_ij_check)}")
-
-    #f_pq_0 = fock_final
-
-    #f_ij_0 = np.einsum("pi, pq, qj ->ij", u_pj, f_pq_0, u_pj)
-
-    #f_ij_0_check = np.diag(fock_final_val)
-    #print(f"F ij 0 test: {np.allclose(f_ij_0, f_ij_0_check)}")
-
-    #f_pq_1 = h_pq + 2 * np.einsum("prqs, sr ->pq", v_pqrs, d_pq)
-    #print(f"F pq 0 and 1 check: {np.allclose(f_pq_0, f_pq_1)}")
-
-    #v_piqj = np.einsum("prqs, ri, sj -> piqj", v_pqrs, u_pj, u_pj)
-
-    #f_pq_2 = h_pq + 2 * np.einsum("piqj, ij ->pq", v_piqj, d_ij)
-    #print(f"F pq 0 and 2 check: {np.allclose(f_pq_0, f_pq_2)}")
-
-    #h_ij = h_full.copy()
-
-    #f_ij_1 = h_ij + 2 * np.einsum("piqj, qp", v_piqj, d_pq)
-    #print(f"F ij 0 and 1 check: {np.allclose(f_ij_0, f_ij_1)}")
-
-    #v_ijkl = v_full.copy()
-
-    #f_ij_2 = h_ij + 2 * np.einsum("ikjl, lk ->ij", v_ijkl, d_ij)
-    #print(f"F ij 0 and 2 check: {np.allclose(f_ij_0, f_ij_2)}")
-
-    #v_aux = 0.5 * (v_aux + v_aux.conj().T)
-    #v_aux_2 = 0.5 * (v_aux_2 + v_aux_2.conj().T)
-
-    #print(f"v aux\n{np.real(v_aux)}")
-    #print(f"v aux 2\n{np.real(v_aux_2)}")
-
-    #print(f"h herm test: {np.allclose(h_full, h_full.conj().T)}")
-    #print(f"v herm test: {np.allclose(v_full, np.conj(np.transpose(v_full, (2, 3, 0, 1))))}")
-
-    #uses updated epsilon values from fock eigenvalues
     epsilon = fock_final_val
 
 else:
@@ -638,9 +585,9 @@ def t_2_amplitude_csv():
 
 if __name__ == "__main__":
 
-    file_path_energy = "energy_periodic.csv"
-    file_path_t_1_amplitudes = "t_1_amplitudes_periodic.csv"
-    file_path_t_2_amplitudes = "t_2_amplitudes_periodic.csv"
+    file_path_energy = files("quant_rotor.data") / "energy_periodic.csv"
+    file_path_t_1_amplitudes = files("quant_rotor.data") / "t_1_amplitudes_periodic.csv"
+    file_path_t_2_amplitudes = files("quant_rotor.data") / "t_2_amplitudes_periodic.csv"
 
     with open(file_path_energy, "w", encoding = "utf-8") as energy_file, \
          open(file_path_t_1_amplitudes, "w") as t_1_amplitudes_file, \

@@ -254,71 +254,71 @@ def residual_single(x_s:int)->np.array:
 
     return R_single
 
-def residual_double_sym(x_ds:int, y_ds:int)->np.array:
+def residual_double_sym(x_d:int, y_d:int)->np.array:
     """Calculates Rs^{ab}_{ij}(x < y) symmetric doubles equation"""
     R_double_symmetric = np.zeros((a, b, i, j))
 
     if i_method >= 1:
         # noinspection SpellCheckingInspection
-        R_double_symmetric += np.einsum("ap, bq, pqrs, ri, sj->abij", A_term(a, p, x_ds), A_term(b, q, y_ds), v_term(p, q, r, s, x_ds, y_ds), B_term(r, i, x_ds), B_term(s, j, y_ds))
+        R_double_symmetric += np.einsum("ap, bq, pqrs, ri, sj->abij", A_term(a, p, x_d), A_term(b, q, y_d), v_term(p, q, r, s, x_d, y_d), B_term(r, i, x_d), B_term(s, j, y_d))
         if i_method >= 2:
             # noinspection SpellCheckingInspection
-            R_double_symmetric += np.einsum("ap, bq, pqcd, cdij->abij", A_term(a, p, x_ds), A_term(b, q, x_ds), v_term(p, q, c, d, x_ds, y_ds), t_term(c, d, i, j, x_ds, y_ds))
+            R_double_symmetric += np.einsum("ap, bq, pqcd, cdij->abij", A_term(a, p, x_d), A_term(b, q, x_d), v_term(p, q, c, d, x_d, y_d), t_term(c, d, i, j, x_d, y_d))
             # noinspection SpellCheckingInspection
-            R_double_symmetric -= np.einsum("abkl, klpq, pi, qj->abij", t_term(a, b, k, l, x_ds, y_ds), v_term(k, l, p, q, x_ds, y_ds), B_term(p, i, x_ds), B_term(q, j, y_ds))
+            R_double_symmetric -= np.einsum("abkl, klpq, pi, qj->abij", t_term(a, b, k, l, x_d, y_d), v_term(k, l, p, q, x_d, y_d), B_term(p, i, x_d), B_term(q, j, y_d))
             if i_method == 3:
                 # noinspection SpellCheckingInspection
-                R_double_symmetric -= np.einsum("abkl, klcd, cdij->abij", t_term(a, b, k, l, x_ds, y_ds), v_term(k, l, c, d, x_ds, y_ds), t_term(c, d, i, j, x_ds, y_ds))
+                R_double_symmetric -= np.einsum("abkl, klcd, cdij->abij", t_term(a, b, k, l, x_d, y_d), v_term(k, l, c, d, x_d, y_d), t_term(c, d, i, j, x_d, y_d))
                 if sites >= 4:
                     for z_ds in range(sites):
                         for w_ds in range(sites):
-                            if z_ds not in {x_ds, y_ds} and w_ds not in {x_ds, y_ds} and z_ds != w_ds:
+                            if z_ds not in {x_d, y_d} and w_ds not in {x_d, y_d} and z_ds != w_ds:
                                 # noinspection SpellCheckingInspection
-                                R_double_symmetric += np.einsum("klcd, acik, bdjl->abij", v_term(k, l, c, d, z_ds, w_ds), t_term(a, c, i, k, x_ds, z_ds), t_term(b, d, j, l, y_ds, w_ds))
+                                R_double_symmetric += np.einsum("klcd, acik, bdjl->abij", v_term(k, l, c, d, z_ds, w_ds), t_term(a, c, i, k, x_d, z_ds), t_term(b, d, j, l, y_d, w_ds))
 
     return R_double_symmetric
 
-def residual_double_non_sym_1(x_dns_1:int, y_dns_1:int)->np.array:
+def residual_double_non_sym_1(x_d:int, y_d:int)->np.array:
     """Calculates Rn^{ab}_{ij}(x, y) non-symmetric doubles equation"""
     R_double_non_symmetric_1 = np.zeros((a, b, i, j))
 
     if i_method >= 1:
         # noinspection SpellCheckingInspection
-        R_double_non_symmetric_1 += np.einsum("ap, pc, cbij->abij", A_term(a, p, x_dns_1), h_term(p, c, x_dns_1), t_term(c, b, i, j, x_dns_1, y_dns_1))
+        R_double_non_symmetric_1 += np.einsum("ap, pc, cbij->abij", A_term(a, p, x_d), h_term(p, c, x_d), t_term(c, b, i, j, x_d, y_d))
         # noinspection SpellCheckingInspection
-        R_double_non_symmetric_1 -= np.einsum("abkj, kp, pi->abij", t_term(a, b, k, j, x_dns_1, y_dns_1), h_term(k, p, x_dns_1), B_term(p, i, x_dns_1))
+        R_double_non_symmetric_1 -= np.einsum("abkj, kp, pi->abij", t_term(a, b, k, j, x_d, y_d), h_term(k, p, x_d), B_term(p, i, x_d))
 
         if i_method >= 2:
             for z_dns_1 in range(sites):
-                if z_dns_1 != x_dns_1 and z_dns_1 != y_dns_1:
+                if z_dns_1 != x_d and z_dns_1 != y_d:
                     # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_1 += np.einsum("acik, krcs, br, sj->abij", t_term(a, c, i, k, x_dns_1, z_dns_1), v_term(k, r, c, s, z_dns_1, y_dns_1), A_term(b, r, y_dns_1), B_term(s, j, y_dns_1))
+                    R_double_non_symmetric_1 += np.einsum("acik, krcs, br, sj->abij", t_term(a, c, i, k, x_d, z_dns_1), v_term(k, r, c, s, z_dns_1, y_d), A_term(b, r, y_d), B_term(s, j, y_d))
                     # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_1 += np.einsum("bq, qlds, adij, sl->abij", A_term(b, q, y_dns_1), v_term(q, l, d, s, y_dns_1, z_dns_1), t_term(a, d, i, j, x_dns_1, y_dns_1), B_term(s, l, z_dns_1))
+                    R_double_non_symmetric_1 += np.einsum("bq, qlds, adij, sl->abij", A_term(b, q, y_d), v_term(q, l, d, s, y_d, z_dns_1), t_term(a, d, i, j, x_d, y_d), B_term(s, l, z_dns_1))
                     # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_1 -= np.einsum("abkj, lkrp, pi, rl->abij", t_term(a, b, k, j, x_dns_1, y_dns_1), v_term(l, k, r, p, z_dns_1, x_dns_1), B_term(p, i, x_dns_1), B_term(r, l, z_dns_1))
+                    R_double_non_symmetric_1 -= np.einsum("abkj, lkrp, pi, rl->abij", t_term(a, b, k, j, x_d, y_d), v_term(l, k, r, p, z_dns_1, x_d), B_term(p, i, x_d), B_term(r, l, z_dns_1))
 
     return R_double_non_symmetric_1
 
-def residual_double_non_sym_2(x_dns_2:int, y_dns_2:int)->np.array:
+def residual_double_non_sym_2(x_d:int, y_d:int)->np.array:
     """Calculates Rn^{ba}_{ji}(y, x) ai -> jb permutation non-symmetric doubles equation"""
     R_double_non_symmetric_2 = np.zeros((b, a, j, i))
 
     if i_method >= 1:
         # noinspection SpellCheckingInspection
-        R_double_non_symmetric_2 += np.einsum("bp, pc, caji->baji", A_term(b, p, y_dns_2), h_term(p, c, y_dns_2), t_term(c, a, j, i, y_dns_2, x_dns_2))
+        R_double_non_symmetric_2 += np.einsum("bp, pc, caji->baji", A_term(b, p, y_d), h_term(p, c, y_d), t_term(c, a, j, i, y_d, x_d))
         # noinspection SpellCheckingInspection
-        R_double_non_symmetric_2 -= np.einsum("baki, kp, pj->baji", t_term(b, a, k, i, y_dns_2, x_dns_2), h_term(k, p, y_dns_2), B_term(p, j, y_dns_2))
+        R_double_non_symmetric_2 -= np.einsum("baki, kp, pj->baji", t_term(b, a, k, i, y_d, x_d), h_term(k, p, y_d), B_term(p, j, y_d))
 
         if i_method >= 2:
             for z_dns_2 in range(sites):
-                if z_dns_2 != x_dns_2 and z_dns_2 != y_dns_2:
+                if z_dns_2 != x_d and z_dns_2 != y_d:
                     # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_2 += np.einsum("bcjk, krcs, ar, si->baji", t_term(b, c, j, k, y_dns_2, z_dns_2), v_term(k, r, c, s, z_dns_2, x_dns_2), A_term(a, r, x_dns_2), B_term(s, i, x_dns_2))
+                    R_double_non_symmetric_2 += np.einsum("bcjk, krcs, ar, si->baji", t_term(b, c, j, k, y_d, z_dns_2), v_term(k, r, c, s, z_dns_2, x_d), A_term(a, r, x_d), B_term(s, i, x_d))
                     # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_2 += np.einsum("aq, qlds, bdji, sl->baji", A_term(a, q, x_dns_2), v_term(q, l, d, s, x_dns_2, z_dns_2), t_term(b, d, j, i, y_dns_2, x_dns_2), B_term(s, l ,z_dns_2))
+                    R_double_non_symmetric_2 += np.einsum("aq, qlds, bdji, sl->baji", A_term(a, q, x_d), v_term(q, l, d, s, x_d, z_dns_2), t_term(b, d, j, i, y_d, x_d), B_term(s, l ,z_dns_2))
                     # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_2 -= np.einsum("baki, lkrp, pj, rl->baji", t_term(b, a, k, i, y_dns_2, x_dns_2), v_term(l, k, r, p, z_dns_2, y_dns_2), B_term(p, j, y_dns_2), B_term(r, l ,z_dns_2))
+                    R_double_non_symmetric_2 -= np.einsum("baki, lkrp, pj, rl->baji", t_term(b, a, k, i, y_d, x_d), v_term(l, k, r, p, z_dns_2, y_d), B_term(p, j, y_d), B_term(r, l ,z_dns_2))
 
     return R_double_non_symmetric_2
 
