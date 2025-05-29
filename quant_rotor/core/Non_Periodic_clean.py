@@ -25,31 +25,21 @@ class TensorData:
     v_full: np.ndarray
 
 def A_term(a_upper, a_site, tensors: TensorData):
-    # print("A_term:", np.hstack((-tensors.t_a_i_tensor[a_site], np.identity(a_upper))))
     return np.hstack((-tensors.t_a_i_tensor[a_site], np.identity(a_upper)))
 
 def B_term(b_lower, b_site, tensors: TensorData):
-    # print("B_term:", np.vstack((np.identity(b_lower), tensors.t_a_i_tensor[b_site])))
     return np.vstack((np.identity(b_lower), tensors.t_a_i_tensor[b_site]))
 
 def h_term(h_upper, h_lower, tensors: TensorData, params: SimulationParams):
     a_h_shift = [params.i if a_check == params.a else 0 for a_check in (h_upper, h_lower)]
-    # print("h_term:", tensors.h_full[a_h_shift[0]:h_upper + a_h_shift[0], a_h_shift[1]:h_lower + a_h_shift[1]])
     return tensors.h_full[a_h_shift[0]:h_upper + a_h_shift[0], a_h_shift[1]:h_lower + a_h_shift[1]]
 
 def v_term(v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2, tensors: TensorData, params: SimulationParams):
-    # if params.gap and ((v_site_1 == params.gap_site and v_site_2 == params.gap_site + 1) or
-    #                    (v_site_1 == params.gap_site + 1 and v_site_2 == params.gap_site)):
-    #     # print("v_term:", np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2)))
-    #     return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
+    if params.gap and ((v_site_1 == params.gap_site and v_site_2 == params.gap_site + 1) or
+                       (v_site_1 == params.gap_site + 1 and v_site_2 == params.gap_site)):
+        return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
     if abs(v_site_1 - v_site_2) == 1:
         a_v_shift = [params.i if a_check == params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]
-        # print("v_term:", tensors.v_full[
-        #     a_v_shift[0]:v_upper_1 + a_v_shift[0],
-        #     a_v_shift[1]:v_upper_2 + a_v_shift[1],
-        #     a_v_shift[2]:v_lower_1 + a_v_shift[2],
-        #     a_v_shift[3]:v_lower_2 + a_v_shift[3]
-        # ])
         return tensors.v_full[
             a_v_shift[0]:v_upper_1 + a_v_shift[0],
             a_v_shift[1]:v_upper_2 + a_v_shift[1],
@@ -57,11 +47,9 @@ def v_term(v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2, tenso
             a_v_shift[3]:v_lower_2 + a_v_shift[3]
         ]
     else:
-        # print("v_term:", np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2)))
         return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
 
 def t_term(t_site_1, t_site_2, tensors: TensorData):
-    # print("t_term:", np.hstack( tensors.t_ab_ij_tensor[t_site_1, t_site_2]))
     return tensors.t_ab_ij_tensor[t_site_1, t_site_2]
 
 def residual_single(x_s:int, tensors: TensorData, params: SimulationParams)->np.array:
@@ -206,9 +194,9 @@ def transformation_test(tensors: TensorData, params: SimulationParams):
 
         # noinspection SpellCheckingInspection
     v_full = np.einsum("ip, jr, prqs, qk, sl->ijkl", U.T, U.T, v_full, U, U)
-    return h_full
+    return h_full, v_full
 
-def run_simulation(
+def non_periodic(
     sites: int,
     states: int,
     low_states: int,
@@ -309,7 +297,7 @@ def run_simulation(
     #same as transformation test.py
     
     if transform:
-        transformation_test(tensors, params)
+        tensors.h_full, tensors.v_full = transformation_test(tensors, params)
 
     file_path_energy = "energy.csv"
 
@@ -334,7 +322,6 @@ def run_simulation(
             print(f"2 max: {np.max(np.abs(double))}")
 
             if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
-                print("I quit!!")
                 break
 
             if np.isnan(single).any() or np.isnan(double).any() or np.isinf(single).any() or np.isinf(double).any():
@@ -365,9 +352,13 @@ def run_simulation(
             print(f"Energy: {float(energy)}")
 
             energy_file.write(f"{iteration}, {energy}, {delta_energy}\n")
+    
+    return previous_energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
 
 
 
 if __name__ == "__main__":
-    run_simulation(5, 5, 1, 0, 1e-8, 0.5, 3, False, 3, False)
-    
+    energy, t_a_i_tensor, t_ab_ij_tensor = run_simulation(5, 5, 1, 0, 1e-8, 0.5, 3, False, 3, False)
+    print("Energy:", energy)
+    print(f"1 max: {np.max(np.abs(t_a_i_tensor))}")
+    print(f"2 max: {np.max(np.abs(t_ab_ij_tensor))}")
