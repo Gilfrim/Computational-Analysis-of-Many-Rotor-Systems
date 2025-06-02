@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 from quant_rotor.models import functions as func
-import quant_rotor.core.hamiltonian_Illia as h
+import quant_rotor.core.hamiltonian as h
 from importlib.resources import files
 from dataclasses import dataclass
 
@@ -358,7 +358,7 @@ def non_periodic(
 
 
 if __name__ == "__main__":
-    energy, t_a_i_tensor, t_ab_ij_tensor = run_simulation(5, 5, 1, 0, 1e-8, 0.5, 3, False, 3, False)
+    energy, t_a_i_tensor, t_ab_ij_tensor = non_periodic(5, 5, 1, 0, 1e-8, 0.5, 3, False, 3, False)
     print("Energy:", energy)
     print(f"1 max: {np.max(np.abs(t_a_i_tensor))}")
     print(f"2 max: {np.max(np.abs(t_ab_ij_tensor))}")

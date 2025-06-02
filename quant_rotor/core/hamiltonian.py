@@ -98,20 +98,20 @@ def write_matrix_elements(m_max):
                     if k * d + l >= i * d + j:
                         V[i*d + j, k*d + l] = hg.interaction_two_body_coplanar(i, j, k, l)
 
-    # Write to package's data directory
-    data_dir = files("quant_rotor.data")
-    np.save(os.path.join(data_dir, "K_matrix.npy"), K)
-    np.save(os.path.join(data_dir, "V_matrix.npy"), V)
+    # # Write to package's data directory
+    # data_dir = files("quant_rotor.data")
+    # np.save(os.path.join(data_dir, "K_matrix.npy"), K)
+    # np.save(os.path.join(data_dir, "V_matrix.npy"), V)
 
     return K, V
 
 def hamiltonian(state: int, site: int, g_val: float=1, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False, clean: bool=False)->np.ndarray:
     if Import == False:
-        write_matrix_elements((state-1) // 2)
+        K_from_npy, V_from_npy = write_matrix_elements((state-1) // 2)
 
-        data_dir = files("quant_rotor.data")
-        K_from_npy = np.load(data_dir / "K_matrix.npy")
-        V_from_npy = np.load(data_dir / "V_matrix.npy")
+        # data_dir = files("quant_rotor.data")
+        # K_from_npy = np.load(data_dir / "K_matrix.npy")
+        # V_from_npy = np.load(data_dir / "V_matrix.npy")
 
         V_from_npy = V_from_npy + V_from_npy.T - np.diag(np.diag(V_from_npy))
         V_tensor = V_from_npy.reshape(state, state, state, state)  # Adjust if needed
@@ -119,12 +119,12 @@ def hamiltonian(state: int, site: int, g_val: float=1, K_import: np.ndarray=[], 
         K_in_p = basis_m_to_p_matrix_conversion(K_from_npy)
         V_in_p = basis_m_to_p_matrix_conversion(V_tensor)
 
-        if clean:
-            try:
-                os.remove(data_dir / "K_matrix.npy")
-                os.remove(data_dir / "V_matrix.npy")
-            except FileNotFoundError as e:
-                print(f"File not found during deletion: {e.filename}")
+        # if clean:
+        #     try:
+        #         os.remove(data_dir / "K_matrix.npy")
+        #         os.remove(data_dir / "V_matrix.npy")
+        #     except FileNotFoundError as e:
+        #         print(f"File not found during deletion: {e.filename}")
 
     else:
         K_in_p = K_import

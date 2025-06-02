@@ -1,5 +1,5 @@
 import numpy as np
-import quant_rotor.core.hamiltonian_Illia as h
+import quant_rotor.core.hamiltonian as h
 import quant_rotor.core.Non_Periodic_clean as NP
 from importlib.resources import files
 from dataclasses import dataclass
