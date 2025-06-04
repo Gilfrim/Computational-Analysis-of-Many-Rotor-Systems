@@ -1,7 +1,7 @@
 import quant_rotor.models.functions as func
 import numpy as np
 import os
-import quant_rotor.models.kinetic_potentian_generator as hg
+import quant_rotor.models.kinetic_potential_generator as hg
 from importlib.resources import files
 
 def create_inverse_index_map(total_num_states: int) -> np.ndarray:

@@ -1,17 +1,17 @@
 import numpy as np
 from importlib.resources import files
 from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.periodic_sup_class import QuantumSimulation, TensorData, SimulationParams
+from quant_rotor.models.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
 
 
 #printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
 
-def HF_test(tensors: TensorData ,params: SimulationParams):
+def HF_test(start_point: str, g: float, tensors: TensorData ,params: SimulationParams):
         
         h_full, v_full = tensors.h_full, tensors.v_full
         
-        states, start_point, i, g = params.states, params.start_point, params.i, params.g
+        states, i, = params.states, params.i
     #crit point negative is just for testing should change
         crit_point = -0.5
         # Initialize the density matrix based on the starting point and the matrix form
@@ -164,10 +164,13 @@ def create_simulation_params(
     sites: int,
     states: int,
     low_states: int,
-    initial: float,
+    t_a_i_tensor_initial: np.ndarray,
+    t_ab_ij_tensor_initial: np.ndarray,
     threshold: float,
     g: float,
     i_method: int,
+    gap: bool,
+    gap_site: int,
     HF: bool,
     start_point: str
 ):
@@ -181,6 +184,7 @@ def create_simulation_params(
     p = states
     i = low_states
     a = p - i
+    periodic = True
 
     # Load .npy matrices directly from the package
     K, V = write_matrix_elements((states-1)//2)
@@ -194,8 +198,11 @@ def create_simulation_params(
     v_full = v_full * g
 
 
-    t_a_i_tensor = np.full((sites, a, i), initial, dtype=complex)
-    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), initial, dtype=complex)
+    t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=complex)
+    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
+
+    # t_a_i_tensor = t_a_i_tensor_initial
+    # t_ab_ij_tensor = t_ab_ij_tensor_initial
 
 
     #eigenvalues from h for update
@@ -208,7 +215,10 @@ def create_simulation_params(
     sites=sites,
     states=states,
     i_method=i_method,
-    epsilon=epsilon
+    gap=gap,
+    gap_site=gap_site,
+    epsilon=epsilon,
+    periodic=periodic
     )
 
     tensors = TensorData(
@@ -223,97 +233,97 @@ def create_simulation_params(
     del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
 
     if HF:
-        HF_test(tensors, params)
+        HF_test(start_point, g, tensors, params)
     else:
 
         params.epsilon = np.diag(tensors.h_full)
 
-    file_path_energy = "energy.csv"
+    # file_path_energy = "energy.csv"
 
-    with open(file_path_energy, "w", encoding = "utf-8") as energy_file:
-        energy_file.write("Iteration, Energy, ΔEnergy\n")
+    # with open(file_path_energy, "w", encoding = "utf-8") as energy_file:
+    #     energy_file.write("Iteration, Energy, ΔEnergy\n")
 
-        iteration = 0
+    iteration = 0
 
-        single = np.zeros((sites, a, i), dtype = complex)
-        double = np.zeros((sites, sites, a, a, i ,i), dtype = complex)
+    single = np.zeros((sites, a, i), dtype = complex)
+    double = np.zeros((sites, sites, a, a, i ,i), dtype = complex)
 
-        previous_energy = 0
+    previous_energy = 0
 
-        while True:
+    while True:
 
-            energy = 0
+        energy = 0
 
-            single[0] = qs.residual_single(0)
-            for y_site in range(1, sites):
-                single[y_site] = single[0]
-                double[0, y_site] = qs.residual_double_total(0, y_site)
-                for x_site in range(1, sites):
-                    double[x_site, (x_site + y_site) % sites] = double[0, y_site]
+        single[0] = qs.residual_single(0)
+        for y_site in range(1, sites):
+            single[y_site] = single[0]
+            double[0, y_site] = qs.residual_double_total(0, y_site)
+            for x_site in range(1, sites):
+                double[x_site, (x_site + y_site) % sites] = double[0, y_site]
 
-            # if HF:
-            #     #middle = np.zeros((p, q))
-            #
-            #     #print(f"b term\n{B_term(s, l, 0)}")
-            #     x_test = 2
-            #     middle = h_term(p, q, x_test)
-            #     h_val, h_vec = np.linalg.eigh(middle)
-            #     for z_test in range(sites):
-            #         if z_test != x_test:
-            #             middle += np.einsum("plqs, sl ->pq", v_term(p, l, q, s, x_test, z_test), B_term(s, l, z_test))
-            #     test = np.einsum("ap, pq, qi ->ai", A_term(a, p, x_test), middle, B_term(q, i, x_test))
-            #     #print(f"middle\n {np.real(middle)}")
-            #     middle_2 = h_term(p, q, x_test) + 2 * np.einsum("plqs, sl ->pq", v_term(p, l, q, s, x_test, 1), d_ij)
-                #print(f"middle 2\n {np.real(middle_2)}")
-                #print(f"v aux - middle\n{np.real(v_aux_2 - middle)}")
-                #if iteration <= 1:
-                    #print(f"fock test: {np.allclose(middle, fock_final)}")
-                    #print(f"{fock_final - middle}")
-                #print(f"single test: {np.allclose(test, single[x_test])}")
-                #print(f"single test\n{np.real(test - single[x_test])}")
+        # if HF:
+        #     #middle = np.zeros((p, q))
+        #
+        #     #print(f"b term\n{B_term(s, l, 0)}")
+        #     x_test = 2
+        #     middle = h_term(p, q, x_test)
+        #     h_val, h_vec = np.linalg.eigh(middle)
+        #     for z_test in range(sites):
+        #         if z_test != x_test:
+        #             middle += np.einsum("plqs, sl ->pq", v_term(p, l, q, s, x_test, z_test), B_term(s, l, z_test))
+        #     test = np.einsum("ap, pq, qi ->ai", A_term(a, p, x_test), middle, B_term(q, i, x_test))
+        #     #print(f"middle\n {np.real(middle)}")
+        #     middle_2 = h_term(p, q, x_test) + 2 * np.einsum("plqs, sl ->pq", v_term(p, l, q, s, x_test, 1), d_ij)
+            #print(f"middle 2\n {np.real(middle_2)}")
+            #print(f"v aux - middle\n{np.real(v_aux_2 - middle)}")
+            #if iteration <= 1:
+                #print(f"fock test: {np.allclose(middle, fock_final)}")
+                #print(f"{fock_final - middle}")
+            #print(f"single test: {np.allclose(test, single[x_test])}")
+            #print(f"single test\n{np.real(test - single[x_test])}")
 
-            one_max = single.flat[np.argmax(np.abs(single))]
-            two_max = double.flat[np.argmax(np.abs(double))]
+        one_max = single.flat[np.argmax(np.abs(single))]
+        two_max = double.flat[np.argmax(np.abs(double))]
 
-            print(f"1 max: {one_max}")
-            print(f"2 max: {two_max}")
+        print(f"1 max: {one_max}")
+        print(f"2 max: {two_max}")
 
-            if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
-                print("I quit.")
-                break
+        if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
+            print("I quit.")
+            break
 
-            #CHANGE BACK TO 10
-            if abs(one_max) >= 100 or abs(two_max) >= 100:
-                raise ValueError("Diverges")
+        #CHANGE BACK TO 10
+        if abs(one_max) >= 100 or abs(two_max) >= 100:
+            raise ValueError("Diverges")
 
-            tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
+        tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
 
-            for site_1 in range(1, sites):
-                tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
-                tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
-                for site_2 in range(1, sites):
-                    tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % sites] = tensors.t_ab_ij_tensor[0, site_1]
+        for site_1 in range(1, sites):
+            tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
+            tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
+            for site_2 in range(1, sites):
+                tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % sites] = tensors.t_ab_ij_tensor[0, site_1]
 
-            #energy calculations
-            for site_x in range(sites):
-                energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) * 0.5
+        #energy calculations
+        for site_x in range(sites):
+            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) * 0.5
 
-                for site_y in range(site_x + 1, site_x + sites):
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y % sites), qs.t_term(site_x, site_y % sites)) * 0.5
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % sites), qs.B_term(i, site_x), qs.B_term(i, site_y % sites)) * 0.5
+            for site_y in range(site_x + 1, site_x + sites):
+                # noinspection SpellCheckingInspection
+                energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y % sites), qs.t_term(site_x, site_y % sites)) * 0.5
+                # noinspection SpellCheckingInspection
+                energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % sites), qs.B_term(i, site_x), qs.B_term(i, site_y % sites)) * 0.5
 
-            delta_energy = energy - previous_energy
-            previous_energy = energy
+        delta_energy = energy - previous_energy
+        previous_energy = energy
 
-            iteration += 1
-            print(f"Iteration #: {iteration}")
-            print(f"Energy: {np.real(energy)}\n")
+        iteration += 1
+        print(f"Iteration #: {iteration}")
+        print(f"Energy: {np.real(energy)}\n")
 
-            energy_file.write(f"{iteration}, {energy}, {delta_energy}\n")
+            # energy_file.write(f"{iteration}, {energy}, {delta_energy}\n")
 
 if __name__ == "__main__":
 
-    create_simulation_params(5, 5, 1, 0, 1e-8, 0.5, 3, False, "sin")
+    create_simulation_params(5, 5, 1, 0, 0, 1e-8, 0.5, 3,  False, 3, True, "sin")
     print("Hello?")

@@ -1,6 +1,6 @@
 import numpy as np
 from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.non_periodic_sup_class import QuantumSimulation, TensorData, SimulationParams
+from quant_rotor.models.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
 
 def save_t_1_amplitudes(iteration, t_a_i_tensor: np.ndarray):
     np.save(f"t1_amplitudes_iter_{iteration}.npy", t_a_i_tensor)
@@ -12,7 +12,8 @@ def non_periodic(
     sites: int,
     states: int,
     low_states: int,
-    initial: float,
+    t_a_i_tensor_initial: np.ndarray,
+    t_ab_ij_tensor_initial: np.ndarray,
     threshold: float,
     g: float,
     i_method: int,
@@ -66,8 +67,11 @@ def non_periodic(
     v_full = v_full * g
 
     #t1 and t2 amplitude tensors
-    t_a_i_tensor = np.full((sites, a, i), initial, dtype=np.float64)
-    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), initial, dtype=np.float64)
+    t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=np.float64)
+    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=np.float64)
+
+    # t_a_i_tensor = t_a_i_tensor_initial
+    # t_ab_ij_tensor = t_ab_ij_tensor_initial
 
     #eigenvalues from h for update
     epsilon = np.diag(h_full)
@@ -160,7 +164,7 @@ def non_periodic(
 
 
 if __name__ == "__main__":
-    energy, t_a_i_tensor, t_ab_ij_tensor = non_periodic(5, 5, 1, 0, 1e-8, 0.5, 3, False, 3, False)
+    energy, t_a_i_tensor, t_ab_ij_tensor = non_periodic(5, 5, 1, 0, 0, 1e-8, 0.5, 3, False, 3, False)
     print("Energy:", energy)
     print(f"1 max: {np.max(np.abs(t_a_i_tensor))}")
     print(f"2 max: {np.max(np.abs(t_ab_ij_tensor))}")
