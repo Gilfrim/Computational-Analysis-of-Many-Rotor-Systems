@@ -1,33 +1,11 @@
 import numpy as np
-import quant_rotor.core.hamiltonian as h
-import quant_rotor.core.Non_Periodic_clean as NP
 from importlib.resources import files
-from dataclasses import dataclass
+from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
+from quant_rotor.models.periodic_sup_class import QuantumSimulation, TensorData, SimulationParams
+
 
 #printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
-
-@dataclass
-class SimulationParams:
-    a: int
-    i: int
-    p: int
-    g: float
-    sites: int
-    states: int
-    i_method: int
-    HF: bool
-    start_point: str
-    epsilon: np.ndarray
-    gap: bool=False
-    gap_site: int=3
-
-@dataclass
-class TensorData:
-    t_a_i_tensor: np.ndarray
-    t_ab_ij_tensor: np.ndarray
-    h_full: np.ndarray
-    v_full: np.ndarray
 
 def HF_test(tensors: TensorData ,params: SimulationParams):
         
@@ -182,164 +160,6 @@ def HF_test(tensors: TensorData ,params: SimulationParams):
 
         params.epsilon = fock_final_val
 
-def A_term(a_upper, a_site, tensors: TensorData):
-
-    return np.hstack((-tensors.t_a_i_tensor[a_site], np.identity(a_upper)))
-
-def B_term(b_lower, b_site, tensors: TensorData):
-    # print(tensors.t_a_i_tensor[b_site])
-    return np.vstack((np.identity(b_lower), tensors.t_a_i_tensor[b_site]))
-
-def h_term(h_upper, h_lower, tensors: TensorData, params: SimulationParams):
-    a_h_shift = [params.i if a_check == params.a else 0 for a_check in (h_upper, h_lower)]
-    return tensors.h_full[a_h_shift[0]:h_upper + a_h_shift[0], a_h_shift[1]:h_lower + a_h_shift[1]]
-
-def v_term(v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2, tensors: TensorData, params: SimulationParams):
-
-    if abs(v_site_1 - v_site_2) == 1:
-        a_v_shift = [params.i if a_check == params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]
-        return tensors.v_full[
-            a_v_shift[0]:v_upper_1 + a_v_shift[0],
-            a_v_shift[1]:v_upper_2 + a_v_shift[1],
-            a_v_shift[2]:v_lower_1 + a_v_shift[2],
-            a_v_shift[3]:v_lower_2 + a_v_shift[3]
-        ]
-    else:
-        return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
-
-def t_term(t_site_1, t_site_2, tensors: TensorData):
-    return tensors.t_ab_ij_tensor[t_site_1, t_site_2]
-
-def residual_single(x_s:int, tensors: TensorData, params: SimulationParams)->np.array:
-    """Calculates R^{a}_{i}(x) singles equation"""
-
-    sites, i_method, a, i, p= params.sites, params.i_method, params.a, params.i, params.p
-
-    if params.HF and params.start_point == "sin":
-        R_single = np.zeros((a, i), dtype = complex)
-    else:
-        R_single = np.zeros((a, i))
-
-    R_single += np.einsum("ap, pq, qi->ai", A_term(a, x_s, tensors), h_term(p, p, tensors, params), B_term(i, x_s, tensors))
-    for z_s in range(sites):
-        if z_s != x_s:
-            if i_method >= 1:
-                # noinspection SpellCheckingInspection
-                R_single += np.einsum("ap, plcd, cdil->ai", A_term(a, x_s, tensors), v_term(p, i, a, a, x_s, z_s, tensors, params), t_term(x_s, z_s, tensors))
-            # noinspection SpellCheckingInspection
-            R_single += np.einsum("ap, plqs, qi, sl->ai", A_term(a, x_s, tensors), v_term(p, i, p, p, x_s, z_s, tensors, params), B_term(i, x_s, tensors), B_term(i, z_s, tensors))
-
-    return R_single
-
-def residual_double_sym(x_d:int, y_d:int, tensors: TensorData, params: SimulationParams)->np.array:
-    """Calculates Rs^{ab}_{ij}(x < y) symmetric doubles equation"""
-    sites, i_method, p, i, a = params.sites, params.i_method, params.p, params.i, params.a
-
-    if params.HF and params.start_point == "sin":
-        R_double_symmetric = np.zeros((a, a, i, i), dtype = complex)
-    else:
-        R_double_symmetric = np.zeros((a, a, i, i))
-
-    if i_method >= 1:
-        # noinspection SpellCheckingInspection
-        R_double_symmetric += np.einsum("ap, bq, pqrs, ri, sj->abij", A_term(a, x_d, tensors), A_term(a, y_d, tensors), v_term(p, p, p, p, x_d, y_d, tensors, params), B_term(i, x_d, tensors), B_term(i, y_d, tensors))
-        if i_method >= 2:
-            # noinspection SpellCheckingInspection
-            R_double_symmetric += np.einsum("ap, bq, pqcd, cdij->abij", A_term(a, x_d, tensors), A_term(a, x_d, tensors), v_term(p, p, a, a, x_d, y_d, tensors, params), t_term(x_d, y_d, tensors))
-            # noinspection SpellCheckingInspection
-            R_double_symmetric -= np.einsum("abkl, klpq, pi, qj->abij", t_term(x_d, y_d, tensors), v_term(i, i, p, p, x_d, y_d, tensors, params), B_term(i, x_d, tensors), B_term(i, y_d, tensors))
-            if i_method == 3:
-                # noinspection SpellCheckingInspection
-                R_double_symmetric -= np.einsum("abkl, klcd, cdij->abij", t_term(x_d, y_d, tensors), v_term(i, i, a, a, x_d, y_d, tensors, params), t_term(x_d, y_d, tensors))
-                if sites >= 4:
-                    for z_ds in range(sites):
-                        for w_ds in range(sites):
-                            if z_ds not in {x_d, y_d} and w_ds not in {x_d, y_d} and z_ds != w_ds:
-                                # noinspection SpellCheckingInspection
-                                R_double_symmetric += np.einsum("klcd, acik, bdjl->abij", v_term(i, i, a, a, z_ds, w_ds, tensors, params), t_term(x_d, z_ds, tensors), t_term(y_d, w_ds, tensors))
-
-    return R_double_symmetric
-
-def residual_double_non_sym_1(x_d:int, y_d:int, tensors: TensorData, params: SimulationParams)->np.array:
-    """Calculates Rn^{ab}_{ij}(x, y) non-symmetric doubles equation"""
-
-    sites, i_method, p, i, a = params.sites, params.i_method, params.p, params.i, params.a
-
-    if params.HF and params.start_point == "sin":
-        R_double_non_symmetric_1 = np.zeros((a, a, i, i), dtype = complex)
-    else:
-        R_double_non_symmetric_1 = np.zeros((a, a, i, i))
-
-    if i_method >= 1:
-        # noinspection SpellCheckingInspection
-        R_double_non_symmetric_1 += np.einsum("ap, pc, cbij->abij", A_term(a, x_d, tensors), h_term(p, a, tensors, params), t_term(x_d, y_d, tensors))
-        # noinspection SpellCheckingInspection
-        R_double_non_symmetric_1 -= np.einsum("abkj, kp, pi->abij", t_term(x_d, y_d, tensors), h_term(i, p, tensors, params), B_term(i, x_d, tensors))
-
-        if i_method >= 2:
-            for z_dns_1 in range(sites):
-                if z_dns_1 != x_d and z_dns_1 != y_d:
-                    # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_1 += np.einsum("acik, krcs, br, sj->abij", t_term(x_d, z_dns_1, tensors), v_term(i, p, a, p, z_dns_1, y_d, tensors, params), A_term(a, y_d, tensors), B_term(i, y_d, tensors))
-                    # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_1 += np.einsum("bq, qlds, adij, sl->abij", A_term(a, y_d, tensors), v_term(p, i, a, p, y_d, z_dns_1, tensors, params), t_term(x_d, y_d, tensors), B_term(i, z_dns_1, tensors))
-                    # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_1 -= np.einsum("abkj, lkrp, pi, rl->abij", t_term(x_d, y_d, tensors), v_term(i, i, p, p, z_dns_1, x_d, tensors, params), B_term(i, x_d, tensors), B_term(i, z_dns_1, tensors))
-
-    return R_double_non_symmetric_1
-
-def residual_double_non_sym_2(x_d:int, y_d:int, tensors: TensorData, params: SimulationParams)->np.array:
-    """Calculates Rn^{ba}_{ji}(y, x) ai -> jb permutation non-symmetric doubles equation"""
-
-    sites, i_method, p, i, a = params.sites, params.i_method, params.p, params.i, params.a
-
-    if params.HF and params.start_point == "sin":
-        R_double_non_symmetric_2 = np.zeros((a, a, i, i), dtype=complex)
-    else:
-        R_double_non_symmetric_2 = np.zeros((a, a, i, i))
-
-    if i_method >= 1:
-        # noinspection SpellCheckingInspection
-        R_double_non_symmetric_2 += np.einsum("bp, pc, caji->baji", A_term(a, y_d, tensors), h_term(p, a, tensors, params), t_term(y_d, x_d, tensors))
-        # noinspection SpellCheckingInspection
-        R_double_non_symmetric_2 -= np.einsum("baki, kp, pj->baji", t_term(y_d, x_d, tensors), h_term(i, p, tensors, params), B_term(i, y_d, tensors))
-
-        if i_method >= 2:
-            for z_dns_2 in range(sites):
-                if z_dns_2 != x_d and z_dns_2 != y_d:
-                    # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_2 += np.einsum("bcjk, krcs, ar, si->baji", t_term(y_d, z_dns_2, tensors), v_term(i, p, a, p, z_dns_2, x_d, tensors, params), A_term(a, x_d, tensors), B_term(i, x_d, tensors))
-                    # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_2 += np.einsum("aq, qlds, bdji, sl->baji", A_term(a, x_d, tensors), v_term(p, i, a, p, x_d, z_dns_2, tensors, params), t_term(y_d, x_d, tensors), B_term(i ,z_dns_2, tensors))
-                    # noinspection SpellCheckingInspection
-                    R_double_non_symmetric_2 -= np.einsum("baki, lkrp, pj, rl->baji", t_term(y_d, x_d, tensors), v_term(i, i, p, p, z_dns_2, y_d, tensors, params), B_term(i, y_d, tensors), B_term(i ,z_dns_2, tensors))
-
-    return R_double_non_symmetric_2
-
-def residual_double_total(x_d:int, y_d:int, tensors: TensorData, params: SimulationParams)->np.array:
-    """Calculates Rt^{ab}_{ij}(x < y) = Rs^{ab}_{ij}(x < y) + Rn^{ab}_{ij}(x < y) + Rn^{ba}_{ji}(y < x)total doubles equation"""
-
-    return residual_double_sym(x_d, y_d, tensors, params) + residual_double_non_sym_1(x_d, y_d, tensors, params) + residual_double_non_sym_2(x_d, y_d, tensors, params)
-
-def update_one(r_1_value, params: SimulationParams):
-    a, i, eps = params.a, params.i, params.epsilon
-
-    update = np.zeros((a, i))
-    for u_a in range(a):
-        for u_i in range(i):
-            update[u_a, u_i] = 1 / (eps[u_a + i] - eps[u_i])
-    return np.multiply(update, r_1_value)
-
-def update_two(r_2_value, params: SimulationParams):
-    a, i, eps = params.a, params.i, params.epsilon
-    update = np.zeros((a, a, i, i))
-    for u_a in range(a):
-        for u_b in range(a):
-            for u_i in range(i):
-                for u_j in range(i):
-                    update[u_a, u_b, u_i, u_j] = 1 / (eps[u_a + i] + eps[u_b + i] - eps[u_i] - eps[u_j])
-    return np.multiply(update, r_2_value)
-
 def create_simulation_params(
     sites: int,
     states: int,
@@ -363,27 +183,20 @@ def create_simulation_params(
     a = p - i
 
     # Load .npy matrices directly from the package
-    data_dir = files("quant_rotor.data")
-    K = np.load(data_dir / "K_matrix.npy")
-    V = np.load(data_dir / "V_matrix.npy")
+    K, V = write_matrix_elements((states-1)//2)
 
     V = V + V.T - np.diag(np.diag(V))
     V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
 
-    h_full = h.basis_m_to_p_matrix_conversion(K)
-    v_full = h.basis_m_to_p_matrix_conversion(V_tensor)
+    h_full = basis_m_to_p_matrix_conversion(K)
+    v_full = basis_m_to_p_matrix_conversion(V_tensor)
 
     v_full = v_full * g
 
-        #starting point using sin needs complex values
-    if HF and start_point == "sin":
-        t_a_i_tensor = np.full((sites, a, i), initial, dtype=complex)
-        t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), initial, dtype=complex)
-    #otherwise use real matrices
-    else:
-        #t1 and t2 amplitude tensors
-        t_a_i_tensor = np.full((sites, a, i), initial, dtype=np.float64)
-        t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), initial, dtype=np.float64)
+
+    t_a_i_tensor = np.full((sites, a, i), initial, dtype=complex)
+    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), initial, dtype=complex)
+
 
     #eigenvalues from h for update
     epsilon = np.diag(h_full)
@@ -392,12 +205,9 @@ def create_simulation_params(
     a=a,
     i=i,
     p=p,  # These can be the same as `a + i` or chosen independently
-    g=g,
     sites=sites,
     states=states,
     i_method=i_method,
-    HF=HF,
-    start_point=start_point,
     epsilon=epsilon
     )
 
@@ -407,6 +217,8 @@ def create_simulation_params(
     h_full=h_full,
     v_full=v_full
     )
+
+    qs = QuantumSimulation(params, tensors)
 
     del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
 
@@ -422,26 +234,20 @@ def create_simulation_params(
         energy_file.write("Iteration, Energy, ΔEnergy\n")
 
         iteration = 0
-        if HF and start_point == "sin":
-            single = np.zeros((sites, a, i), dtype = complex)
-            double = np.zeros((sites, sites, a, a, i ,i), dtype = complex)
-        else:
-            single = np.zeros((sites, a, i))
-            double = np.zeros((sites, sites, a, a, i, i))
-        previous_energy = 0
 
-        # print(A_term(params.a, 3, tensors))
-        # print(B_term(params.i, 3, tensors))
-        print(h_term(i, i, tensors, params))
+        single = np.zeros((sites, a, i), dtype = complex)
+        double = np.zeros((sites, sites, a, a, i ,i), dtype = complex)
+
+        previous_energy = 0
 
         while True:
 
             energy = 0
 
-            single[0] = residual_single(0, tensors, params)
+            single[0] = qs.residual_single(0)
             for y_site in range(1, sites):
                 single[y_site] = single[0]
-                double[0, y_site] = residual_double_total(0, y_site, tensors, params)
+                double[0, y_site] = qs.residual_double_total(0, y_site)
                 for x_site in range(1, sites):
                     double[x_site, (x_site + y_site) % sites] = double[0, y_site]
 
@@ -469,11 +275,8 @@ def create_simulation_params(
             one_max = single.flat[np.argmax(np.abs(single))]
             two_max = double.flat[np.argmax(np.abs(double))]
 
-            # print(f"1 max: {one_max}")
-            # print(f"2 max: {two_max}")
-
-            if iteration >= 3:
-                break
+            print(f"1 max: {one_max}")
+            print(f"2 max: {two_max}")
 
             if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
                 print("I quit.")
@@ -483,30 +286,30 @@ def create_simulation_params(
             if abs(one_max) >= 100 or abs(two_max) >= 100:
                 raise ValueError("Diverges")
 
-            tensors.t_a_i_tensor[0] -= update_one(single[0], params)
+            tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
 
             for site_1 in range(1, sites):
                 tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
-                tensors.t_ab_ij_tensor[0, site_1] -= update_two(double[0, site_1], params)
+                tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
                 for site_2 in range(1, sites):
                     tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % sites] = tensors.t_ab_ij_tensor[0, site_1]
 
             #energy calculations
             for site_x in range(sites):
-                energy += np.einsum("ip, pi->", h_term(i, p, tensors, params), B_term(i, site_x, tensors)) * 0.5
+                energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) * 0.5
 
                 for site_y in range(site_x + 1, site_x + sites):
                     # noinspection SpellCheckingInspection
-                    energy += np.einsum("ijab, abij->", v_term(i, i, a, a, site_x, site_y % sites, tensors, params), t_term(site_x, site_y % sites, tensors)) * 0.5
+                    energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y % sites), qs.t_term(site_x, site_y % sites)) * 0.5
                     # noinspection SpellCheckingInspection
-                    energy += np.einsum("ijpq, pi, qj->", v_term(i, i, p, p, site_x, site_y % sites, tensors, params), B_term(i, site_x, tensors), B_term(i, site_y % sites, tensors)) * 0.5
+                    energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % sites), qs.B_term(i, site_x), qs.B_term(i, site_y % sites)) * 0.5
 
             delta_energy = energy - previous_energy
             previous_energy = energy
 
             iteration += 1
-            # print(f"Iteration #: {iteration}")
-            # print(f"Energy: {np.real(energy)}\n")
+            print(f"Iteration #: {iteration}")
+            print(f"Energy: {np.real(energy)}\n")
 
             energy_file.write(f"{iteration}, {energy}, {delta_energy}\n")
 
