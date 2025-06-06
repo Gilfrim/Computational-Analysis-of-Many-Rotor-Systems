@@ -160,7 +160,7 @@ def HF_test(start_point: str, g: float, tensors: TensorData ,params: SimulationP
 
         params.epsilon = fock_final_val
 
-def create_simulation_params(
+def t_periodic(
     sites: int,
     states: int,
     low_states: int,
@@ -198,11 +198,11 @@ def create_simulation_params(
     v_full = v_full * g
 
 
-    t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=complex)
-    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
+    # t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=complex)
+    # t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
 
-    # t_a_i_tensor = t_a_i_tensor_initial
-    # t_ab_ij_tensor = t_ab_ij_tensor_initial
+    t_a_i_tensor = t_a_i_tensor_initial
+    t_ab_ij_tensor = t_ab_ij_tensor_initial
 
 
     #eigenvalues from h for update
@@ -285,16 +285,15 @@ def create_simulation_params(
         one_max = single.flat[np.argmax(np.abs(single))]
         two_max = double.flat[np.argmax(np.abs(double))]
 
-        print(f"1 max: {one_max}")
-        print(f"2 max: {two_max}")
+        # print(f"1 max: {one_max}")
+        # print(f"2 max: {two_max}")
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
-            print("I quit.")
             break
 
         #CHANGE BACK TO 10
         if abs(one_max) >= 100 or abs(two_max) >= 100:
-            raise ValueError("Diverges")
+            return previous_energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor, False
 
         tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
 
@@ -318,12 +317,13 @@ def create_simulation_params(
         previous_energy = energy
 
         iteration += 1
-        print(f"Iteration #: {iteration}")
-        print(f"Energy: {np.real(energy)}\n")
+        # print(f"Iteration #: {iteration}")
+        # print(f"Energy: {np.real(energy)}\n")
 
             # energy_file.write(f"{iteration}, {energy}, {delta_energy}\n")
+    return previous_energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor, True
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    create_simulation_params(5, 5, 1, 0, 0, 1e-8, 0.5, 3,  False, 3, True, "sin")
-    print("Hello?")
+#     t_periodic(5, 5, 1, 0, 0, 1e-8, 0.5, 3,  False, 3, True, "sin")
+#     print("Hello?")

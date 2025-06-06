@@ -8,7 +8,7 @@ def save_t_1_amplitudes(iteration, t_a_i_tensor: np.ndarray):
 def save_t_2_amplitudes(iteration,  t_ab_ij_tensor: np.ndarray):
     np.save(f"t2_amplitudes_iter_{iteration}.npy", t_ab_ij_tensor)
 
-def non_periodic(
+def t_non_periodic(
     sites: int,
     states: int,
     low_states: int,
@@ -67,11 +67,11 @@ def non_periodic(
     v_full = v_full * g
 
     #t1 and t2 amplitude tensors
-    t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=np.float64)
-    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=np.float64)
+    # t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=np.float64)
+    # t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=np.float64)
 
-    # t_a_i_tensor = t_a_i_tensor_initial
-    # t_ab_ij_tensor = t_ab_ij_tensor_initial
+    t_a_i_tensor = t_a_i_tensor_initial
+    t_ab_ij_tensor = t_ab_ij_tensor_initial
 
     #eigenvalues from h for update
     epsilon = np.diag(h_full)
@@ -111,8 +111,8 @@ def non_periodic(
         energy_file.write("Iteration, Energy, ΔEnergy\n")
 
         iteration = 0
-        single = np.zeros((sites, a, i))
-        double = np.zeros((sites, sites, a, a, i, i))
+        single = np.zeros((sites, a, i), dtype = complex)
+        double = np.zeros((sites, sites, a, a, i, i), dtype = complex)
         previous_energy = 0
 
         while True:
@@ -124,8 +124,8 @@ def non_periodic(
                     if x_site < y_site:
                         double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
 
-            print(f"1 max: {np.max(np.abs(single))}")
-            print(f"2 max: {np.max(np.abs(double))}")
+            # print(f"1 max: {np.max(np.abs(single))}")
+            # print(f"2 max: {np.max(np.abs(double))}")
 
             if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
                 break
@@ -154,17 +154,16 @@ def non_periodic(
             previous_energy = energy
 
             iteration += 1
-            print(f"Iteration #: {iteration}")
-            print(f"Energy: {float(energy)}")
+            # print(f"Iteration #: {iteration}")
+            # print(f"Energy: {energy}")
 
-            energy_file.write(f"{iteration}, {energy}, {delta_energy}\n")
-    
+            # energy_file.write(f"{iteration}, {energy}, {delta_energy}\n")
     return previous_energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
 
 
 
-if __name__ == "__main__":
-    energy, t_a_i_tensor, t_ab_ij_tensor = non_periodic(5, 5, 1, 0, 0, 1e-8, 0.5, 3, False, 3, False)
-    print("Energy:", energy)
-    print(f"1 max: {np.max(np.abs(t_a_i_tensor))}")
-    print(f"2 max: {np.max(np.abs(t_ab_ij_tensor))}")
+# if __name__ == "__main__":
+#     energy, t_a_i_tensor, t_ab_ij_tensor = t_non_periodic(5, 5, 1, 0, 0, 1e-8, 0.5, 3, False, 3, False)
+#     print("Energy:", energy)
+#     print(f"1 max: {np.max(np.abs(t_a_i_tensor))}")
+#     print(f"2 max: {np.max(np.abs(t_ab_ij_tensor))}")

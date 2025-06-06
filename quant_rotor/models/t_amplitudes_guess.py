@@ -54,4 +54,38 @@ def amplitute_energy(sites: int, states: int, g: float, d: np.ndarray):
                     sum_t_2 += V[state_a, state_b, 0, 0] * C2
 
     return E_0 + sum_t_1 + sum_t_2
-        
+
+def t_1_amplitude_guess_ground_state(states: int, sites: int, g: float, low_states: int, eig_vec: np.ndarray, eig_val: np.ndarray):
+
+    i = low_states
+    a = states - low_states
+    t_a_i_tensor = np.full((sites, a, i), 0, dtype=complex)
+
+    d = intermediate_normalisation(eig_val, eig_vec)
+
+    for site in range(sites):
+        for state in range(states - 1):
+            t_a_i_tensor[site, state, i-1] = t_1_amplitutde(site, state + 1, states, d)
+
+    return t_a_i_tensor
+
+def t_2_amplitude_guess_ground_state(states: int, sites: int, g: float, low_states: int, eig_vec: np.ndarray, eig_val: np.ndarray):
+
+    i = low_states
+    a = states - low_states
+    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), 0, dtype=complex)
+
+    d = intermediate_normalisation(eig_val, eig_vec)
+
+    for site_a in range(sites):
+        for state_a in range(a):
+            for site_b in range(site_a + 1, sites):
+                for state_b in range(a):
+
+                    t_2_guess = t_2_amplitutde(site_a, state_a + 1, site_b, state_b + 1, states, d)[0]
+
+
+                    t_ab_ij_tensor[site_a, site_b, state_a, state_b, 0, 0] = t_2_guess
+                    t_ab_ij_tensor[site_b, site_a, state_b, state_a, 0, 0] = t_2_guess
+
+    return t_ab_ij_tensor
