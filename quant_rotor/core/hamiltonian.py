@@ -6,6 +6,30 @@ from scipy.sparse import diags
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 9)
 
 def hamiltonian(state: int, site: int, g_val: float, l_val: float=0, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False)->np.ndarray:
+    """_summary_
+
+    Parameters
+    ----------
+    state : int
+        state of the system that 
+    site : int
+        _description_
+    g_val : float
+        _description_
+    l_val : float, optional
+        _description_, by default 0
+    K_import : np.ndarray, optional
+        _description_, by default []
+    V_import : np.ndarray, optional
+        _description_, by default []
+    Import : bool, optional
+        _description_, by default False
+
+    Returns
+    -------
+    np.ndarray
+        _description_
+    """
     if Import == False:
         K, V = write_matrix_elements((state-1) // 2)
 

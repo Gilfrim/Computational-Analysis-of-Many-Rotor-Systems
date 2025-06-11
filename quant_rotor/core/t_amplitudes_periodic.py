@@ -197,10 +197,10 @@ def t_periodic(
 
     v_full = v_full * g
 
-
-    # t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=complex)
-    # t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
-
+    # if t_a_i_tensor_initial == 0 and  t_ab_ij_tensor_initial == 0:
+    #     t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=complex)
+    #     t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
+    # else:
     t_a_i_tensor = t_a_i_tensor_initial
     t_ab_ij_tensor = t_ab_ij_tensor_initial
 

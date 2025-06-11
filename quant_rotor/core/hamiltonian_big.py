@@ -17,14 +17,9 @@ def hamiltonian_big(state: int, site: int, g_val: float, H_K_V: list[np.ndarray]
     psi_vec = eig_vec[:, index[0]] 
     rho_site_0 = density_matrix_1(state_old, site_old, psi_vec, 0)
     eig_val_D, eig_vec_D = np.linalg.eig(rho_site_0)
+    index_d = np.argsort(-eig_val_D)
 
-    matrix_p_to_natural_orbital = eig_vec_D[:, 0:state]
-
-    # print("System sites:", site)
-    # print("Shape p_to_mu:", matrix_p_to_natural_orbital.shape)
-    # print("Shape K:", K.shape)
-    # print("Shape V:", V.shape)
-    # print("Shape H:", H.shape)
+    matrix_p_to_natural_orbital = eig_vec_D[:, index_d[0:state]]
 
     V = V.reshape(state_old**2,state_old**2)
     K_mu = matrix_p_to_natural_orbital.T.conj() @ K @ matrix_p_to_natural_orbital
@@ -33,7 +28,7 @@ def hamiltonian_big(state: int, site: int, g_val: float, H_K_V: list[np.ndarray]
 
     H_mu = hamiltonian(state, site, g_val, l_val, K_mu, V_mu, True)[0]
 
-    return H_mu, K_mu, V_mu, matrix_p_to_natural_orbital
+    return H_mu, K_mu, V_mu, matrix_p_to_natural_orbital, eig_val_D[index_d[0:4]] 
 
 def hamiltonian_general(states: int, sites: int, g_val: float):
 

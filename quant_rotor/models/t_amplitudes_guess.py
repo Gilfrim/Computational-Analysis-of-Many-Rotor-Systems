@@ -84,7 +84,6 @@ def t_2_amplitude_guess_ground_state(states: int, sites: int, g: float, low_stat
 
                     t_2_guess = t_2_amplitutde(site_a, state_a + 1, site_b, state_b + 1, states, d)[0]
 
-
                     t_ab_ij_tensor[site_a, site_b, state_a, state_b, 0, 0] = t_2_guess
                     t_ab_ij_tensor[site_b, site_a, state_b, state_a, 0, 0] = t_2_guess
 
