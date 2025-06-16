@@ -64,8 +64,6 @@ def hamiltonian(state: int, site: int, g_val: float, l_val: float=0, K_import: n
 
     H_final = K_final + V_final
 
-    print("Done generating hamiltonian.")
-
     return H_final, K_in_p, V_in_p
 
 if __name__ == "__main__":

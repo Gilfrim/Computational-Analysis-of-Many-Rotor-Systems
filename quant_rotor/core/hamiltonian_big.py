@@ -26,8 +26,6 @@ def hamiltonian_big(state: int, site: int, g_val: float, H_K_V: list[np.ndarray]
     # eig_val_D, eig_vec_D = np.linalg.eig(rho_site_0)
     index_d = np.argsort(-eig_val_D)
 
-    print("Done change of basis.")
-
     matrix_p_to_natural_orbital_sparse = csr_matrix(matrix_p_to_natural_orbital[:, index_d[:state]])
 
     # V = V.reshape(state_old**2,state_old**2)
@@ -50,6 +48,5 @@ def hamiltonian_general(states: int, sites: int, g_val: float):
     H_K_V = hamiltonian(11, 3, g_val, spar=True)
     for current_site in range(3, sites + 2, 2):
         H_K_V = hamiltonian_big(states, current_site, g_val, H_K_V)
-        print(f"Done {states} states {sites} sites:")
 
     return H_K_V

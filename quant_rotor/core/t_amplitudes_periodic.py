@@ -201,8 +201,8 @@ def t_periodic(
     #     t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=complex)
     #     t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
     # else:
-    t_a_i_tensor = t_a_i_tensor_initial
-    t_ab_ij_tensor = t_ab_ij_tensor_initial
+    t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=complex)
+    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
 
 
     #eigenvalues from h for update

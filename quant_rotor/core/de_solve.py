@@ -117,7 +117,7 @@ def integration_scheme(hamiltonian_dict:dict, t_init=0., t_final=10., nof_points
     t0_stored = [(0,0)]  # time, value 
 
     # Arguments to pass to the ODE function
-    arguments = (hamiltonian_dict,t0_stored,[])
+    arguments = (hamiltonian_dict,t0_stored)
     
     # specify the precision of the integrator so that the output for the test models is numerically identical
     relative_tolerance = 1e-10
@@ -159,23 +159,28 @@ def integration_scheme(hamiltonian_dict:dict, t_init=0., t_final=10., nof_points
     
     return(time,T_0)
 
-# Test hamiltonian 
-hamiltonian  = np.array([[-1, 0.2, 0.3, 0.4],
-                        [ 0.2, -3, 0.7, 0.5], 
-                        [ 0.3,  0.7, 3, 0.6],
-                        [ 0.4,  0.5, 0.6, 2]])
+if __name__ == "__main__":
 
-# Number of electrons 
-n_el = 2 
+    # Test hamiltonian 
+    hamiltonian  = np.array([[-1, 0.2, 0.3, 0.4],
+                            [ 0.2, -3, 0.7, 0.5], 
+                            [ 0.3,  0.7, 3, 0.6],
+                            [ 0.4,  0.5, 0.6, 2]])
 
-# Partition hamiltonian (specific to my case)
-hamiltonian_dict = get_hamiltonian_dict(hamiltonian,n_el)
+    # Number of electrons 
+    n_el = 2 
 
-# Call function to propagate 
-time,t_0 = integration_scheme(hamiltonian_dict,t_init=0,t_final=100,nof_points=1000)
+    # Partition hamiltonian (specific to my case)
+    hamiltonian_dict = get_hamiltonian_dict(hamiltonian,n_el)
 
-breakpoint()
+    # Call function to propagate 
+    time,t_0 = integration_scheme(hamiltonian_dict,t_init=0,t_final=100,nof_points=1000)
 
-# Demonstrate propagation works by plotting autocorrelation function
-plt.plot(time,(np.exp(t_0)))
-plt.show()
+    breakpoint()
+
+    # Demonstrate propagation works by plotting autocorrelation function
+    plt.plot(time,(np.exp(t_0)))
+    plt.show()
+
+
+
