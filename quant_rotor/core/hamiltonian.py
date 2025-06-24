@@ -33,11 +33,11 @@ def hamiltonian(state: int, site: int, g_val: float, l_val: float=0, K_import: n
     if Import == False:
         K, V = write_matrix_elements((state-1) // 2)
 
-        L_sparce = diags([l_val * 1/np.sqrt(2), 0, l_val * 1/np.sqrt(2)], offsets=[-1, 0, 1], shape=(state, state))
+        # L_sparce = diags([l_val * 1/np.sqrt(2), 0, l_val * 1/np.sqrt(2)], offsets=[-1, 0, 1], shape=(state, state))
 
-        L_dense = L_sparce.toarray()
+        # L_dense = L_sparce.toarray()
 
-        K = K + L_dense
+        # K = K + L_dense
 
         V_from_npy = V + V.T - np.diag(np.diag(V))
         V_tensor = V_from_npy.reshape(state, state, state, state)

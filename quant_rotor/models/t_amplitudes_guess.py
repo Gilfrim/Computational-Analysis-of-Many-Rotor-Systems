@@ -55,7 +55,7 @@ def amplitute_energy(sites: int, states: int, g: float, d: np.ndarray):
 
     return E_0 + sum_t_1 + sum_t_2
 
-def t_1_amplitude_guess_ground_state(states: int, sites: int, g: float, low_states: int, eig_vec: np.ndarray, eig_val: np.ndarray):
+def t_1_amplitude_guess_ground_state(states: int, sites: int, g: float, eig_vec: np.ndarray, eig_val: np.ndarray, low_states: int=1):
 
     i = low_states
     a = states - low_states
@@ -69,7 +69,7 @@ def t_1_amplitude_guess_ground_state(states: int, sites: int, g: float, low_stat
 
     return t_a_i_tensor
 
-def t_2_amplitude_guess_ground_state(states: int, sites: int, g: float, low_states: int, eig_vec: np.ndarray, eig_val: np.ndarray):
+def t_2_amplitude_guess_ground_state(states: int, sites: int, g: float,eig_vec: np.ndarray, eig_val: np.ndarray,  low_states: int=1):
 
     i = low_states
     a = states - low_states

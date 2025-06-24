@@ -74,7 +74,6 @@ def H_kinetic_sparse(states: int, sites: int, h_pp: np.ndarray) -> csr_matrix:
 def H_potential(states: int, sites: int, h_pp_qq: np.ndarray, g_val: float) -> np.ndarray:
 
     V = np.zeros((states**sites, states**sites), dtype=complex)
-    h_pp_qq = h_pp_qq.tocsr()
 
     for x in range(sites):
         y = (x+1) % sites
