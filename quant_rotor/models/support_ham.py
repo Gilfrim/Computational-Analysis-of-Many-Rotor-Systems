@@ -134,6 +134,35 @@ def H_potential_sparse(states: int, sites: int, h_pp_qq: np.ndarray, g_val: floa
 
     return V_sparse.tocsr()
 
+def H_potential_general(states: int, sites: int, h_pp_qq: np.ndarray, g_val: float) -> np.ndarray:
+
+    V = np.zeros((states**sites, states**sites), dtype=complex)
+
+    for x in range(sites):
+        y = (x+1) % sites
+        n_lambda = states**(x % (sites-1))
+        n_mu = states**((sites - y - 1) % (sites - 1))
+        n_nu = states**(np.abs(y - x) - 1)
+
+        for q in range(states):
+            for q_prime in range(states):
+                for p in range(states):
+                    for p_prime in range(states):
+                        row = p * states + q
+                        col = p_prime * states + q_prime
+                        val = h_pp_qq[row, col]
+                        if val == 0:
+                            continue  # skip writing 0s
+
+                        for Lambda in range(int(n_lambda)):
+                            for mu in range(int(n_mu)):
+                                for nu in range(int(n_nu)):
+                                    
+                                    i = mu + q*n_mu + nu*states*n_mu + p*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
+                                    j = mu + q_prime*n_mu + nu*states*n_mu + p_prime*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
+                                    V[i, j] += val
+    return V
+
  
 def free_one_body(i, j, max_m):
 

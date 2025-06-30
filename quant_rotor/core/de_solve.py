@@ -142,7 +142,7 @@ def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10.
 
     if import_K_V:
         h_full = K_import
-        v_full = V_import.reshape(sites**states, sites**states, sites**states, sites**states,)
+        v_full = V_import.reshape(sites**states, sites**states, sites**states, sites**states)
     else:
         h_full = basis_m_to_p_matrix_conversion(K)
         v_full = basis_m_to_p_matrix_conversion(V_tensor)
@@ -239,17 +239,3 @@ def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10.
     time, T_0, t1_max, t_2max, t_1, t_2 = postprocess_rk45_integration_results(sol,t0_stored, states, sites)
     
     return(time, T_0, t1_max, t_2max, t_1, t_2)
-
-if __name__ == "__main__":
-
-    # Call function to propagate 
-    time,t_0 = integration_scheme(states, sites, g, t_init=0,t_final=100,nof_points=1000)
-
-    breakpoint()
-
-    # Demonstrate propagation works by plotting autocorrelation function
-    plt.plot(time,(np.exp(t_0)))
-    plt.show()
-
-
-

@@ -204,9 +204,6 @@ def t_periodic(
         t_a_i_tensor = t_a_i_tensor_initial
         t_ab_ij_tensor = t_ab_ij_tensor_initial
 
-
-    print(v_full)
-
     #eigenvalues from h for update
     epsilon = np.diag(h_full)
 
@@ -300,7 +297,7 @@ def t_periodic(
 
         #energy calculations
         for site_x in range(sites):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) * 0.5
+            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) #* 0.5
 
             for site_y in range(site_x + 1, site_x + sites):
                 # noinspection SpellCheckingInspection

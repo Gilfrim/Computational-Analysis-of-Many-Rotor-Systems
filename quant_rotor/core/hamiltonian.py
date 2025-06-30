@@ -1,11 +1,11 @@
 import numpy as np
 import os
-from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion, H_kinetic, H_potential, H_kinetic_sparse, H_potential_sparse
+from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion, H_kinetic, H_potential, H_kinetic_sparse, H_potential_sparse, H_potential_general
 from scipy.sparse import diags, lil_matrix
 
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 9)
 
-def hamiltonian(state: int, site: int, g_val: float, l_val: float=0, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False, spar: bool=False)->np.ndarray:
+def hamiltonian(state: int, site: int, g_val: float, l_val: float=0, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False, spar: bool=False, general: bool=False)->np.ndarray:
     """_summary_
 
     Parameters
@@ -47,17 +47,20 @@ def hamiltonian(state: int, site: int, g_val: float, l_val: float=0, K_import: n
 
         V_in_p = V_in_p.reshape(state**2, state**2)
 
-        K_in_p = lil_matrix(K_in_p)
-        V_in_p = lil_matrix(V_in_p)
-
     else:
         K_in_p = K_import
         V_in_p = V_import
-        state = K_import.shape[0]
 
     if spar:
+        K_in_p = lil_matrix(K_in_p)
+        V_in_p = lil_matrix(V_in_p)
         K_final = H_kinetic_sparse(state, site, K_in_p)
         V_final = H_potential_sparse(state, site, V_in_p, g_val)
+    elif general:
+        K_in_p = lil_matrix(K_in_p)
+        V_in_p = lil_matrix(V_in_p)
+        K_final = H_kinetic(state, site, K_in_p)
+        V_final = H_potential_general(state, site, V_in_p, g_val)
     else:
         K_final = H_kinetic(state, site, K_in_p)
         V_final = H_potential(state, site, V_in_p, g_val)
