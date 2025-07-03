@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion, H_kinetic, H_potential, H_kinetic_sparse, H_potential_sparse, H_potential_general
+from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion, H_kinetic, H_potential, H_kinetic_sparse, H_potential_sparse, H_potential_general
 from scipy.sparse import diags, lil_matrix
 
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 9)

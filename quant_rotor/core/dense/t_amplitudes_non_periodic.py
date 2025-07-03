@@ -1,6 +1,6 @@
 import numpy as np
-from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
+from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
+from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
 
 def save_t_1_amplitudes(iteration, t_a_i_tensor: np.ndarray):
     np.save(f"t1_amplitudes_iter_{iteration}.npy", t_a_i_tensor)

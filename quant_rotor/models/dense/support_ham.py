@@ -1,4 +1,4 @@
-import quant_rotor.models.functions as func
+import quant_rotor.models.dense.functions as func
 import numpy as np
 from importlib.resources import files
 from scipy.sparse import lil_matrix, csr_matrix

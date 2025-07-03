@@ -1,7 +1,7 @@
 import numpy as np
 from importlib.resources import files
-from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
+from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
+from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
 
 
 #printout settings for large matrices

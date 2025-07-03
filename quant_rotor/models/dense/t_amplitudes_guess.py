@@ -1,5 +1,5 @@
 import numpy as np
-from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
+from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
 
 def intermediate_normalisation(eig_val: np.ndarray, eig_vec: np.ndarray)->np.ndarray:
 

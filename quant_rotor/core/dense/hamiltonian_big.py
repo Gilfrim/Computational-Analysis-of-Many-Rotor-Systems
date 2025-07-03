@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.sparse import csr_matrix, kron
 from scipy.sparse.linalg import eigsh
-from quant_rotor.core.hamiltonian import hamiltonian
-from quant_rotor.models.density_matrix import density_matrix_1
+from quant_rotor.core.dense.hamiltonian import hamiltonian
+from quant_rotor.models.dense.density_matrix import density_matrix_1
 
 def hamiltonian_big(state: int, site: int, g_val: float, H_K_V: list[np.ndarray], l_val: float=0) -> np.ndarray:
 

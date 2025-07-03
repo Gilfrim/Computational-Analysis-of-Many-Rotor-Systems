@@ -1,8 +1,8 @@
 from typing import Tuple, List, Dict, Union, Callable 
-from quant_rotor.models.temporary_trial_solver import new_solve_ivp
-from quant_rotor.core.t_amplitudes_periodic_unique import unique_residuals
-from quant_rotor.models.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
-from quant_rotor.models.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
+from quant_rotor.models.dense.de_solver_func import new_solve_ivp
+from quant_rotor.core.dense.t_amplitudes_periodic_unique import unique_residuals
+from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
+from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
 import numpy as np 
 import scipy as scp
 import matplotlib.pyplot as plt
@@ -26,21 +26,26 @@ def postprocess_rk45_integration_results(sol,t0_stored, states, sites):
 
         # initialize the arrays to store the autocorrelation function
         true_evaluated_t0 = np.zeros_like(time, dtype=np.complex128)
-        true_evaluated_T_ai = np.zeros_like(time, dtype=np.complex128)
-        true_evaluated_two_max = np.zeros_like(time, dtype=np.complex128)
+        single_max = np.zeros_like(time, dtype=np.complex128)
+        double_max = np.zeros_like(time, dtype=np.complex128)
+        t_1_arr = np.zeros((len(time), states-1), dtype=np.complex128)
+        t_2_arr = np.zeros((len(time), sites*(states-1)**2), dtype=np.complex128)
          
         # only extract the values which correspond to time steps in the solution
         # since we save C(t) for all integration steps, but only some are accepted
         
-        t_dict = {t: (dT_0dB, T_ai, two_max) for (t, dT_0dB, T_ai, two_max) in t0_stored}
+        t_dict = {t: (dT_0dt, one_max, two_max, t_1, t_2) for (t, dT_0dt, one_max, two_max, t_1, t_2) in t0_stored}
         
         for idx, t in enumerate(sol.t):
-            dT_0dB, T_ai, two_max = t_dict[t]
-            true_evaluated_t0[idx] = dT_0dB[0]
-            true_evaluated_T_ai[idx] = T_ai
-            true_evaluated_two_max[idx] = two_max
+            dT_0dt, one_max, two_max, t_1, t_2 = t_dict[t]
+            true_evaluated_t0[idx] = dT_0dt[0]
+            single_max[idx] = one_max
+            double_max[idx] = two_max
+            t_1_arr[idx, :] = t_1
+            t_2_arr[idx, :] = t_2
 
-        return(time,true_evaluated_t0, true_evaluated_T_ai, true_evaluated_two_max)
+
+        return(time,true_evaluated_t0, single_max, double_max, t_1_arr, t_2_arr)
     
       
 def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, params: SimulationParams, tensors: TensorData, qs: QuantumSimulation) -> np.ndarray:
@@ -71,24 +76,28 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     sites, a, p, i = params.sites, params.a, params.p, params.i
     
 
-    dTab_ijdB_sol, dTa_idB_sol, T_ai = comb_flat[:-a-1], comb_flat[-a-1:-1], comb_flat[-1] 
-    dTab_ijdB = dTab_ijdB_sol.reshape(sites, a, a, i, i)
-    dTa_idB = dTa_idB_sol.reshape(a, i)
+    dTab_ijdt_sol, dTa_idt_sol, T_ai = comb_flat[:-a-1], comb_flat[-a-1:-1], comb_flat[-1] 
+    dTab_ijdt = dTab_ijdt_sol.reshape(sites, a, a, i, i)
+    dTa_idt = dTa_idt_sol.reshape(a, i)
 
-    tensors.t_a_i_tensor[0] = dTa_idB
+    tensors.t_a_i_tensor[0] = dTa_idt
 
     for site_1 in range(1, sites):
         tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
-        tensors.t_ab_ij_tensor[0, site_1] = dTab_ijdB[site_1]
+        tensors.t_ab_ij_tensor[0, site_1] = dTab_ijdt[site_1]
         for site_2 in range(1, sites):
             tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % sites] = tensors.t_ab_ij_tensor[0, site_1]
 
+    one_max = tensors.t_a_i_tensor.flat[np.argmax(np.abs(tensors.t_a_i_tensor))]
     two_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
+
+    # print(f"Time: {t} 1 max: {one_max}")
+    # print(f"2 max: {two_max}")
 
     energy = 0
 
     for site_x in range(sites):
-        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) #* 0.5
+        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) * 0.5
 
         for site_y in range(site_x + 1, site_x + sites):
             # noinspection SpellCheckingInspection
@@ -102,18 +111,22 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     single = qs.residual_single(0)
     for y_site in range(1, sites):
         double[y_site] = qs.residual_double_total(0, y_site)
-    
-    dTa_idB = (-1*(single))
-    dTab_ijdB= (-1*(double))
-    dT_0dB = [-1*(energy)]
 
-    dTa_idB = dTa_idB.flatten()
-    dTab_ijdB = dTab_ijdB.flatten()
-    comb_flat = np.concatenate([dTab_ijdB, dTa_idB, dT_0dB])
-    t0_stored.append((t, dT_0dB, T_ai, two_max))
+
+    
+    dTa_idt = (-1j*(single))
+
+    dTab_ijdt= (-1j*(double))
+    
+    dT_0dt = [-1j*(energy)]
+
+    dTa_idt = dTa_idt.flatten()
+    dTab_ijdt = dTab_ijdt.flatten()
+    comb_flat = np.concatenate([dTab_ijdt, dTa_idt,dT_0dt])
+    t0_stored.append((t, dT_0dt, one_max, two_max, dTa_idt_sol, dTab_ijdt_sol))
     return (comb_flat)
 
-def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10., nof_points=10000, K_import: np.ndarray=[], V_import: np.ndarray=[], import_K_V_TF = False, import_K_V_NO = False) -> Tuple:
+def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10., nof_points=10000, K_import: np.ndarray=[], V_import: np.ndarray=[], import_K_V = False) -> Tuple:
     """"""     
 
 
@@ -127,18 +140,16 @@ def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10.
     V = V + V.T - np.diag(np.diag(V))
     V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
 
-    if import_K_V_TF:
+    if import_K_V:
         h_full = K_import
-        v_full = V_import.reshape(states**2, states**2, states**2, states**2)
-        v_full = v_full * g
-    elif import_K_V_NO:
-        h_full = K_import
-        v_full = V_import.reshape(states, states, states, states)
-        v_full = v_full * g
+        v_full = V_import.reshape(sites**states, sites**states, sites**states, sites**states)
     else:
         h_full = basis_m_to_p_matrix_conversion(K)
         v_full = basis_m_to_p_matrix_conversion(V_tensor)
+
         v_full = v_full * g
+
+    print(v_full.shape)
 
     t_a_i_tensor = np.full((sites, a, i), 0, dtype=complex)
     t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), 0, dtype=complex)
@@ -184,14 +195,14 @@ def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10.
     step_size = (t_final - t_init) / nof_points
 
     # prepare the initial y_tensor
-    t0_stored = [(0, 0, 0, 0)]  # time, value 
+    t0_stored = [(0, 0, 0, 0, single, double)]  # time, value 
 
     # Arguments to pass to the ODE function
     arguments = (t0_stored, params, tensors, qs)
     
     # specify the precision of the integrator so that the output for the test models is numerically identical
     relative_tolerance = 1e-5
-    absolute_tolerance = 1e-6
+    absolute_tolerance = 1e-7
 
     # ------------------------------------------------------------------------
     # call the integrator
@@ -225,6 +236,6 @@ def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10.
     # now we extract the relevant information from the integrator object `sol`
     # ------------------------------------------------------------------------
     
-    time, T_0, t_0_sol, two_max = postprocess_rk45_integration_results(sol,t0_stored, states, sites)
+    time, T_0, t1_max, t_2max, t_1, t_2 = postprocess_rk45_integration_results(sol,t0_stored, states, sites)
     
-    return(time, T_0, t_0_sol, two_max)
+    return(time, T_0, t1_max, t_2max, t_1, t_2)
