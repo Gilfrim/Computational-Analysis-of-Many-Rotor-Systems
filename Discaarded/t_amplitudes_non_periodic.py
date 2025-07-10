@@ -8,9 +8,8 @@ def save_t_1_amplitudes(iteration, t_a_i_tensor: np.ndarray):
 def save_t_2_amplitudes(iteration,  t_ab_ij_tensor: np.ndarray):
     np.save(f"t2_amplitudes_iter_{iteration}.npy", t_ab_ij_tensor)
 
-def t_non_periodic(
-    sites: int,
-    states: int,
+def t_non_periodic(site: int,
+    state: int,
     low_states: int,
     t_a_i_tensor_initial: np.ndarray,
     t_ab_ij_tensor_initial: np.ndarray,
@@ -25,9 +24,9 @@ def t_non_periodic(
     Direct input version of the simulation setup.
 
     Parameters:
-    - sites (int): Number of lattice sites.
-    - states (int): Number of rotor states.
-    - low_states (int): Cutoff for low-energy states.
+    - site (int): Number of lattice site.
+    - state (int): Number of rotor state.
+    - low_state (int): Cutoff for low-energy state.
     - initial (float): Initial value for the solver.
     - threshold (float): Convergence threshold.
     - g (float): Coupling constant.
@@ -45,7 +44,7 @@ def t_non_periodic(
     #state variables
     #could just use p, i, a
     #makes checking einsums and such a bit easier
-    p = states
+    p = state
     i = low_states
     a = p - i
 
@@ -53,10 +52,10 @@ def t_non_periodic(
     if i %2 == 0 or a %2 != 0:
         raise ValueError("Overlap between low and high stats, will cause divide by zero in denominator update")
 
-    #for states > 11 would need to have shaeers code generate csv files with m_max > 5
+    #for state > 11 would need to have shaeers code generate csv files with m_max > 5
     #gets h values from csv files made with Shaeer's code and puts them into a dictionary
 
-    K, V = write_matrix_elements((states-1)//2)
+    K, V = write_matrix_elements((state-1)//2)
 
     V = V + V.T - np.diag(np.diag(V))
     V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
@@ -67,8 +66,8 @@ def t_non_periodic(
     v_full = v_full * g
 
     #t1 and t2 amplitude tensors
-    # t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=np.float64)
-    # t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=np.float64)
+    # t_a_i_tensor = np.full((site, a, i), t_a_i_tensor_initial, dtype=np.float64)
+    # t_ab_ij_tensor = np.full((site, site, a, a, i, i), t_ab_ij_tensor_initial, dtype=np.float64)
 
     t_a_i_tensor = t_a_i_tensor_initial
     t_ab_ij_tensor = t_ab_ij_tensor_initial
@@ -80,8 +79,8 @@ def t_non_periodic(
     a=a,
     i=i,
     p=p,  # These can be the same as `a + i` or chosen independently
-    sites=sites,
-    states=states,
+    site=site,
+    state=state,
     i_method=i_method,
     gap=gap,
     gap_site=gap_site,
@@ -98,9 +97,6 @@ def t_non_periodic(
     qs = QuantumSimulation(params, tensors)
 
     del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
-
-    #unitary transformation test
-    #same as transformation test.py
     
     if transform:
         tensors.h_full, tensors.v_full = qs.transformation_test()
@@ -110,22 +106,17 @@ def t_non_periodic(
     with open(file_path_energy, "w", encoding="utf-8") as energy_file:
         energy_file.write("Iteration, Energy, ΔEnergy\n")
 
-        iteration = 0
-        single = np.zeros((sites, a, i), dtype = complex)
-        double = np.zeros((sites, sites, a, a, i, i), dtype = complex)
-        previous_energy = 0
+        single = np.zeros((site, a, i), dtype = complex)
+        double = np.zeros((site, site, a, a, i, i), dtype = complex)
 
         while True:
             energy = 0
 
-            for x_site in range(sites):
+            for x_site in range(site):
                 single[x_site] = qs.residual_single(x_site)
-                for y_site in range(sites):
+                for y_site in range(site):
                     if x_site < y_site:
                         double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
-
-            # print(f"1 max: {np.max(np.abs(single))}")
-            # print(f"2 max: {np.max(np.abs(double))}")
 
             if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
                 break
@@ -133,37 +124,17 @@ def t_non_periodic(
             if np.isnan(single).any() or np.isnan(double).any() or np.isinf(single).any() or np.isinf(double).any():
                 raise ValueError("Diverges (inf or nan)")
 
-            # Save amplitudes as NumPy arrays
-            # save_t_1_amplitudes(iteration, tensors.t_a_i_tensor)
-            # save_t_2_amplitudes(iteration, tensors.t_ab_ij_tensor)
-
-            for site_u_1 in range(sites):
+            for site_u_1 in range(site):
                 tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single[site_u_1])
-                for site_u_2 in range(sites):
+                for site_u_2 in range(site):
                     if site_u_1 < site_u_2:
                         tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(double[site_u_1, site_u_2])
 
-            for site_x in range(sites):
+            for site_x in range(site):
                 energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
-                for site_y in range(sites):
+                for site_y in range(site):
                     if site_x < site_y:
                         energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y), qs.t_term(site_x, site_y))
                         energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y), qs.B_term(i, site_x), qs.B_term(i, site_y))
 
-            delta_energy = energy - previous_energy
-            previous_energy = energy
-
-            iteration += 1
-            # print(f"Iteration #: {iteration}")
-            # print(f"Energy: {energy}")
-
-            # energy_file.write(f"{iteration}, {energy}, {delta_energy}\n")
-    return previous_energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
-
-
-
-# if __name__ == "__main__":
-#     energy, t_a_i_tensor, t_ab_ij_tensor = t_non_periodic(5, 5, 1, 0, 0, 1e-8, 0.5, 3, False, 3, False)
-#     print("Energy:", energy)
-#     print(f"1 max: {np.max(np.abs(t_a_i_tensor))}")
-#     print(f"2 max: {np.max(np.abs(t_ab_ij_tensor))}")
+    return energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor

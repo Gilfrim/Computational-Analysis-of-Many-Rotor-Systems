@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import quant_rotor.models.dense.de_solver_func as bz
+import quant_rotor.models.de_solver_func as bz
 
 
 # hamiltonian = np.array([[7,9,2,5],[0,2,3,5],[0,0,3,2],[0,0,2,2]]) # good 

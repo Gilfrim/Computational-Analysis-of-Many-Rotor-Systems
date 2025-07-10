@@ -6,8 +6,8 @@ class SimulationParams:
     a: int
     i: int
     p: int
-    site: int
-    state: int
+    sites: int
+    states: int
     i_method: int
     gap: bool
     gap_site: int
@@ -39,7 +39,7 @@ class QuantumSimulation:
     
     def v_term(self, v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2):
         if self.params.periodic:
-            if abs(v_site_1 - v_site_2) == 1 or abs(v_site_1 - v_site_2) == (self.params.site - 1):
+            if abs(v_site_1 - v_site_2) == 1 or abs(v_site_1 - v_site_2) == (self.params.sites - 1):
                 a_v_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]
                 return self.tensors.v_full[
                     a_v_shift[0]:v_upper_1 + a_v_shift[0],
@@ -86,7 +86,7 @@ class QuantumSimulation:
 
     def residual_single(self, x_s: int) -> np.ndarray:
         """Calculates R^{a}_{i}(x) singles equation"""
-        site, i_method, a, i, p = self.params.site, self.params.i_method, self.params.a, self.params.i, self.params.p
+        sites, i_method, a, i, p = self.params.sites, self.params.i_method, self.params.a, self.params.i, self.params.p
 
         R_single = np.zeros((a, i), dtype = complex)
 
@@ -95,7 +95,7 @@ class QuantumSimulation:
                               self.h_term(p, p),
                               self.B_term(i, x_s))
 
-        for z_s in range(site):
+        for z_s in range(sites):
             if z_s != x_s:
                 if i_method >= 1:
                     R_single += np.einsum("ap, plcd, cdil->ai",
@@ -113,7 +113,7 @@ class QuantumSimulation:
 
 
     def residual_double_sym(self, x_d: int, y_d: int) -> np.ndarray:
-        site, i_method, p, i, a = self.params.site, self.params.i_method, self.params.p, self.params.i, self.params.a
+        sites, i_method, p, i, a = self.params.sites, self.params.i_method, self.params.p, self.params.i, self.params.a
         R = np.zeros((a, a, i, i), dtype = complex)
 
         if i_method >= 1:
@@ -129,13 +129,13 @@ class QuantumSimulation:
                                self.t_term(x_d, y_d),
                                self.v_term(i, i, p, p, x_d, y_d),
                                self.B_term(i, x_d), self.B_term(i, y_d))
-                if i_method == 3 and site >= 4:
+                if i_method == 3 and sites >= 4:
                     R -= np.einsum("abkl, klcd, cdij->abij",
                                    self.t_term(x_d, y_d),
                                    self.v_term(i, i, a, a, x_d, y_d),
                                    self.t_term(x_d, y_d))
-                    for z in range(site):
-                        for w in range(site):
+                    for z in range(sites):
+                        for w in range(sites):
                             if z not in {x_d, y_d} and w not in {x_d, y_d} and z != w:
                                 R += np.einsum("klcd, acik, bdjl->abij",
                                                self.v_term(i, i, a, a, z, w),
@@ -144,7 +144,7 @@ class QuantumSimulation:
         return R
 
     def residual_double_non_sym_1(self, x_d: int, y_d: int) -> np.ndarray:
-        site, i_method, p, i, a = self.params.site, self.params.i_method, self.params.p, self.params.i, self.params.a
+        sites, i_method, p, i, a = self.params.sites, self.params.i_method, self.params.p, self.params.i, self.params.a
         R = np.zeros((a, a, i, i), dtype = complex)
 
         if i_method >= 1:
@@ -153,7 +153,7 @@ class QuantumSimulation:
             R -= np.einsum("abkj, kp, pi->abij",
                            self.t_term(x_d, y_d), self.h_term(i, p), self.B_term(i, x_d))
             if i_method >= 2:
-                for z in range(site):
+                for z in range(sites):
                     if z != x_d and z != y_d:
                         R += np.einsum("acik, krcs, br, sj->abij",
                                        self.t_term(x_d, z), self.v_term(i, p, a, p, z, y_d),
@@ -167,7 +167,7 @@ class QuantumSimulation:
         return R
 
     def residual_double_non_sym_2(self, x_d: int, y_d: int) -> np.ndarray:
-        site, i_method, p, i, a = self.params.site, self.params.i_method, self.params.p, self.params.i, self.params.a
+        sites, i_method, p, i, a = self.params.sites, self.params.i_method, self.params.p, self.params.i, self.params.a
         R = np.zeros((a, a, i, i), dtype = complex)
 
         if i_method >= 1:
@@ -176,7 +176,7 @@ class QuantumSimulation:
             R -= np.einsum("baki, kp, pj->baji",
                            self.t_term(y_d, x_d), self.h_term(i, p), self.B_term(i, y_d))
             if i_method >= 2:
-                for z in range(site):
+                for z in range(sites):
                     if z != x_d and z != y_d:
                         R += np.einsum("bcjk, krcs, ar, si->baji",
                                        self.t_term(y_d, z), self.v_term(i, p, a, p, z, x_d),
@@ -196,12 +196,12 @@ class QuantumSimulation:
     
 
     def transformation_test(self):
-        state = self.params.state
+        states = self.params.states
         h_full = self.tensors.h_full.copy()
         v_full = self.tensors.v_full.copy()
 
-        for p in range(state):
-            for q in range(state):
+        for p in range(states):
+            for q in range(states):
                 if p != q:
                     h_full[p, q] = 0.1 / abs(p - q)
 

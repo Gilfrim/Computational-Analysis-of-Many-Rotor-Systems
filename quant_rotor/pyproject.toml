@@ -1,0 +1,36 @@
+[project]
+name = "quant_rotor"
+version = "0.1.0"
+description = "A library for computational analysis of many rotor systems"
+authors = [
+  { name = "Illia Voropai", email = "ivoropay8@gmail.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+  "numpy",
+  "scipy",
+  "pandas",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-cov",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["quant_rotor"]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+addopts = "--cov=quant_rotor --cov-report=term-missing"

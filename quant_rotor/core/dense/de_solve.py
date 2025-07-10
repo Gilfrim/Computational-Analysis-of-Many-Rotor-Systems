@@ -1,11 +1,7 @@
-from typing import Tuple, List, Dict, Union, Callable 
-from quant_rotor.models.dense.de_solver_func import new_solve_ivp
-from quant_rotor.core.dense.t_amplitudes_periodic_unique import unique_residuals
+from quant_rotor.models.de_solver_func import new_solve_ivp
 from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
 from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
 import numpy as np 
-import scipy as scp
-import matplotlib.pyplot as plt
 
 def residual_double():
      return 0
@@ -126,7 +122,7 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     t0_stored.append((t, dT_0dt, one_max, two_max, dTa_idt_sol, dTab_ijdt_sol))
     return (comb_flat)
 
-def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10., nof_points=10000, K_import: np.ndarray=[], V_import: np.ndarray=[], import_K_V = False) -> Tuple:
+def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10., nof_points=10000, K_import: np.ndarray=[], V_import: np.ndarray=[], import_K_V = False) -> tuple:
     """"""     
 
 
