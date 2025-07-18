@@ -1,4 +1,4 @@
-from quant_rotor.models.de_solver_func import new_solve_ivp
+from quant_rotor.models.dense.de_solver_func import new_solve_ivp
 from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
 from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
 import numpy as np 

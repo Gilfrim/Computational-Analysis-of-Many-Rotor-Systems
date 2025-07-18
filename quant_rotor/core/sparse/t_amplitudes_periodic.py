@@ -1,5 +1,5 @@
 import numpy as np
-from importlib.resources import files
+
 from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
 from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
 
@@ -236,11 +236,6 @@ def t_periodic(
     else:
 
         params.epsilon = np.diag(tensors.h_full)
-
-    # file_path_energy = "energy.csv"
-
-    # with open(file_path_energy, "w", encoding = "utf-8") as energy_file:
-    #     energy_file.write("Iteration, Energy, ΔEnergy\n")
 
     iteration = 0
 

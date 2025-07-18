@@ -25,7 +25,7 @@ def hamiltonian_dense(state: int, site: int, g_val: float, l_val: float=0, K_imp
         If provided, this skips the construction and basis conversion of the kinetic matrix.
         Defaults to None or empty list.
     V_import : np.ndarray, optional
-        Predefined potential energy matrix in the p-basis, shape (state^2, state^2).
+        Predefined potential energy matrix in the p-basis, shape (state² * state²).
         If provided, this skips construction, symmetrization, reshaping, and basis conversion
         of the potential matrix. Defaults to None or empty list.
     Import : bool, optional
@@ -35,7 +35,7 @@ def hamiltonian_dense(state: int, site: int, g_val: float, l_val: float=0, K_imp
 
     Returns
     -------
-    tuple of np.ndarray
+    tuple[np.ndarray, np.ndarray, np.ndarray]
         Returns a tuple of three arrays in the following order:
         - Dense Hamiltonian matrix of shape (state^site, state^site), constructed from K and V
         - Kinetic energy matrix in p-basis, shape (state, state)

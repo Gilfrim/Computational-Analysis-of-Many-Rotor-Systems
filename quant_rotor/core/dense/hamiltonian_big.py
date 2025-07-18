@@ -1,8 +1,9 @@
 import numpy as np
+import scipy.sparse as sp
 from quant_rotor.core.dense.hamiltonian import hamiltonian_dense
 from quant_rotor.models.dense.density_matrix import density_matrix_1
 
-def hamiltonian_big(state: int, site: int, g_val: float, H_K_V: tuple[np.ndarray, np.ndarray, np.ndarray], l_val: float=0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.ndarray, np.ndarray, np.ndarray], l_val: float=0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Takes in a system of rotors and scales it to a specified larger system. The approximation is taken from assuming the ground state of the 
@@ -56,8 +57,6 @@ def hamiltonian_big(state: int, site: int, g_val: float, H_K_V: tuple[np.ndarray
     # Make a one site dencity matrix associated with the ground state.
     ground_state_dencity_matrix = density_matrix_1(state_old, site_old, ground_state_vec, 0)
 
-    print(ground_state_dencity_matrix.shape)
-
     # Extract eigenstates and eigenvalues.
     eig_val_D, matrix_p_to_NO_full = np.linalg.eigh(ground_state_dencity_matrix)
     
@@ -83,9 +82,9 @@ def hamiltonian_big(state: int, site: int, g_val: float, H_K_V: tuple[np.ndarray
     H_mu = hamiltonian_dense(state, site, g_val, l_val, K_mu, V_mu, True)[0]
 
     # It is importatnt to keep the return in this format since hamiltonian_general uses this structure. 
-    return H_mu, K_mu, V_mu#, matrix_p_to_NO_full[:, index_d[:state]]
+    return H_mu, K_mu, V_mu, eig_val_D#matrix_p_to_NO_full[:, index_d[:state]]
 
-def hamiltonian_general(states: int, sites: int, g_val: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def hamiltonian_general_dense(states: int, sites: int, g_val: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Interates through systems progressively increasing the nubmer of cites.
@@ -113,6 +112,6 @@ def hamiltonian_general(states: int, sites: int, g_val: float) -> tuple[np.ndarr
     # Iterate through every new system by increasing the size of the system by 2 sites every eteration.
     for current_site in range(3, sites + 2, 2):
         # Make an approximation of the Hamiltonian, Kinetic and Potential energy matrices for the bigger system.
-        H_K_V = hamiltonian_big(states, current_site, g_val, H_K_V)
+        H_K_V = hamiltonian_big_dense(states, current_site, g_val, H_K_V)
 
     return H_K_V

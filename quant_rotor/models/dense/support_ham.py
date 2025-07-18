@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.sparse as sp
 
 def m_to_p(energy_state:int)->int:
     """
@@ -95,11 +96,28 @@ def basis_m_to_p_matrix_conversion(matrix: np.ndarray)->np.ndarray:
 
     return matrix
  
-def write_matrix_elements(numer_unique_states):
+def write_matrix_elements(numer_unique_states: int) -> tuple[np.ndarray, np.ndarray]:
+    """_summary_
+
+    Parameters
+    ----------
+    numer_unique_states : int
+        _description_
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        - K: diagonal kinetic energy operator as a dense CSR matrix in the 'p' basis
+        - V: dense potential energy operator as a CSR matrix in the 'm' basis
+    """
+
     d = 2 * numer_unique_states + 1
 
     # Generate Kinetic Energy Matrix
-    K = np.diag(np.arange(-numer_unique_states, numer_unique_states + 1))
+    K = np.zeros((d, d))
+    for i in range(d):
+        for j in range(i, d):
+            K[i, j] = free_one_body(i, j, numer_unique_states)
 
     # Generate Potential Energy Matrix
     V = np.zeros((d**2, d**2))
@@ -112,43 +130,105 @@ def write_matrix_elements(numer_unique_states):
 
     return K, V
 
-def H_kinetic(states: int, sites: int, h_pp: np.ndarray) -> np.ndarray:
+def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
+    """
+    Constructs the sparse kinetic energy Hamiltonian in a many-body tensor-product space,
+    using a single-particle operator K applied independently to each site.
 
-    K = np.zeros((states**sites, states**sites), dtype=complex)
+    Parameters
+    ----------
+    state : int
+        Total number states in the system, counting the ground state. Ex: system of -1, 0, 1 would be a system of 3 states.
+    site : int
+        The number of rotors (sites) in the system.
+    K : np.ndarray
+        Dense Kinetic energy matrix in the p-basis, shape (state, state).
+
+    Returns
+    -------
+    np.ndarray
+        Dense many-body kinetic Hamiltonian.
+    """
+
+    # Create a matrix of the shape of Kinetic energy Hamiltonian filled with zeros.
+    K_H = np.zeros((states**sites, states**sites), dtype=complex)
 
     for x in range(sites):
+
+        # Define the total number of elements in the matrix operator, which represent the left and right sites that are not interacting 
+        # by n_lambda and n_mu respectively.
         n_lambda = states**(x)
         n_mu = states**(sites - x - 1)
 
+        # Iterate through all elements of the Potential energy matrix operator.
         for p in range(states):
             for p_prime in range(states):
-                val = h_pp[p, p_prime]
+
+                # Extract an associated element.
+                val = K[p, p_prime]
+
+                # Check if element is non zero.
                 if val == 0:
                     continue  # skip writing 0s
+
                 for Lambda in range(int(n_lambda)):
                     for mu in range(int(n_mu)):
+
+                        # Calculate the indices in the hamiltonian.
                         i = mu + p * n_mu + Lambda * states * n_mu
                         j = mu + p_prime * n_mu + Lambda * states * n_mu
-                        K[i, j] += val
-    return K
- 
-def H_potential(states: int, sites: int, h_pp_qq: np.ndarray, g_val: float) -> np.ndarray:
 
-    V = np.zeros((states**sites, states**sites), dtype=complex)
+                        # Assign a values to associated.
+                        K_H[i, j] += val
+    return K_H
+ 
+def H_potential(states: int, sites: int, V: np.ndarray, g_val: float) -> np.ndarray:
+    """
+    Constructs the sparse Potential energy Hamiltonian using a two-site interaction operator V
+    and coupling constant g_val. The interaction acts on nearest-neighbor pairs (periodic).
+
+    Parameters
+    ----------
+    state : int
+        Total number states in the system, counting the ground state. Ex: system of -1, 0, 1 would be a system of 3 states.
+    site : int
+        The number of rotors (sites) in the system.
+    V : np.ndarray
+        Dense potential energy matrix in the p-basis, shape (state² * state²).
+    g_val : float
+        The constant multiplier for the Potential energy. Typically in the range 0 <= g <= 1.
+
+    Returns
+    -------
+    csr_matrix
+        Sparse many-body Potential energy Hamiltonian operator.
+    """
+
+    # Create a matrix of the shape of Potential energy Hamiltonian filled with zeros.
+    V_H = np.zeros((states**sites, states**sites), dtype=complex)
 
     for x in range(sites):
+        # With x defining the first site of two-body interaction, we define the second dynamically.
         y = (x+1) % sites
+
+        # Define the total number of elements in the matrix operator, which represent the left, right, and center sites that are not interacting 
+        # by n_lambda, n_mu, n_nu, respectively.
         n_lambda = states**(x % (sites-1))
         n_mu = states**((sites - y - 1) % (sites - 1))
         n_nu = states**(np.abs(y - x) - 1)
 
+        # Iterate through all elements of the Potential energy matrix operator.
         for q in range(states):
             for q_prime in range(states):
                 for p in range(states):
                     for p_prime in range(states):
+
+                        # Calculate the flattened indices of the associated element.
                         row = p * states + q
                         col = p_prime * states + q_prime
-                        val = h_pp_qq[row, col]
+                        val = V[row, col]
+
+                        # Check if element is non zero.
                         if val == 0:
                             continue  # skip writing 0s
 
@@ -156,34 +236,88 @@ def H_potential(states: int, sites: int, h_pp_qq: np.ndarray, g_val: float) -> n
                             for mu in range(int(n_mu)):
                                 for nu in range(int(n_nu)):
                                     
+                                    # Calculate the indices in the hamiltonian.
                                     i = mu + q*n_mu + nu*states*n_mu + p*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
                                     j = mu + q_prime*n_mu + nu*states*n_mu + p_prime*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
-                                    V[i, j] += val * g_val
-    return V
+                                    
+                                    # Assign a values to associated. 
+                                    V_H[i, j] += val * g_val
+    return V_H
  
-def free_one_body(i, j, max_m):
+def free_one_body(i: int, j: int, max_m: int) -> float:
+    """
+    Computes the matrix element ⟨i|K|j⟩ of the free particle Hamiltonian on a ring
+    in the momentum representation.
 
-    # Free particle on a ring Hamiltonian in the momentum representation. 
-    # K = \sum_{m=0}^{2l} (m-l)^2 |m><m|
+    This represents the kinetic energy operator for a quantum rotor (free particle on a ring),
+    which is diagonal in the momentum basis:
+        K = ∑ₘ (m - max_m)² |m⟩⟨m|
+
+    Parameters
+    ----------
+    i : int
+        Row index in the basis (momentum state index).
+    j : int
+        Column index in the basis (momentum state index).
+    max_m : int
+        The shift for centering the angular momentum indices; usually max_m = floor((d - 1)/2)
+        for `d` total states. This centers the momentum spectrum around zero.
+
+    Returns
+    -------
+    float
+        The value of the kinetic energy matrix element ⟨i|K|j⟩. Nonzero only when i == j.
+    """
     if i == j:
-        return (i-max_m)**2
-    else: 
+        return (i - max_m) ** 2
+    else:
         return 0.0
  
-def interaction_two_body_coplanar(i1, i2, j1, j2):
+def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int) -> float:
+    """
+    Computes the two-body matrix element ⟨i1, i2|V|j1, j2⟩ of the dipole-dipole interaction
+    between two planar rotors aligned along the x-axis, in the momentum basis.
 
-    # returns <i1,i2|V|j1,j2> where V is the dipole-dipole interaction between two planar rotors oriented along the x-axis.
-    # See https://arxiv.org/abs/2401.02887 for details. 
-    # V = 0.75 \sum_{m1, m2} (|m1, m2> <m1+1, m2+1| + |m1, m2> <m1-1, m2-1|) - 0.25 \sum_{m1, m2} (|m1, m2> <m1-1, m2+1| + |m1, m2> <m1+1, m2-1|)
-    if ((abs(i1 - j1) != 1) or (abs(i2 - j2) != 1)):
+    This implementation models the coplanar dipole-dipole interaction using the momentum-shift
+    selection rules described in:
+        https://arxiv.org/abs/2401.02887
+
+    The interaction Hamiltonian is of the form:
+        V = 0.75 ∑ₘ₁,ₘ₂ (|m₁, m₂⟩⟨m₁±1, m₂±1|) 
+            - 0.25 ∑ₘ₁,ₘ₂ (|m₁, m₂⟩⟨m₁±1, m₂∓1|)
+
+    Only matrix elements where both indices differ by ±1 are non-zero.
+
+    Parameters
+    ----------
+    i1 : int
+        First particle's row index (bra momentum).
+    i2 : int
+        Second particle's row index (bra momentum).
+    j1 : int
+        First particle's column index (ket momentum).
+    j2 : int
+        Second particle's column index (ket momentum).
+
+    Returns
+    -------
+    float
+        The matrix element ⟨i1, i2|V|j1, j2⟩. Non-zero only if |i1 - j1| = |i2 - j2| = 1.
+    """
+    # Selection rule: both i1 and i2 must differ by ±1 from j1 and j2 respectively.
+    if (abs(i1 - j1) != 1) or (abs(i2 - j2) != 1):
         return 0.0
-    elif (i1 == j1 + 1):
-        if (i2 == j2 + 1):
-            return 0.75
+
+    # Coefficients based on the specific momentum exchange:
+    # (++ or --) →  +0.75
+    # (+-, -+)   →  -0.25
+    if i1 == j1 + 1:
+        if i2 == j2 + 1:
+            return 0.75  # ⟨m1+1, m2+1|
         else:
-            return -0.25
+            return -0.25 # ⟨m1+1, m2−1|
     else:
-        if (i2 == j2 + 1):
-            return -0.25
+        if i2 == j2 + 1:
+            return -0.25 # ⟨m1−1, m2+1|
         else:
-            return 0.75
+            return 0.75  # ⟨m1−1, m2−1|
