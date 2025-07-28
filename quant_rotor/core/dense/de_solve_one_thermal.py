@@ -16,7 +16,7 @@ def get_list_shape(lst):
         lst = lst[0]
     return tuple(shape)
 
-def postprocess_rk45_integration_results(sol,t0_stored, states, sites):
+def postprocess_rk45_integration_results(sol,t0_stored, state, site):
         
         # Copy the time value arrays
         time = sol.t.copy()
@@ -65,39 +65,39 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
         the flattened array containing the derivative of the T_ai and T_0 for a given time step, the 2 derivatives are concatenated 
         to make a 1d array  
     """  
-    sites, a, p, i = params.sites, params.a, params.p, params.i
+    site, a, p, i = params.site, params.a, params.p, params.i
     
 
     dTab_ijdB_sol, dTa_idB_sol, T_ai = comb_flat[:-a-1], comb_flat[-a-1:-1], comb_flat[-1] 
-    dTab_ijdB = dTab_ijdB_sol.reshape(sites, a, a, i, i)
+    dTab_ijdB = dTab_ijdB_sol.reshape(site, a, a, i, i)
     dTa_idB = dTa_idB_sol.reshape(a, i)
 
     tensors.t_a_i_tensor[0] = dTa_idB
 
-    for site_1 in range(1, sites):
+    for site_1 in range(1, site):
         tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
         tensors.t_ab_ij_tensor[0, site_1] = dTab_ijdB[site_1]
-        for site_2 in range(1, sites):
-            tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % sites] = tensors.t_ab_ij_tensor[0, site_1]
+        for site_2 in range(1, site):
+            tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors.t_ab_ij_tensor[0, site_1]
 
     two_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
 
     energy = 0
 
-    for site_x in range(sites):
+    for site_x in range(site):
         energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) #* 0.5
 
-        for site_y in range(site_x + 1, site_x + sites):
+        for site_y in range(site_x + 1, site_x + site):
             # noinspection SpellCheckingInspection
-            energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y % sites), qs.t_term(site_x, site_y % sites)) * 0.5
+            energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y % site), qs.t_term(site_x, site_y % site)) * 0.5
             # noinspection SpellCheckingInspection
-            energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % sites), qs.B_term(i, site_x), qs.B_term(i, site_y % sites)) * 0.5
+            energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % site), qs.B_term(i, site_x), qs.B_term(i, site_y % site)) * 0.5
 
     single = np.zeros((a,i), dtype = complex)
-    double = np.zeros((sites, a, a, i, i), dtype = complex)
+    double = np.zeros((site, a, a, i, i), dtype = complex)
 
     single = qs.residual_single(0)
-    for y_site in range(1, sites):
+    for y_site in range(1, site):
         double[y_site] = qs.residual_double_total(0, y_site)
     
     dTa_idB = (-1*(single))
@@ -110,35 +110,34 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     t0_stored.append((t, dT_0dB, T_ai, two_max))
     return (comb_flat)
 
-def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10., nof_points=10000, K_import: np.ndarray=[], V_import: np.ndarray=[], import_K_V_TF = False, import_K_V_NO = False) -> Tuple:
+def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., nof_points=10000, K_import: np.ndarray=[], V_import: np.ndarray=[], import_K_V_TF = False, import_K_V_NO = False) -> tuple:
     """"""     
 
 
-    p = states
+    p = state
     i = 1
     a = p - i
 
     # Load .npy matrices directly from the package
-    K, V = write_matrix_elements((states-1)//2)
+    K, V = write_matrix_elements((state-1)//2)
 
     V = V + V.T - np.diag(np.diag(V))
     V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
 
     if import_K_V_TF:
         h_full = K_import
-        v_full = V_import.reshape(states**2, states**2, states**2, states**2)
+        v_full = V_import
         v_full = v_full * g
     elif import_K_V_NO:
         h_full = K_import
-        v_full = V_import.reshape(states, states, states, states)
         v_full = v_full * g
     else:
-        h_full = basis_m_to_p_matrix_conversion(K)
-        v_full = basis_m_to_p_matrix_conversion(V_tensor)
+        h_full = basis_m_to_p_matrix_conversion(K, state)
+        v_full = basis_m_to_p_matrix_conversion(V_tensor, state)
         v_full = v_full * g
 
-    t_a_i_tensor = np.full((sites, a, i), 0, dtype=complex)
-    t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), 0, dtype=complex)
+    t_a_i_tensor = np.full((site, a, i), 0, dtype=complex)
+    t_ab_ij_tensor = np.full((site, site, a, a, i, i), 0, dtype=complex)
 
     #eigenvalues from h for update
     epsilon = np.diag(h_full)
@@ -147,8 +146,8 @@ def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10.
     a=a,
     i=i,
     p=p,  # These can be the same as `a + i` or chosen independently
-    sites=sites,
-    states=states,
+    site=site,
+    state=state,
     i_method=3,
     gap=False,
     gap_site=3,
@@ -173,7 +172,7 @@ def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10.
     t_0 = complex(0)
     # Initialize T_ai amplitudes as zeros
     single = np.zeros((a,1), dtype = complex)
-    double = np.zeros((sites, a, a, i, i), dtype = complex)
+    double = np.zeros((site, a, a, i, i), dtype = complex)
     
     # Concatenate flattened T_ai and T_0 into a single array for the ODE solver
     init_amps = np.concatenate((double.flatten(), single.flatten(), np.array([t_0])),)
@@ -222,6 +221,6 @@ def integration_scheme(sites: int, states: int, g: float, t_init=0., t_final=10.
     # now we extract the relevant information from the integrator object `sol`
     # ------------------------------------------------------------------------
     
-    time, T_0, t_0_sol, two_max = postprocess_rk45_integration_results(sol,t0_stored, states, sites)
+    time, T_0, t_0_sol, two_max = postprocess_rk45_integration_results(sol,t0_stored, state, site)
     
     return(time, T_0, t_0_sol, two_max)

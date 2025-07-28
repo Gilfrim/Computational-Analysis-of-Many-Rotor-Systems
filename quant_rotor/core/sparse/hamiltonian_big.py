@@ -58,7 +58,9 @@ def hamiltonian_big_sparse(state: int, site: int, g_val: float, H_K_V: list[np.n
 
 def hamiltonian_general_sparse(states: int, sites: int, g_val: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
-    """    
+    """
+    Iterages through hamiltonian systems using the hamiltonian_big_sparse to optimise the process of producing the hamiltonian.
+
     Parameters
     ----------
     state : int

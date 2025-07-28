@@ -1,5 +1,5 @@
 import numpy as np
-from quant_rotor.models.sparse.support_ham import build_V, basis_m_to_p_matrix_conversion, H_kinetic_sparse, H_potential_sparse
+from quant_rotor.models.sparse.support_ham import build_V_in_p, H_kinetic_sparse, H_potential_sparse
 import scipy.sparse as sp
 
 def hamiltonian_sparse(state: int, site: int, g_val: float, l_val: float=0, K_import: sp.csr_matrix=[], V_import: sp.csr_matrix=[], Import: bool=False, spar: bool=False, general: bool=False)->tuple[sp.csr_matrix, sp.csr_matrix, sp.csr_matrix]:
@@ -45,16 +45,7 @@ def hamiltonian_sparse(state: int, site: int, g_val: float, l_val: float=0, K_im
     # Check if you are importing a Kinetic and Potential energy matrix or creating one from the scratch.
     if Import == False:
         # Create a Kinetic and Potential energy matricies.
-        K_in_p, V = build_V(state)
-
-        # L_sparce = sp.diags([l_val * 1/np.sqrt(2), 0, l_val * 1/np.sqrt(2)], offsets=[-1, 0, 1], shape=(state, state))
-
-        # L_dense = L_sparce.toarray()
-
-        # K = K + L_dense
-
-        # Transfrom Potential energy matrix from m to p basis.
-        V_in_p = basis_m_to_p_matrix_conversion(V)
+        K_in_p, V_in_p = build_V_in_p(state)
 
     else:
         # In case of importing skiping ass of the steps and assumes the Kinetic and Potential energy matricies are in the coreect shape and in p basis.

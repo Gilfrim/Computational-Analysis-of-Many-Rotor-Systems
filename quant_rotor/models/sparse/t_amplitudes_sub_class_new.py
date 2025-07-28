@@ -22,16 +22,23 @@ class TensorData:
     h_full: np.ndarray
     v_full: np.ndarray
 
+@dataclass
+class PrecalcalculatedTerms:
+    a_term: np.ndarray = None
+    b_term: np.ndarray = None
+
 class QuantumSimulation:
     def __init__(self, params: SimulationParams, tensors: TensorData):
         self.params = params
         self.tensors = tensors
+        self.terms = PrecalcalculatedTerms()
+        self._precalculate_terms()
 
-    def A_term(self, a_upper, a_site):
-        return np.hstack((-self.tensors.t_a_i_tensor, np.identity(a_upper)))
+    def A_term(self):
+        return np.hstack((-self.tensors.t_a_i_tensor, np.identity(self.params.a)))
 
-    def B_term(self, b_lower, b_site):
-        return np.vstack((np.identity(b_lower), self.tensors.t_a_i_tensor))
+    def B_term(self):
+        return np.vstack((np.identity(self.params.i), self.tensors.t_a_i_tensor))
 
     def h_term(self, h_upper, h_lower):
         a_h_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (h_upper, h_lower)]
@@ -66,6 +73,10 @@ class QuantumSimulation:
 
     def t_term(self, t_site_1, t_site_2):
         return self.tensors.t_ab_ij_tensor[np.abs(t_site_2 - t_site_1)]
+
+    def _precalculate_terms(self):
+        self.terms.a_term = self.A_term()
+        self.terms.b_term = self.B_term()
 
     def update_one(self, r_1_value):
         a, i, eps = self.params.a, self.params.i, self.params.epsilon
@@ -106,26 +117,27 @@ class QuantumSimulation:
         R_single = np.zeros((a, i), dtype=complex)
 
         # Precompute shared terms for x_s = 0
-        A_x = self.A_term(a, x_s)        # shape (a, p)
-        B_x = self.B_term(i, x_s)        # shape (p, i)
+        A = self.terms.a_term        # shape (a, p)
+        B = self.terms.b_term        # shape (p, i)
         H_pq = self.h_term(p, p)         # shape (p, p)
 
         # Term 1: A H B
-        R_single += oe.contract("ap,pq,qi->ai", A_x, H_pq, B_x)
+        R_single += oe.contract("ap,pq,qi->ai", A, H_pq, B)
 
         # Terms from other sites
         for z_s in range(site):
-            if z_s != x_s:
-                if i_method >= 1:
-                    # Term 2: A V T
-                    V_cd = self.v_term(p, i, a, a, x_s, z_s)      # (p, l, c, d)
-                    T_cd = self.t_term(x_s, z_s)                  # (c, d, i, l)
-                    R_single += oe.contract("ap,plcd,cdil->ai", A_x, V_cd, T_cd)
+            if z_s == x_s:
+                continue
+
+            if i_method >= 1:
+                # Term 2: A V T
+                V_cd = self.v_term(p, i, a, a, x_s, z_s)      # (p, l, c, d)
+                T_cd = self.t_term(x_s, z_s)                  # (c, d, i, l)
+                R_single += oe.contract("ap,plcd,cdil->ai", A, V_cd, T_cd)
 
             # Term 3: A V B B
-            B_z = self.B_term(i, z_s)                         # shape (p, i)
             V_qq = self.v_term(p, i, p, p, x_s, z_s)          # shape (p, l, q, s)
-            R_single += oe.contract("ap,plqs,qi,sl->ai", A_x, V_qq, B_x, B_z)
+            R_single += oe.contract("ap,plqs,qi,sl->ai", A, V_qq, B, B)
 
         return R_single
 
@@ -143,25 +155,23 @@ class QuantumSimulation:
         R = np.zeros((a, a, i, i), dtype=complex)
 
         if i_method >= 1:
-            A_0 = self.A_term(a, x_d)
-            A_y = A_0
-            B_0 = self.B_term(i, x_d)
-            B_y = B_0
+            A = self.terms.a_term        # shape (a, p)
+            B = self.terms.b_term        # shape (p, i)
 
             # Term 1: A ⊗ A · V · B ⊗ B
             V_pqrs = self.v_term(p, p, p, p, x_d, y_d)
-            R += oe.contract("ap,bq,pqrs,ri,sj->abij", A_0, A_y, V_pqrs, B_0, B_y)
+            R += oe.contract("ap,bq,pqrs,ri,sj->abij", A, A, V_pqrs, B, B)
 
             if i_method >= 2:
                 T_0y = self.t_term(x_d, y_d)
 
                 # Term 2: A ⊗ A · V · T
                 V_pqcd = self.v_term(p, p, a, a, x_d, y_d)
-                R += oe.contract("ap,bq,pqcd,cdij->abij", A_0, A_0, V_pqcd, T_0y)
+                R += oe.contract("ap,bq,pqcd,cdij->abij", A, A, V_pqcd, T_0y)
 
                 # Term 3: T · V · B ⊗ B
                 V_klpq = self.v_term(i, i, p, p, x_d, y_d)
-                R -= oe.contract("abkl,klpq,pi,qj->abij", T_0y, V_klpq, B_0, B_y)
+                R -= oe.contract("abkl,klpq,pi,qj->abij", T_0y, V_klpq, B, B)
 
                 if i_method == 3 and site >= 4:
                     # Term 4: T · V · T
@@ -192,36 +202,33 @@ class QuantumSimulation:
         R = np.zeros((a, a, i, i), dtype=complex)
 
         if i_method >= 1:
-            A_x = self.A_term(a, x_d)
-            B_x = self.B_term(i, x_d)
+            A = self.terms.a_term        # shape (a, p)
+            B = self.terms.b_term        # shape (p, i)
             T_xy = self.t_term(x_d, y_d)
 
             # Term 1
-            R += oe.contract("ap,pc,cbij->abij", A_x, self.h_term(p, a), T_xy)
+            R += oe.contract("ap,pc,cbij->abij", A, self.h_term(p, a), T_xy)
 
             # Term 2
-            R -= oe.contract("abkj,kp,pi->abij", T_xy, self.h_term(i, p), B_x)
+            R -= oe.contract("abkj,kp,pi->abij", T_xy, self.h_term(i, p), B)
 
             if i_method >= 2:
-                A_y = self.A_term(a, y_d)
-                B_y = self.B_term(i, y_d)
 
                 for z in range(site):
                     if z != x_d and z != y_d:
-                        B_z = self.B_term(i, z)
 
                         # Term 3
                         V_ipap = self.v_term(i, p, a, p, z, y_d)
                         T_xz = self.t_term(x_d, z)
-                        R += oe.contract("acik,krcs,br,sj->abij", T_xz, V_ipap, A_y, B_y)
+                        R += oe.contract("acik,krcs,br,sj->abij", T_xz, V_ipap, A, B)
 
                         # Term 4
                         V_piap = self.v_term(p, i, a, p, y_d, z)
-                        R += oe.contract("bq,qlds,adij,sl->abij", A_y, V_piap, T_xy, B_z)
+                        R += oe.contract("bq,qlds,adij,sl->abij", A, V_piap, T_xy, B)
 
                         # Term 5
                         V_iipp = self.v_term(i, i, p, p, z, x_d)
-                        R -= oe.contract("abkj,lkrp,pi,rl->abij", T_xy, V_iipp, B_x, B_z)
+                        R -= oe.contract("abkj,lkrp,pi,rl->abij", T_xy, V_iipp, B, B)
 
         return R
 
@@ -238,36 +245,33 @@ class QuantumSimulation:
         R = np.zeros((a, a, i, i), dtype=complex)
 
         if i_method >= 1:
-            A_y = self.A_term(a, y_d)
-            B_y = self.B_term(i, y_d)
+            A = self.terms.a_term        # shape (a, p)
+            B = self.terms.b_term        # shape (p, i)
             T_yx = self.t_term(y_d, x_d)
 
             # Term 1
-            R += oe.contract("bp,pc,caji->baji", A_y, self.h_term(p, a), T_yx)
+            R += oe.contract("bp,pc,caji->baji", A, self.h_term(p, a), T_yx)
 
             # Term 2
-            R -= oe.contract("baki,kp,pj->baji", T_yx, self.h_term(i, p), B_y)
+            R -= oe.contract("baki,kp,pj->baji", T_yx, self.h_term(i, p), B)
 
             if i_method >= 2:
-                A_x = self.A_term(a, x_d)
-                B_x = self.B_term(i, x_d)
 
                 for z in range(site):
                     if z != x_d and z != y_d:
-                        B_z = self.B_term(i, z)
 
                         # Term 3
                         V_ipap = self.v_term(i, p, a, p, z, x_d)
                         T_yz = self.t_term(y_d, z)
-                        R += oe.contract("bcjk,krcs,ar,si->baji", T_yz, V_ipap, A_x, B_x)
+                        R += oe.contract("bcjk,krcs,ar,si->baji", T_yz, V_ipap, A, B)
 
                         # Term 4
                         V_piap = self.v_term(p, i, a, p, x_d, z)
-                        R += oe.contract("aq,qlds,bdji,sl->baji", A_x, V_piap, T_yx, B_z)
+                        R += oe.contract("aq,qlds,bdji,sl->baji", A, V_piap, T_yx, B)
 
                         # Term 5
                         V_iipp = self.v_term(i, i, p, p, z, y_d)
-                        R -= oe.contract("baki,lkrp,pj,rl->baji", T_yx, V_iipp, B_y, B_z)
+                        R -= oe.contract("baki,lkrp,pj,rl->baji", T_yx, V_iipp, B, B)
 
         return R
 

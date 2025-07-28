@@ -71,7 +71,7 @@ def create_inverse_index_map(numer_unique_states: int) -> np.ndarray:
 
     return inverse_index_map
 
-def basis_m_to_p_matrix_conversion(matrix: np.ndarray)->np.ndarray:
+def basis_m_to_p_matrix_conversion(matrix: np.ndarray, state: int)->np.ndarray:
     """_summary_
 
     Parameters
@@ -86,7 +86,8 @@ def basis_m_to_p_matrix_conversion(matrix: np.ndarray)->np.ndarray:
     """
 
     dim = matrix.ndim
-    index_map = create_inverse_index_map((matrix.shape[0]-1)//2)
+
+    index_map = create_inverse_index_map((state-1)//2)
 
     index_maps = []
     for i in range(dim):
@@ -125,7 +126,7 @@ def write_matrix_elements(numer_unique_states: int) -> tuple[np.ndarray, np.ndar
         for j in range(d):
             for k in range(d):
                 for l in range(d):
-                    if k * d + l >= i * d + j:
+                    # if k * d + l >= i * d + j:
                         V[i*d + j, k*d + l] = interaction_two_body_coplanar(i, j, k, l)
 
     return K, V
@@ -311,13 +312,18 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int) -> float:
     # Coefficients based on the specific momentum exchange:
     # (++ or --) →  +0.75
     # (+-, -+)   →  -0.25
+
     if i1 == j1 + 1:
         if i2 == j2 + 1:
+            # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
             return 0.75  # ⟨m1+1, m2+1|
         else:
+            # print(f"{i1}, {j1}, {i2}, {j2} --> -0.25")
             return -0.25 # ⟨m1+1, m2−1|
     else:
         if i2 == j2 + 1:
+            # print(f"{i1}, {j1}, {i2}, {j2} --> -0.25")
             return -0.25 # ⟨m1−1, m2+1|
         else:
+            # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
             return 0.75  # ⟨m1−1, m2−1|

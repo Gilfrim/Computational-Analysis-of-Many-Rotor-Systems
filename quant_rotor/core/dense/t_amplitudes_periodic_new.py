@@ -1,7 +1,7 @@
 import numpy as np
 from importlib.resources import files
 from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
+from quant_rotor.models.dense.t_amplitudes_sub_class_new import QuantumSimulation, TensorData, SimulationParams, PrecalcalculatedTerms
 
 
 #printout settings for large matrices
@@ -198,8 +198,8 @@ def t_periodic(
     v_full = v_full * g
 
     if np.isscalar(t_a_i_tensor_initial) and np.isscalar(t_ab_ij_tensor_initial):
-        t_a_i_tensor = np.full((site, a, i), t_a_i_tensor_initial, dtype=complex)
-        t_ab_ij_tensor = np.full((site, site, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
+        t_a_i_tensor = np.full((a, i), t_a_i_tensor_initial, dtype=complex)
+        t_ab_ij_tensor = np.full((site, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
     else:
         t_a_i_tensor = t_a_i_tensor_initial
         t_ab_ij_tensor = t_ab_ij_tensor_initial
@@ -227,7 +227,9 @@ def t_periodic(
     v_full=v_full
     )
 
-    qs = QuantumSimulation(params, tensors)
+    terms = PrecalcalculatedTerms()
+
+    qs = QuantumSimulation(params, tensors, terms)
 
     del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
 
@@ -244,21 +246,37 @@ def t_periodic(
 
     iteration = 0
 
-    single = np.zeros((site, a, i), dtype = complex)
-    double = np.zeros((site, site, a, a, i ,i), dtype = complex)
+    single = np.zeros((a, i), dtype = complex)
+    double = np.zeros((site, a, a, i ,i), dtype = complex)
 
     previous_energy = 0
 
+    terms.h_pp=qs.h_term(p, p)
+    terms.h_pa=qs.h_term(p, a)
+    terms.h_ip=qs.h_term(i, p)
+    terms.V_pppp=qs.v_term(p, p, p, p, 0, 1)
+    terms.V_ppaa=qs.v_term(p, p, a, a, 0, 1)
+    terms.V_iipp=qs.v_term(i, i, p, p, 0, 1)
+    terms.V_iiaa=qs.v_term(i, i, a, a, 0, 1)
+    terms.V_piaa=qs.v_term(p, i, a, a, 0, 1)
+    terms.V_pipp=qs.v_term(p, i, p, p, 0, 1)
+    terms.V_ipap=qs.v_term(i, p, a, p, 0, 1)
+    terms.V_piap=qs.v_term(p, i, a, p, 0, 1)
+
     while True:
+
+        terms.a_term=qs.A_term(a)
+        terms.b_term=qs.B_term(i)
+
 
         energy = 0
 
-        single[0] = qs.residual_single(0)
+        single = qs.residual_single()
         for y_site in range(1, site):
-            single[y_site] = single[0]
-            double[0, y_site] = qs.residual_double_total(0, y_site)
-            for x_site in range(1, site):
-                double[x_site, (x_site + y_site) % site] = double[0, y_site]
+            # single[y_site] = single[0]
+            double[y_site] = qs.residual_double_total(y_site)
+            # for x_site in range(1, site):
+            #     double[x_site, (x_site + y_site) % site] = double[0, y_site]
 
         # if HF:
         #     #middle = np.zeros((p, q))
@@ -287,23 +305,23 @@ def t_periodic(
         # print(f"1 max: {one_max}")
         # print(f"2 max: {two_max}")
 
-        tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
+        tensors.t_a_i_tensor -= qs.update_one(single)
 
         for site_1 in range(1, site):
-            tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
-            tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
-            for site_2 in range(1, site):
-                tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors.t_ab_ij_tensor[0, site_1]
+            # tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
+            tensors.t_ab_ij_tensor[site_1] -= qs.update_two(double[site_1])
+            # for site_2 in range(1, site):
+            #     tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors.t_ab_ij_tensor[0, site_1]
 
         #energy calculations
         for site_x in range(site):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) #* 0.5
+            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i)) #* 0.5
 
             for site_y in range(site_x + 1, site_x + site):
                 # noinspection SpellCheckingInspection
                 energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y % site), qs.t_term(site_x, site_y % site)) * 0.5
                 # noinspection SpellCheckingInspection
-                energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % site), qs.B_term(i, site_x), qs.B_term(i, site_y % site)) * 0.5
+                energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % site), qs.B_term(i), qs.B_term(i)) * 0.5
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
@@ -321,7 +339,7 @@ def t_periodic(
 
             # energy_file.write(f"{iteration}, {energy}, {delta_energy}\n")
     # return previous_energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor, True
-    return one_max, two_max, energy, tensors.t_a_i_tensor[0], tensors.t_ab_ij_tensor[0]
+    return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
 
 # if __name__ == "__main__":
 

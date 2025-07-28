@@ -203,6 +203,173 @@ def build_V(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
 
     return K, V
 
+def build_V_non_zero(state: int) -> tuple[sp.coo_matrix, sp.coo_matrix]:
+    """
+    Constructs:
+    - K: diagonal kinetic energy operator in the p-basis
+    - V: sparse potential energy operator, built in m-basis and transformed to p-basis
+
+    The interaction operator V is built using structured rotor interaction rules,
+    and then converted from m-basis to p-basis using m_to_p().
+
+    Parameters
+    ----------
+    state : int
+        Number of m-states: e.g. m in [-2, -1, 0, 1, 2] → state = 5
+
+    Returns
+    -------
+    tuple[sp.coo_matrix, sp.coo_matrix]
+        - K: diagonal kinetic energy matrix in p-basis (coo_matrix)
+        - V: sparse potential energy matrix in p-basis (coo_matrix)
+    """
+    dim_V = state * state
+
+    data_V = []
+    rows = []
+    cols = []
+
+    def index(m1: int, m2: int) -> int:
+        return m1 * state + m2
+
+    # === Build V in m-basis ===
+    for x in range(state - 1):
+        rows.append(index(x, x))
+        cols.append(index(x + 1, x + 1))
+        data_V.append(0.75)
+
+        rows.append(index(x + 1, x + 1))
+        cols.append(index(x, x))
+        data_V.append(0.75)
+
+        rows.append(index(x + 1, x))
+        cols.append(index(x, x + 1))
+        data_V.append(-0.25)
+
+        rows.append(index(x, x + 1))
+        cols.append(index(x + 1, x))
+        data_V.append(-0.25)
+
+        for y in range(state - x - 1):
+            rows.append(index(x, x + y))
+            cols.append(index(x + 1, x + 1 + y))
+            data_V.append(0.75)
+
+            rows.append(index(x, x + 1 + y))
+            cols.append(index(x + 1, x + y))
+            data_V.append(-0.25)
+
+            rows.append(index(x + 1, x + y))
+            cols.append(index(x, x + 1 + y))
+            data_V.append(-0.25)
+
+            rows.append(index(x + 1, x + 1 + y))
+            cols.append(index(x, x + y))
+            data_V.append(0.75)
+
+            rows.append(index(x + y, x + 1))
+            cols.append(index(x + 1 + y, x))
+            data_V.append(-0.25)
+
+            rows.append(index(x + 1 + y, x + 1))
+            cols.append(index(x + y, x))
+            data_V.append(0.75)
+
+            rows.append(index(x + y, x))
+            cols.append(index(x + 1 + y, x + 1))
+            data_V.append(0.75)
+
+            rows.append(index(x + 1 + y, x))
+            cols.append(index(x + y, x + 1))
+            data_V.append(-0.25)
+
+    V_m = sp.coo_matrix((data_V, (rows, cols)), shape=(dim_V, dim_V), dtype=np.float64)
+
+    # === Build K in p-basis ===
+    p = vector_in_p(state)  # e.g., [0, -1, 1, -2, 2]
+    K = sp.coo_matrix((p**2, (np.arange(state), np.arange(state))), shape=(state, state), dtype=np.float64)
+
+    # === m → p transformation for V ===
+
+    # Create m_vals (e.g. [-2, -1, 0, 1, 2])
+    m_vals = np.arange(-(state - 1) // 2, (state - 1) // 2 + 1)
+
+    # Build m_index → p_index map
+    perm = np.vectorize(m_to_p)(m_vals)  # m_to_p must be defined
+
+    row_mapped = np.empty_like(V_m.row)
+    col_mapped = np.empty_like(V_m.col)
+
+    for k in range(len(V_m.data)):
+        m1, m2 = divmod(V_m.row[k], state)
+        m3, m4 = divmod(V_m.col[k], state)
+
+        p1 = perm[m1]
+        p2 = perm[m2]
+        p3 = perm[m3]
+        p4 = perm[m4]
+
+        row_mapped[k] = p1 * state + p2
+        col_mapped[k] = p3 * state + p4
+
+    V_p = sp.coo_matrix((V_m.data, (row_mapped, col_mapped)), shape=(dim_V, dim_V), dtype=np.float64)
+
+    return K, V_p
+
+def build_V_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
+    """
+    Constructs:
+    - K: a diagonal kinetic energy operator in the 'p' basis
+    - V: a sparse potential energy operator directly in the 'p' basis
+
+    Avoids constructing in the m basis and transforming later.
+    """
+
+    dim_V = state * state
+
+    # Construct a diagonal of Kinetic energy matrix in m basis.
+    m_vals = np.arange(-(state - 1) // 2, (state - 1) // 2 + 1)
+
+    # Construct index map m -> p.
+    perm = np.vectorize(m_to_p)(m_vals)  # Maps m-index → p-index
+
+    data_V = []
+    rows = []
+    cols = []
+
+    def index(p1: int, p2: int) -> int:
+        return p1 * state + p2
+
+    # Loop over (m1, m2) — this preserves physics
+    for m1 in range(state):
+        for m2 in range(state):
+            p1 = perm[m1]
+            p2 = perm[m2]
+            i = index(p1, p2)
+
+            for dm1, dm2, coef in [
+                (1, 1, 0.75),
+                (-1, -1, 0.75),
+                (1, -1, -0.25),
+                (-1, 1, -0.25),
+            ]:
+                m1p = m1 + dm1
+                m2p = m2 + dm2
+                if 0 <= m1p < state and 0 <= m2p < state:
+                    p1p = perm[m1p]
+                    p2p = perm[m2p]
+                    j = index(p1p, p2p)
+                    rows.append(i)
+                    cols.append(j)
+                    data_V.append(coef)
+
+    V = sp.csr_matrix((data_V, (rows, cols)), shape=(dim_V, dim_V), dtype=np.float64)
+
+    # Diagonal kinetic operator in p basis
+    p = vector_in_p(state)
+    K = sp.diags(p**2, offsets=0, format='csr')
+
+    return K, V
 def H_kinetic_sparse(state: int, site: int, K: sp.spmatrix) -> sp.csr_matrix:
     """
     Constructs the sparse kinetic energy Hamiltonian in a many-body tensor-product space,

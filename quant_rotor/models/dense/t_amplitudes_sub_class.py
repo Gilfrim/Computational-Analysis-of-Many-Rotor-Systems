@@ -49,19 +49,19 @@ class QuantumSimulation:
                 ]
             else:
                 return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
-        else:
-            if self.params.gap and ((v_site_1 == self.params.gap_site and v_site_2 == self.params.gap_site + 1) or
-                                    (v_site_1 == self.params.gap_site + 1 and v_site_2 == self.params.gap_site)):
-                return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
-            if abs(v_site_1 - v_site_2) == 1:
-                a_v_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]
-                return self.tensors.v_full[
-                    a_v_shift[0]:v_upper_1 + a_v_shift[0],
-                    a_v_shift[1]:v_upper_2 + a_v_shift[1],
-                    a_v_shift[2]:v_lower_1 + a_v_shift[2],
-                    a_v_shift[3]:v_lower_2 + a_v_shift[3]
-                ]
-            return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
+        # else:
+        #     if self.params.gap and ((v_site_1 == self.params.gap_site and v_site_2 == self.params.gap_site + 1) or
+        #                             (v_site_1 == self.params.gap_site + 1 and v_site_2 == self.params.gap_site)):
+        #         return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
+        #     if abs(v_site_1 - v_site_2) == 1:
+        #         a_v_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]
+        #         return self.tensors.v_full[
+        #             a_v_shift[0]:v_upper_1 + a_v_shift[0],
+        #             a_v_shift[1]:v_upper_2 + a_v_shift[1],
+        #             a_v_shift[2]:v_lower_1 + a_v_shift[2],
+        #             a_v_shift[3]:v_lower_2 + a_v_shift[3]
+        #         ]
+        #     return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
 
     def t_term(self, t_site_1, t_site_2):
         return self.tensors.t_ab_ij_tensor[t_site_1, t_site_2]

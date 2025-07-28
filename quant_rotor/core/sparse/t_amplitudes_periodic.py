@@ -1,7 +1,6 @@
 import numpy as np
-
-from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
+from quant_rotor.models.sparse.support_ham import build_V_in_p
+from quant_rotor.models.sparse.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
 
 
 #printout settings for large matrices
@@ -11,7 +10,7 @@ def HF_test(start_point: str, g: float, tensors: TensorData ,params: SimulationP
         
         h_full, v_full = tensors.h_full, tensors.v_full
         
-        states, i, = params.states, params.i
+        state, i, = params.state, params.i
     #crit point negative is just for testing should change
         crit_point = -0.5
         # Initialize the density matrix based on the starting point and the matrix form
@@ -19,25 +18,25 @@ def HF_test(start_point: str, g: float, tensors: TensorData ,params: SimulationP
             # ⟨m|cosφ|n⟩ = 0.5 * δ_{m, n+1} + 0.5 * δ_{m, n-1}
             # ⟨m|sinφ|n⟩ = 1/(2i) * δ_{m, n+1} + 1/(2i) * δ_{m, n-1}
             if start_point == "sin":
-                matrix = np.zeros((states, states), dtype = complex)
+                matrix = np.zeros((state, state), dtype = complex)
             else:
-                matrix = np.zeros((states, states))
+                matrix = np.zeros((state, state))
 
             #uses real values for cos and complex for sin
             t = {"cos": 0.5, "sin": 1 / 2j}[start_point]
 
             #adds elements to trig matrix
-            for off_diag in range(states - 1):
+            for off_diag in range(state - 1):
                 matrix[off_diag, off_diag + 1] = t
                 matrix[off_diag + 1, off_diag] = np.conj(t)
 
 
             # ⟨m|cos^2φ|n⟩ = 0.5 * δ_{m, n} + 0.5 * (δ_{m, n+2} + δ_{m, n-2})
             # ⟨m|cos^2φ|n⟩ = 0.5 * δ_{m, n} - 0.5 * (δ_{m, n+2} + δ_{m, n-2})
-            I = np.identity(states)
-            cos_2phi = np.zeros((states, states))
+            I = np.identity(state)
+            cos_2phi = np.zeros((state, state))
 
-            for off in range(states - 2):
+            for off in range(state - 2):
                 cos_2phi[off, off + 2] = 1
                 cos_2phi[off + 2, off] = 1
 
@@ -75,7 +74,7 @@ def HF_test(start_point: str, g: float, tensors: TensorData ,params: SimulationP
             fock_val, fock_vec = np.linalg.eigh(fock)
 
             #checks that fock eigenvectors are unitary
-            if not np.allclose(fock_vec.conj().T @ fock_vec, np.identity(states)):
+            if not np.allclose(fock_vec.conj().T @ fock_vec, np.identity(state)):
                 raise ValueError("Fock vectors not unitary")
 
             print(f"Iteration density: {iteration_density}")
@@ -139,7 +138,7 @@ def HF_test(start_point: str, g: float, tensors: TensorData ,params: SimulationP
         f_final_occ = fock_final_vec[:, :i]
 
         #check eigenvectors unitary
-        if not np.allclose(fock_final_vec.conj().T @ fock_final_vec, np.identity(states)):
+        if not np.allclose(fock_final_vec.conj().T @ fock_final_vec, np.identity(state)):
             raise ValueError("Fock final vectors not unitary")
 
         #checks that the difference between density and 2nd last density are the same
@@ -161,8 +160,8 @@ def HF_test(start_point: str, g: float, tensors: TensorData ,params: SimulationP
         params.epsilon = fock_final_val
 
 def t_periodic(
-    sites: int,
-    states: int,
+    site: int,
+    state: int,
     g: float,
     i_method: int = 3,
     threshold: float=1e-8,
@@ -170,7 +169,7 @@ def t_periodic(
     gap_site: int=3,
     HF: bool=False,
     start_point: str="sin",
-    low_states: int=1,
+    low_state: int=1,
     t_a_i_tensor_initial: np.ndarray=0,
     t_ab_ij_tensor_initial: np.ndarray=0
 ):
@@ -181,25 +180,23 @@ def t_periodic(
     #state variables
     #could just use p, i, a
     #makes checking einsums and such a bit easier
-    p = states
-    i = low_states
+    p = state
+    i = low_state
     a = p - i
     periodic = True
 
     # Load .npy matrices directly from the package
-    K, V = write_matrix_elements((states-1)//2)
+    K, V = build_V_in_p(state)
 
-    V = V + V.T - np.diag(np.diag(V))
-    V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
+    V = V * g
 
-    h_full = basis_m_to_p_matrix_conversion(K)
-    v_full = basis_m_to_p_matrix_conversion(V_tensor)
-
-    v_full = v_full * g
+    h_full = K.toarray()
+    V = V.toarray()
+    v_full = V.reshape(p, p, p, p)  # Adjust if needed
 
     if np.isscalar(t_a_i_tensor_initial) and np.isscalar(t_ab_ij_tensor_initial):
-        t_a_i_tensor = np.full((sites, a, i), t_a_i_tensor_initial, dtype=complex)
-        t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
+        t_a_i_tensor = np.full((a, i), t_a_i_tensor_initial, dtype=complex)
+        t_ab_ij_tensor = np.full((site, a, a, i, i), t_ab_ij_tensor_initial, dtype=complex)
     else:
         t_a_i_tensor = t_a_i_tensor_initial
         t_ab_ij_tensor = t_ab_ij_tensor_initial
@@ -211,8 +208,8 @@ def t_periodic(
     a=a,
     i=i,
     p=p,  # These can be the same as `a + i` or chosen independently
-    sites=sites,
-    states=states,
+    site=site,
+    state=state,
     i_method=i_method,
     gap=gap,
     gap_site=gap_site,
@@ -229,7 +226,7 @@ def t_periodic(
 
     qs = QuantumSimulation(params, tensors)
 
-    del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
+    del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor
 
     if HF:
         HF_test(start_point, g, tensors, params)
@@ -239,8 +236,8 @@ def t_periodic(
 
     iteration = 0
 
-    single = np.zeros((sites, a, i), dtype = complex)
-    double = np.zeros((sites, sites, a, a, i ,i), dtype = complex)
+    single = np.zeros((a, i), dtype = complex)
+    double = np.zeros((site, a, a, i, i), dtype = complex)
 
     previous_energy = 0
 
@@ -248,12 +245,12 @@ def t_periodic(
 
         energy = 0
 
-        single[0] = qs.residual_single(0)
-        for y_site in range(1, sites):
-            single[y_site] = single[0]
-            double[0, y_site] = qs.residual_double_total(0, y_site)
-            for x_site in range(1, sites):
-                double[x_site, (x_site + y_site) % sites] = double[0, y_site]
+        single = qs.residual_single()
+        for y_site in range(1, site):
+            # single[y_site] = single[0]
+            double[y_site] = qs.residual_double_total(y_site)
+            # for x_site in range(1, site):
+            #     double[x_site, (x_site + y_site) % site] = double[0, y_site]
 
         # if HF:
         #     #middle = np.zeros((p, q))
@@ -262,7 +259,7 @@ def t_periodic(
         #     x_test = 2
         #     middle = h_term(p, q, x_test)
         #     h_val, h_vec = np.linalg.eigh(middle)
-        #     for z_test in range(sites):
+        #     for z_test in range(site):
         #         if z_test != x_test:
         #             middle += np.einsum("plqs, sl ->pq", v_term(p, l, q, s, x_test, z_test), B_term(s, l, z_test))
         #     test = np.einsum("ap, pq, qi ->ai", A_term(a, p, x_test), middle, B_term(q, i, x_test))
@@ -282,23 +279,23 @@ def t_periodic(
         # print(f"1 max: {one_max}")
         # print(f"2 max: {two_max}")
 
-        tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
+        tensors.t_a_i_tensor -= qs.update_one(single)
 
-        for site_1 in range(1, sites):
-            tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
-            tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
-            for site_2 in range(1, sites):
-                tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % sites] = tensors.t_ab_ij_tensor[0, site_1]
+        for site_1 in range(1, site):
+            # tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
+            tensors.t_ab_ij_tensor[site_1] -= qs.update_two(double[site_1])
+            # for site_2 in range(1, site):
+            #     tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors.t_ab_ij_tensor[0, site_1]
 
         #energy calculations
-        for site_x in range(sites):
+        for site_x in range(site):
             energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) #* 0.5
 
-            for site_y in range(site_x + 1, site_x + sites):
+            for site_y in range(site_x + 1, site_x + site):
                 # noinspection SpellCheckingInspection
-                energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y % sites), qs.t_term(site_x, site_y % sites)) * 0.5
+                energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y % site), qs.t_term(site_x, site_y % site)) * 0.5
                 # noinspection SpellCheckingInspection
-                energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % sites), qs.B_term(i, site_x), qs.B_term(i, site_y % sites)) * 0.5
+                energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % site), qs.B_term(i, site_x), qs.B_term(i, site_y % site)) * 0.5
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
@@ -318,7 +315,7 @@ def t_periodic(
     # return previous_energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor, True
     return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     t_periodic(5, 5, 1, 0, 0, 1e-8, 0.5, 3,  False, 3, True, "sin")
-#     print("Hello?")
+    t_periodic(5, 5, 1, 0, 0, 1e-8, 0.5, 3,  False, 3, True, "sin")
+    print("Hello?")

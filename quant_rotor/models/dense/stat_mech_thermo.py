@@ -15,7 +15,7 @@ def P_n(eig_val: np.ndarray, beta_val: float)-> np.ndarray:
     return (1/Z(eig_val, beta_val)) * np.exp(-eig_val*beta_val)
 
 
-def U(eig_val: np.ndarray, beta_val: float)-> complex:
+def U_stat(eig_val: np.ndarray, beta_val: float)-> complex:
     P_n_val = P_n(eig_val, beta_val)
     return (np.einsum('n->', P_n_val * eig_val))
 

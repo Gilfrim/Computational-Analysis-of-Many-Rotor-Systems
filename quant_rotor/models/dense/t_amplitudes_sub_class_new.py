@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-import opt_einsum as oe
 import numpy as np
+import opt_einsum as oe
 
 @dataclass
 class SimulationParams:
@@ -22,15 +22,32 @@ class TensorData:
     h_full: np.ndarray
     v_full: np.ndarray
 
+@dataclass
+class PrecalcalculatedTerms:
+    a_term: np.ndarray = None
+    b_term: np.ndarray = None
+    h_pp: np.ndarray = None
+    h_pa: np.ndarray = None
+    h_ip: np.ndarray = None
+    V_pppp: np.ndarray = None
+    V_ppaa: np.ndarray = None
+    V_iipp: np.ndarray = None
+    V_iiaa: np.ndarray = None
+    V_piaa: np.ndarray = None
+    V_pipp: np.ndarray = None
+    V_ipap: np.ndarray = None
+    V_piap: np.ndarray = None
+
 class QuantumSimulation:
-    def __init__(self, params: SimulationParams, tensors: TensorData):
+    def __init__(self, params: SimulationParams, tensors: TensorData, terms: PrecalcalculatedTerms):
         self.params = params
         self.tensors = tensors
+        self.terms = terms
 
-    def A_term(self, a_upper, a_site):
+    def A_term(self, a_upper):
         return np.hstack((-self.tensors.t_a_i_tensor, np.identity(a_upper)))
 
-    def B_term(self, b_lower, b_site):
+    def B_term(self, b_lower):
         return np.vstack((np.identity(b_lower), self.tensors.t_a_i_tensor))
 
     def h_term(self, h_upper, h_lower):
@@ -50,19 +67,19 @@ class QuantumSimulation:
                 ]
             else:
                 return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
-        else:
-            if self.params.gap and ((v_site_1 == self.params.gap_site and v_site_2 == self.params.gap_site + 1) or
-                                    (v_site_1 == self.params.gap_site + 1 and v_site_2 == self.params.gap_site)):
-                return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
-            if abs(v_site_1 - v_site_2) == 1:
-                a_v_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]
-                return self.tensors.v_full[
-                    a_v_shift[0]:v_upper_1 + a_v_shift[0],
-                    a_v_shift[1]:v_upper_2 + a_v_shift[1],
-                    a_v_shift[2]:v_lower_1 + a_v_shift[2],
-                    a_v_shift[3]:v_lower_2 + a_v_shift[3]
-                ]
-            return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
+        # else:
+        #     if self.params.gap and ((v_site_1 == self.params.gap_site and v_site_2 == self.params.gap_site + 1) or
+        #                             (v_site_1 == self.params.gap_site + 1 and v_site_2 == self.params.gap_site)):
+        #         return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
+        #     if abs(v_site_1 - v_site_2) == 1:
+        #         a_v_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]
+        #         return self.tensors.v_full[
+        #             a_v_shift[0]:v_upper_1 + a_v_shift[0],
+        #             a_v_shift[1]:v_upper_2 + a_v_shift[1],
+        #             a_v_shift[2]:v_lower_1 + a_v_shift[2],
+        #             a_v_shift[3]:v_lower_2 + a_v_shift[3]
+        #         ]
+        #     return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
 
     def t_term(self, t_site_1, t_site_2):
         return self.tensors.t_ab_ij_tensor[np.abs(t_site_2 - t_site_1)]
@@ -101,33 +118,33 @@ class QuantumSimulation:
         # Unpack parameters
         site, i_method = self.params.site, self.params.i_method
         a, i, p = self.params.a, self.params.i, self.params.p
+        A, B = self.terms.a_term, self.terms.b_term
 
         # Initialize residual
         R_single = np.zeros((a, i), dtype=complex)
 
         # Precompute shared terms for x_s = 0
-        A_x = self.A_term(a, x_s)        # shape (a, p)
-        B_x = self.B_term(i, x_s)        # shape (p, i)
-        H_pq = self.h_term(p, p)         # shape (p, p)
-
+        H_pq = self.terms.h_pp         # shape (p, p)
+        
         # Term 1: A H B
-        R_single += oe.contract("ap,pq,qi->ai", A_x, H_pq, B_x)
+        R_single += oe.contract("ap,pq,qi->ai", A, H_pq, B, optimize='optimal')
+
+        sites_close = [1, site-1]
 
         # Terms from other sites
-        for z_s in range(site):
-            if z_s != x_s:
-                if i_method >= 1:
-                    # Term 2: A V T
-                    V_cd = self.v_term(p, i, a, a, x_s, z_s)      # (p, l, c, d)
-                    T_cd = self.t_term(x_s, z_s)                  # (c, d, i, l)
-                    R_single += oe.contract("ap,plcd,cdil->ai", A_x, V_cd, T_cd)
+        for z_s in sites_close:
+            if i_method >= 1:
+                # Term 2: A V T
+                V_cd = self.v_term(p, i, a, a, x_s, z_s)      # (p, l, c, d)
+                T_cd = self.t_term(x_s, z_s)                  # (c, d, i, l)
+                R_single += oe.contract("ap,plcd,cdil->ai", A, V_cd, T_cd, optimize='optimal')
 
             # Term 3: A V B B
-            B_z = self.B_term(i, z_s)                         # shape (p, i)
             V_qq = self.v_term(p, i, p, p, x_s, z_s)          # shape (p, l, q, s)
-            R_single += oe.contract("ap,plqs,qi,sl->ai", A_x, V_qq, B_x, B_z)
+            R_single += oe.contract("ap,plqs,qi,sl->ai", A, V_qq, B, B, optimize='optimal')
 
         return R_single
+
 
     def residual_double_sym(self, y_d: int) -> np.ndarray:
         """
@@ -138,44 +155,43 @@ class QuantumSimulation:
 
         site, i_method = self.params.site, self.params.i_method
         p, i, a = self.params.p, self.params.i, self.params.a
+        A, B = self.terms.a_term, self.terms.b_term
         x_d = 0  # fixed by symmetry
 
         R = np.zeros((a, a, i, i), dtype=complex)
 
         if i_method >= 1:
-            A_0 = self.A_term(a, x_d)
-            A_y = A_0
-            B_0 = self.B_term(i, x_d)
-            B_y = B_0
 
             # Term 1: A ⊗ A · V · B ⊗ B
             V_pqrs = self.v_term(p, p, p, p, x_d, y_d)
-            R += oe.contract("ap,bq,pqrs,ri,sj->abij", A_0, A_y, V_pqrs, B_0, B_y)
+            R += oe.contract("ap,bq,pqrs,ri,sj->abij", A, A, V_pqrs, B, B, optimize='optimal')
 
             if i_method >= 2:
                 T_0y = self.t_term(x_d, y_d)
 
                 # Term 2: A ⊗ A · V · T
                 V_pqcd = self.v_term(p, p, a, a, x_d, y_d)
-                R += oe.contract("ap,bq,pqcd,cdij->abij", A_0, A_0, V_pqcd, T_0y)
+                R += oe.contract("ap,bq,pqcd,cdij->abij", A, A, V_pqcd, T_0y, optimize='optimal')
 
                 # Term 3: T · V · B ⊗ B
                 V_klpq = self.v_term(i, i, p, p, x_d, y_d)
-                R -= oe.contract("abkl,klpq,pi,qj->abij", T_0y, V_klpq, B_0, B_y)
+                R -= oe.contract("abkl,klpq,pi,qj->abij", T_0y, V_klpq, B, B, optimize='optimal')
 
                 if i_method == 3 and site >= 4:
                     # Term 4: T · V · T
                     V_klcd = self.v_term(i, i, a, a, x_d, y_d)
-                    R -= oe.contract("abkl,klcd,cdij->abij", T_0y, V_klcd, T_0y)
+                    R -= oe.contract("abkl,klcd,cdij->abij", T_0y, V_klcd, T_0y, optimize='optimal')
 
                     # Term 5: all connected permutations
                     for z in range(site):
                         for w in range(site):
                             if z not in {x_d, y_d} and w not in {x_d, y_d} and z != w:
-                                V_klcd_zw = self.v_term(i, i, a, a, z, w)
-                                T_0z = self.t_term(x_d, z)
-                                T_yw = self.t_term(y_d, w)
-                                R += oe.contract("klcd,acik,bdjl->abij", V_klcd_zw, T_0z, T_yw)
+                                if abs(z - w) == 1 or abs(z - w) == (self.params.site - 1):
+                                    V_klcd_zw = self.v_term(i, i, a, a, z, w)
+                                    T_0z = self.t_term(x_d, z)
+                                    T_yw = self.t_term(y_d, w)
+                                    
+                                    R += oe.contract("klcd,acik,bdjl->abij", V_klcd_zw, T_0z, T_yw, optimize='optimal')
 
         return R
 
@@ -187,43 +203,40 @@ class QuantumSimulation:
 
         site, i_method = self.params.site, self.params.i_method
         p, i, a = self.params.p, self.params.i, self.params.a
+        A, B, h_pa, h_ip = self.terms.a_term, self.terms.b_term, self.terms.h_pa, self.terms.h_ip
         x_d = 0  # fixed
 
         R = np.zeros((a, a, i, i), dtype=complex)
 
         if i_method >= 1:
-            A_x = self.A_term(a, x_d)
-            B_x = self.B_term(i, x_d)
             T_xy = self.t_term(x_d, y_d)
 
             # Term 1
-            R += oe.contract("ap,pc,cbij->abij", A_x, self.h_term(p, a), T_xy)
+            R += oe.contract("ap,pc,cbij->abij", A, h_pa, T_xy, optimize='optimal')
 
             # Term 2
-            R -= oe.contract("abkj,kp,pi->abij", T_xy, self.h_term(i, p), B_x)
+            R -= oe.contract("abkj,kp,pi->abij", T_xy, h_ip, B, optimize='optimal')
 
             if i_method >= 2:
-                A_y = self.A_term(a, y_d)
-                B_y = self.B_term(i, y_d)
 
                 for z in range(site):
                     if z != x_d and z != y_d:
-                        B_z = self.B_term(i, z)
 
                         # Term 3
                         V_ipap = self.v_term(i, p, a, p, z, y_d)
                         T_xz = self.t_term(x_d, z)
-                        R += oe.contract("acik,krcs,br,sj->abij", T_xz, V_ipap, A_y, B_y)
+                        R += oe.contract("acik,krcs,br,sj->abij", T_xz, V_ipap, A, B, optimize='optimal')
 
                         # Term 4
                         V_piap = self.v_term(p, i, a, p, y_d, z)
-                        R += oe.contract("bq,qlds,adij,sl->abij", A_y, V_piap, T_xy, B_z)
+                        R += oe.contract("bq,qlds,adij,sl->abij", A, V_piap, T_xy, B, optimize='optimal')
 
                         # Term 5
                         V_iipp = self.v_term(i, i, p, p, z, x_d)
-                        R -= oe.contract("abkj,lkrp,pi,rl->abij", T_xy, V_iipp, B_x, B_z)
+                        R -= oe.contract("abkj,lkrp,pi,rl->abij", T_xy, V_iipp, B, B, optimize='optimal')
 
         return R
+
 
     def residual_double_non_sym_2(self, y_d: int) -> np.ndarray:
         """
@@ -233,49 +246,47 @@ class QuantumSimulation:
 
         site, i_method = self.params.site, self.params.i_method
         p, i, a = self.params.p, self.params.i, self.params.a
+        A, B, h_pa, h_ip = self.terms.a_term, self.terms.b_term, self.terms.h_pa, self.terms.h_ip
         x_d = 0  # fixed
 
         R = np.zeros((a, a, i, i), dtype=complex)
 
         if i_method >= 1:
-            A_y = self.A_term(a, y_d)
-            B_y = self.B_term(i, y_d)
             T_yx = self.t_term(y_d, x_d)
 
             # Term 1
-            R += oe.contract("bp,pc,caji->baji", A_y, self.h_term(p, a), T_yx)
+            R += oe.contract("bp,pc,caji->baji", A, h_pa, T_yx, optimize='optimal')
 
             # Term 2
-            R -= oe.contract("baki,kp,pj->baji", T_yx, self.h_term(i, p), B_y)
+            R -= oe.contract("baki,kp,pj->baji", T_yx, h_ip, B, optimize='optimal')
 
             if i_method >= 2:
-                A_x = self.A_term(a, x_d)
-                B_x = self.B_term(i, x_d)
 
                 for z in range(site):
                     if z != x_d and z != y_d:
-                        B_z = self.B_term(i, z)
 
                         # Term 3
                         V_ipap = self.v_term(i, p, a, p, z, x_d)
                         T_yz = self.t_term(y_d, z)
-                        R += oe.contract("bcjk,krcs,ar,si->baji", T_yz, V_ipap, A_x, B_x)
+                        R += oe.contract("bcjk,krcs,ar,si->baji", T_yz, V_ipap, A, B, optimize='optimal')
 
                         # Term 4
                         V_piap = self.v_term(p, i, a, p, x_d, z)
-                        R += oe.contract("aq,qlds,bdji,sl->baji", A_x, V_piap, T_yx, B_z)
+                        R += oe.contract("aq,qlds,bdji,sl->baji", A, V_piap, T_yx, B, optimize='optimal')
 
                         # Term 5
                         V_iipp = self.v_term(i, i, p, p, z, y_d)
-                        R -= oe.contract("baki,lkrp,pj,rl->baji", T_yx, V_iipp, B_y, B_z)
+                        R -= oe.contract("baki,lkrp,pj,rl->baji", T_yx, V_iipp, B, B, optimize='optimal')
 
         return R
+
 
     def residual_double_total(self, y_d: int) -> np.ndarray:
         return (self.residual_double_sym(y_d) +
                 self.residual_double_non_sym_1(y_d) +
                 self.residual_double_non_sym_2(y_d))
     
+
     def transformation_test(self):
         state = self.params.state
         h_full = self.tensors.h_full.copy()
