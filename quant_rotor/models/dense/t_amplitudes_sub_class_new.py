@@ -168,47 +168,32 @@ class QuantumSimulation:
 
         site, i_method, fast = self.params.site, self.params.i_method, self.params.fast
         p, i, a = self.params.p, self.params.i, self.params.a
-        if fast:
-            A, B, AA_BQ, BB_R= sp.csr_matrix(self.terms.a_term), sp.csr_matrix(self.terms.b_term), sp.csr_matrix(self.terms.aa_term), sp.csr_matrix(self.terms.bb_term)
-            R = sp.csr_matrix(np.zeros((a, a), dtype=complex))
-        else:
-            A, B, AA_BQ, BB_R= self.terms.a_term, self.terms.b_term, self.terms.aa_term, self.terms.bb_term
-            R = np.zeros((a, a), dtype=complex)
+        A, B, AA_BQ, BB_R= self.terms.a_term, self.terms.b_term, self.terms.aa_term, self.terms.bb_term
+        R = np.zeros((a, a), dtype=complex)
 
         x_d = 0  # fixed by symmetry
 
         if i_method >= 1:
-
+            V_QR = self.terms.V_pppp
             # Term 1: A ⊗ A · V · B ⊗ B
             if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
                 if fast:
-                    V_QR = sp.csr_matrix(self.terms.V_pppp)
-
-                    # R += (AA_BQ @ (V_QR @ BB_R)).reshape(a, a)
-                    R += ((AA_BQ @ (V_QR @ BB_R.T)).reshape(a, a))
+                    R += (AA_BQ @ (V_QR @ BB_R)).reshape(a, a)
                 else:
-                    V_QR = self.terms.V_pppp
-
                     R += oe.contract("BQ,QR,R->B", AA_BQ, V_QR, BB_R).reshape(a, a)
 
             if i_method >= 2:
-
+                T_C_flat = self.t_term(x_d, y_d).reshape(a**2)
+                T_C = self.t_term(x_d, y_d)
+                V_QC = self.terms.V_ppaa
+                V_pq = self.terms.V_iipp
 
                 if fast:
-                    T_C_flat = sp.csr_matrix(self.t_term(x_d, y_d).reshape(a**2))
-                    T_C = sp.csr_matrix(self.t_term(x_d, y_d).reshape(a, a))
-                    V_QC = self.terms.V_ppaa
-                    V_pq = self.terms.V_iipp
-
-                    # R += (AA_BQ @ (V_QC @ T_C_flat)).reshape(a, a)
-                    R += (AA_BQ @ (V_QC @ T_C_flat.T)).reshape(a, a)
-                    # R -= T_C * ((V_pq @ B) @ B)
-                    R -= (T_C * ((V_pq @ B.T).T @ B.T)[0 ,0])
+                    if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
+                        R += (AA_BQ @ (V_QC @ T_C_flat)).reshape(a, a)
+                        R -= T_C * ((V_pq @ B) @ B)
                 else:
-                    T_C_flat = self.t_term(x_d, y_d).reshape(a**2)
-                    T_C = self.t_term(x_d, y_d)
-                    V_QC = self.terms.V_ppaa
-                    V_pq = self.terms.V_iipp
+
                     # Term 2: A ⊗ A · V · T
                     if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
                         
@@ -218,38 +203,28 @@ class QuantumSimulation:
                         R -= oe.contract("ab,pq,p,q->ab", T_C, V_pq, B, B)
 
                 if i_method == 3 and site >= 4:
-
+                    V_cd = self.terms.V_iiaa.reshape(a, a)
                     if fast:
-                        V_cd = sp.csr_matrix(self.terms.V_iiaa.reshape(a, a))
-
-                        # scalar = np.sum(V_cd * T_C)
-                        # R -= T_C * scalar
-                        R -= (T_C * np.sum(V_cd.multiply(T_C)))
-                    else:
-                        V_cd = self.terms.V_iiaa                        
+                        if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
+                            scalar = np.sum(V_cd * T_C)
+                            R -= T_C * scalar
+                    else:        
                         # Term 4: T · V · T
                         if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
                             R -= oe.contract("ab,cd,cd->ab", T_C, V_cd, T_C)
-
+                            
                     # Term 5: all connected permutations
                     for z in range(site-1):
                             if z not in {0, y_d} and z+1 not in {0, y_d} and z != z+1:
-                                    if fast:
-                                        T_0z_1 = sp.csr_matrix(self.t_term(x_d, z))
-                                        T_yw_1 = sp.csr_matrix(self.t_term(y_d, z+1))
-                                        T_0z_2 = sp.csr_matrix(self.t_term(x_d, z+1))
-                                        T_yw_2 = sp.csr_matrix(self.t_term(y_d, z))
+                                    T_0z_1 = self.t_term(x_d, z)
+                                    T_yw_1 = self.t_term(y_d, z+1)
+                                    T_0z_2 = self.t_term(x_d, z+1)
+                                    T_yw_2 = self.t_term(y_d, z)
 
-                                        # R += T_0z_1 @ V_cd @ T_yw_1.T
+                                    if fast:
                                         R += T_0z_1 @ V_cd @ T_yw_1.T
-                                        # R += T_0z_2 @ V_cd @ T_yw_2.T
                                         R += T_0z_2 @ V_cd @ T_yw_2.T
                                     else:
-                                        T_0z_1 = self.t_term(x_d, z)
-                                        T_yw_1 = self.t_term(y_d, z+1)
-                                        T_0z_2 = self.t_term(x_d, z+1)
-                                        T_yw_2 = self.t_term(y_d, z)
-
                                         R += oe.contract("cd,ac,bd->ab", V_cd, T_0z_1, T_yw_1)
                                         R += oe.contract("cd,ac,bd->ab", V_cd, T_0z_2, T_yw_2)
         return R
@@ -262,67 +237,44 @@ class QuantumSimulation:
 
         site, i_method, fast = self.params.site, self.params.i_method, self.params.fast
         p, i, a = self.params.p, self.params.i, self.params.a
-        
-        if fast:
-            A, B = sp.csr_matrix(self.terms.a_term), sp.csr_matrix(self.terms.b_term)
-            h_pc, h_p = sp.csr_matrix(self.terms.h_pa), sp.csr_matrix(self.terms.h_ip)
-        else:
-            A, B = self.terms.a_term, self.terms.b_term
-            h_pc, h_p = self.terms.h_pa, self.terms.h_ip
+
+        A, B = self.terms.a_term, self.terms.b_term
+        h_pc, h_p = self.terms.h_pa, self.terms.h_ip
         x_d = 0  # fixed
 
         R = np.zeros((a, a), dtype=complex)
 
         if i_method >= 1:
+            T_cb = self.t_term(x_d, y_d)
             if fast:
-                T_cb = sp.csr_matrix(self.t_term(x_d, y_d))
-
-                # R += A @ h_pc @ T_cb
-                R += (A @ h_pc @ T_cb)
-                # R -= T_cb * (h_p @ B)
-                R -= (T_cb * (h_p @ B.T)[0,0])
+                R += (A @ h_pc @ T_cb)        
+                R -= T_cb * (h_p @ B)
             else:
-                T_cb = self.t_term(x_d, y_d)
-
                 # Term 1
                 R += oe.contract("ap,pc,cb->ab", A, h_pc, T_cb)
                 # Term 2
                 R -= oe.contract("ab,p,p->ab", T_cb, h_p, B)
 
             if i_method >= 2:
-                if fast:
-                    for z in range(site):
-                        if z != x_d and z != y_d:
-
-                            V_ipap = sp.csr_matrix(self.terms.V_ipap.reshape(p*a, p))
-                            T_xz = sp.csr_matrix(self.t_term(x_d, z))
-                            V_pp = sp.csr_matrix(self.terms.V_iipp)
-                            V_pap = sp.csr_matrix(self.terms.V_piap.reshape(p*a, p))
+                for z in range(site):
+                    if z != x_d and z != y_d:
+                        V_ipap = self.terms.V_ipap
+                        T_xz = self.t_term(x_d, z)
+                        V_pp = self.terms.V_iipp
+                        V_pap = self.terms.V_piap
+                        if fast:
 
                             if abs(z - y_d) == 1 or abs(z - y_d) == (site - 1):
 
                                 # Term 3
-                                # R += oe.contract("ac,rcs,br,s->ab", T_xz, V_ipap, A, B)
-                                # R += T_xz @ (A @ (V_ipap @ B).reshape(p, a)).T
-                                R += (T_xz @ (A @ (V_ipap @ B.T).reshape(p, a)).T)
+                                R += T_xz @ (A @ (V_ipap @ B).reshape(p, a)).T
 
-                                # Term 4                                
-                                # R += oe.contract("bq,qds,ad,s->ab", A, V_pap, T_cb, B)
-                                # R += T_cb @ (A @ (V_pap @ B).reshape(p, a)).T
-                                R += (T_cb @ (A @ (V_pap @ B.T).reshape(p, a)).T)
+                                # Term 4
+                                R += T_cb @ (A @ (V_pap @ B).reshape(p, a)).T
 
-                            if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
-                                # R -= T_cb *((V_pp @ B) @ B)
-                                R -= (T_cb *((V_pp @ B.T).T @ B.T)[0, 0])
-                else:
-                    for z in range(site):
-                        if z != x_d and z != y_d:
-
-                            V_ipap = self.terms.V_ipap
-                            T_xz = self.t_term(x_d, z)
-                            V_pp = self.terms.V_iipp
-                            V_pap = self.terms.V_piap
-                            
+                            if abs(0 - z) == 1 or abs(0 - z) == (site - 1):
+                                R -= T_cb *((V_pp @ B) @ B)
+                        else:
                             if abs(z - y_d) == 1 or abs(z - y_d) == (site - 1):
 
                                 # Term 3
@@ -331,58 +283,12 @@ class QuantumSimulation:
                                 # Term 4                                
                                 R += oe.contract("bq,qds,ad,s->ab", A, V_pap, T_cb, B)
 
-                            if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
+                            if abs(0 - z) == 1 or abs(0 - z) == (site - 1):
 
                                 # Term 5
                                 R -= oe.contract("ab,rp,p,r->ab", T_cb, V_pp, B, B)
 
         return R
-
-
-    def residual_double_non_sym_2(self, y_d: int) -> np.ndarray:
-        """
-        Computes asymmetric residual R^{ba}_{ji} for fixed x_d = 0 and variable y_d.
-        Corresponds to the second non-symmetric contraction path using optimized einsums.
-        """
-
-        site, i_method = self.params.site, self.params.i_method
-        p, i, a = self.params.p, self.params.i, self.params.a
-        A, B, h_pa, h_ip = self.terms.a_term, self.terms.b_term, self.terms.h_pa, self.terms.h_ip
-        x_d = 0  # fixed
-
-        R = np.zeros((a, a, i, i), dtype=complex)
-
-        if i_method >= 1:
-            T_yx = self.t_term(y_d, x_d)
-
-            # Term 1
-            R += oe.contract("bp,pc,caji->baji", A, h_pa, T_yx)
-
-            # Term 2
-            R -= oe.contract("baki,kp,pj->baji", T_yx, h_ip, B)
-
-            if i_method >= 2:
-
-                for z in range(site):
-                    if z != x_d and z != y_d:
-                        if abs(z) == 1 or abs(z) == (site - 1):
-
-                            # Term 3
-                            V_ipap = self.terms.V_ipap
-                            T_yz = self.t_term(y_d, z)
-                            R += oe.contract("bcjk,krcs,ar,si->baji", T_yz, V_ipap, A, B)
-
-                            # Term 4
-                            V_piap = self.terms.V_piap
-                            R += oe.contract("aq,qlds,bdji,sl->baji", A, V_piap, T_yx, B)
-
-                        if abs(z - y_d) == 1 or abs(z - y_d) == (site - 1):
-                            # Term 5
-                            V_iipp = self.terms.V_iipp
-                            R -= oe.contract("baki,lkrp,pj,rl->baji", T_yx, V_iipp, B, B)
-
-        return R
-
 
     def residual_double_total(self, y_d: int) -> np.ndarray:
         return (self.residual_double_sym(y_d) + self.residual_double_non_sym_1(y_d)*2)

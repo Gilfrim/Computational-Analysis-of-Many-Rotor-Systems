@@ -90,19 +90,19 @@ class QuantumSimulation:
 
     def update_one(self, r_1_value):
         a, i, eps, fast = self.params.a, self.params.i, self.params.epsilon, self.params.fast
-        update = np.zeros((a), dtype=np.float64)
+        update = np.zeros((a), dtype=complex)
         for u_a in range(a):
             update[u_a] = 1 / (eps[u_a + i] - eps[0])
         
         if fast:
-            ret = (update * r_1_value.toarray()).reshape(10)
+            ret = (update * r_1_value.toarray()).reshape(a)
         else:
             ret = update * r_1_value
         return ret
 
     def update_two(self, r_2_value):
         a, i, eps = self.params.a, self.params.i, self.params.epsilon
-        update = np.zeros((a, a), dtype=np.float64)
+        update = np.zeros((a, a), dtype=complex)
         for u_a in range(a):
             for u_b in range(a):
                         update[u_a, u_b] = 1 / (eps[u_a + i] + eps[u_b + i] - 2*eps[0])
@@ -127,10 +127,10 @@ class QuantumSimulation:
 
         if fast:
             A_ap, B_q, BB_Q = sp.csr_matrix(self.terms.a_term), sp.csr_matrix(self.terms.b_term), sp.csr_matrix(self.terms.bb_term)
-            R_single = sp.csr_matrix(np.zeros((a), dtype=np.float64))
+            R_single = sp.csr_matrix(np.zeros((a), dtype=complex))
         else:
             A_ap, B_q, BB_Q = self.terms.a_term, self.terms.b_term, self.terms.bb_term
-            R_single = np.zeros((a), dtype=np.float64)
+            R_single = np.zeros((a), dtype=complex)
 
         # Term 1: A H B
         if fast:
@@ -179,10 +179,10 @@ class QuantumSimulation:
         p, i, a = self.params.p, self.params.i, self.params.a
         if fast:
             A, B, AA_BQ, BB_R= sp.csr_matrix(self.terms.a_term), sp.csr_matrix(self.terms.b_term), sp.csr_matrix(self.terms.aa_term), sp.csr_matrix(self.terms.bb_term)
-            R = sp.csr_matrix(np.zeros((a, a), dtype=np.float64))
+            R = sp.csr_matrix(np.zeros((a, a), dtype=complex))
         else:
             A, B, AA_BQ, BB_R= self.terms.a_term, self.terms.b_term, self.terms.aa_term, self.terms.bb_term
-            R = np.zeros((a, a), dtype=np.float64)
+            R = np.zeros((a, a), dtype=complex)
 
         x_d = 0  # fixed by symmetry
 
@@ -203,39 +203,37 @@ class QuantumSimulation:
                     R += oe.contract("BQ,QR,R->B", AA_BQ, V_QR, BB_R).reshape(a, a)
 
             if i_method >= 2:
+                if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
+                    if fast:
+                        T_C_flat = sp.csr_matrix(self.t_term(x_d, y_d).reshape(a**2))
+                        T_C = sp.csr_matrix(self.t_term(x_d, y_d).reshape(a, a))
+                        V_QC = self.terms.V_ppaa
+                        V_pq = self.terms.V_iipp
 
-
-                if fast:
-                    T_C_flat = sp.csr_matrix(self.t_term(x_d, y_d).reshape(a**2))
-                    T_C = sp.csr_matrix(self.t_term(x_d, y_d).reshape(a, a))
-                    V_QC = self.terms.V_ppaa
-                    V_pq = self.terms.V_iipp
-
-                    # R += (AA_BQ @ (V_QC @ T_C_flat)).reshape(a, a)
-                    R += (AA_BQ @ (V_QC @ T_C_flat.T)).reshape(a, a)
-                    # R -= T_C * ((V_pq @ B) @ B)
-                    R -= (T_C * ((V_pq @ B.T).T @ B.T)[0 ,0])
-                else:
-                    T_C_flat = self.t_term(x_d, y_d).reshape(a**2)
-                    T_C = self.t_term(x_d, y_d)
-                    V_QC = self.terms.V_ppaa
-                    V_pq = self.terms.V_iipp
-                    # Term 2: A ⊗ A · V · T
-                    if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
+                        # R += (AA_BQ @ (V_QC @ T_C_flat)).reshape(a, a)
+                        R += (AA_BQ @ (V_QC @ T_C_flat.T)).reshape(a, a)
+                        # R -= T_C * ((V_pq @ B) @ B)
+                        R -= (T_C * ((V_pq @ B.T).T @ B.T)[0 ,0])
+                    else:
+                        T_C_flat = self.t_term(x_d, y_d).reshape(a**2)
+                        T_C = self.t_term(x_d, y_d)
+                        V_QC = self.terms.V_ppaa
+                        V_pq = self.terms.V_iipp
                         
+                        # Term 2: A ⊗ A · V · T
                         R += oe.contract("BQ,QC,C->B", AA_BQ, V_QC, T_C_flat).reshape(a, a)
 
-                    # Term 3: T · V · B ⊗ B
+                        # Term 3: T · V · B ⊗ B
                         R -= oe.contract("ab,pq,p,q->ab", T_C, V_pq, B, B)
 
                 if i_method == 3 and site >= 4:
-
                     if fast:
                         V_cd = sp.csr_matrix(self.terms.V_iiaa.reshape(a, a))
 
                         # scalar = np.sum(V_cd * T_C)
                         # R -= T_C * scalar
-                        R -= (T_C * np.sum(V_cd.multiply(T_C)))
+                        if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
+                            R -= (T_C * np.sum(V_cd.multiply(T_C)))
                     else:
                         V_cd = self.terms.V_iiaa                        
                         # Term 4: T · V · T
@@ -250,10 +248,8 @@ class QuantumSimulation:
                                         T_yw_1 = sp.csr_matrix(self.t_term(y_d, z+1))
                                         T_0z_2 = sp.csr_matrix(self.t_term(x_d, z+1))
                                         T_yw_2 = sp.csr_matrix(self.t_term(y_d, z))
-
-                                        # R += T_0z_1 @ V_cd @ T_yw_1.T
+                                        
                                         R += T_0z_1 @ V_cd @ T_yw_1.T
-                                        # R += T_0z_2 @ V_cd @ T_yw_2.T
                                         R += T_0z_2 @ V_cd @ T_yw_2.T
                                     else:
                                         T_0z_1 = self.t_term(x_d, z)
@@ -280,17 +276,15 @@ class QuantumSimulation:
         else:
             A, B = self.terms.a_term, self.terms.b_term
             h_pc, h_p = self.terms.h_pa, self.terms.h_ip
-        x_d = 0  # fixed
+        x_d = 0
 
-        R = np.zeros((a, a), dtype=np.float64)
+        R = np.zeros((a, a), dtype=complex)
 
         if i_method >= 1:
             if fast:
                 T_cb = sp.csr_matrix(self.t_term(x_d, y_d))
 
-                # R += A @ h_pc @ T_cb
                 R += (A @ h_pc @ T_cb)
-                # R -= T_cb * (h_p @ B)
                 R -= (T_cb * (h_p @ B.T)[0,0])
             else:
                 T_cb = self.t_term(x_d, y_d)
@@ -313,17 +307,12 @@ class QuantumSimulation:
                             if abs(z - y_d) == 1 or abs(z - y_d) == (site - 1):
 
                                 # Term 3
-                                # R += oe.contract("ac,rcs,br,s->ab", T_xz, V_ipap, A, B)
-                                # R += T_xz @ (A @ (V_ipap @ B).reshape(p, a)).T
                                 R += (T_xz @ (A @ (V_ipap @ B.T).reshape(p, a)).T)
 
                                 # Term 4                                
-                                # R += oe.contract("bq,qds,ad,s->ab", A, V_pap, T_cb, B)
-                                # R += T_cb @ (A @ (V_pap @ B).reshape(p, a)).T
                                 R += (T_cb @ (A @ (V_pap @ B.T).reshape(p, a)).T)
 
-                            if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
-                                # R -= T_cb *((V_pp @ B) @ B)
+                            if abs(0 - z) == 1 or abs(0 - z) == (site - 1):
                                 R -= (T_cb *((V_pp @ B.T).T @ B.T)[0, 0])
                 else:
                     for z in range(site):
@@ -342,62 +331,15 @@ class QuantumSimulation:
                                 # Term 4                                
                                 R += oe.contract("bq,qds,ad,s->ab", A, V_pap, T_cb, B)
 
-                            if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
+                            if abs(0 - z) == 1 or abs(0 - z) == (site - 1):
 
                                 # Term 5
                                 R -= oe.contract("ab,rp,p,r->ab", T_cb, V_pp, B, B)
 
         return R
 
-
-    def residual_double_non_sym_2(self, y_d: int) -> np.ndarray:
-        """
-        Computes asymmetric residual R^{ba}_{ji} for fixed x_d = 0 and variable y_d.
-        Corresponds to the second non-symmetric contraction path using optimized einsums.
-        """
-
-        site, i_method = self.params.site, self.params.i_method
-        p, i, a = self.params.p, self.params.i, self.params.a
-        A, B, h_pa, h_ip = self.terms.a_term, self.terms.b_term, self.terms.h_pa, self.terms.h_ip
-        x_d = 0  # fixed
-
-        R = np.zeros((a, a, i, i), dtype=np.float64)
-
-        if i_method >= 1:
-            T_yx = self.t_term(y_d, x_d)
-
-            # Term 1
-            R += oe.contract("bp,pc,caji->baji", A, h_pa, T_yx)
-
-            # Term 2
-            R -= oe.contract("baki,kp,pj->baji", T_yx, h_ip, B)
-
-            if i_method >= 2:
-
-                for z in range(site):
-                    if z != x_d and z != y_d:
-                        if abs(z) == 1 or abs(z) == (site - 1):
-
-                            # Term 3
-                            V_ipap = self.terms.V_ipap
-                            T_yz = self.t_term(y_d, z)
-                            R += oe.contract("bcjk,krcs,ar,si->baji", T_yz, V_ipap, A, B)
-
-                            # Term 4
-                            V_piap = self.terms.V_piap
-                            R += oe.contract("aq,qlds,bdji,sl->baji", A, V_piap, T_yx, B)
-
-                        if abs(z - y_d) == 1 or abs(z - y_d) == (site - 1):
-                            # Term 5
-                            V_iipp = self.terms.V_iipp
-                            R -= oe.contract("baki,lkrp,pj,rl->baji", T_yx, V_iipp, B, B)
-
-        return R
-
-
     def residual_double_total(self, y_d: int) -> np.ndarray:
         return (self.residual_double_sym(y_d) + self.residual_double_non_sym_1(y_d)*2)
-    
 
     def transformation_test(self):
         state = self.params.state

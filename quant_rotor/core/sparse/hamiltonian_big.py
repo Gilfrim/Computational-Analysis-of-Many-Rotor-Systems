@@ -54,7 +54,7 @@ def hamiltonian_big_sparse(state: int, site: int, g_val: float, H_K_V: list[np.n
 
     H_mu = hamiltonian_sparse(state, site, g_val, l_val, K_mu, V_mu, True, False, False)[0]
 
-    return H_mu, K_mu, V_mu#,matrix_p_to_NO_full[:, index_d[:state]]
+    return H_mu, K_mu, V_mu, matrix_p_to_NO_full[:, index_d[:state]]
 
 def hamiltonian_general_sparse(states: int, sites: int, g_val: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 

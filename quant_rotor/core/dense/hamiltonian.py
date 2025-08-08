@@ -62,8 +62,8 @@ def hamiltonian_dense(state: int, site: int, g_val: float, l_val: float=0, K_imp
         V_tensor = V_symetric.reshape(state, state, state, state)
 
         # Transform Kinnetic and Potential energy matricies from m basis to p basis.
-        K_in_p = basis_m_to_p_matrix_conversion(K)
-        V_in_p = basis_m_to_p_matrix_conversion(V_tensor)
+        K_in_p = basis_m_to_p_matrix_conversion(K, state)
+        V_in_p = basis_m_to_p_matrix_conversion(V_tensor, state)
 
         # Reshape a Potential energy matrix back from (state, state, state, state) -> (state^2, state^2).
         V_in_p = V_in_p.reshape(state**2, state**2)

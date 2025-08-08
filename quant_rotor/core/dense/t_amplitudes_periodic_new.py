@@ -41,14 +41,14 @@ def t_periodic(
     V = V + V.T - np.diag(np.diag(V))
     V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
 
-    h_full = basis_m_to_p_matrix_conversion(K, state).astype(np.float64)
-    v_full = basis_m_to_p_matrix_conversion(V_tensor, state).astype(np.float64)
+    h_full = basis_m_to_p_matrix_conversion(K, state).astype(complex)
+    v_full = basis_m_to_p_matrix_conversion(V_tensor, state).astype(complex)
 
     v_full = v_full * g
 
     if np.isscalar(t_a_i_tensor_initial) and np.isscalar(t_ab_ij_tensor_initial):
-        t_a_i_tensor = np.full((a), t_a_i_tensor_initial, dtype=np.float64)
-        t_ab_ij_tensor = np.full((site, a, a), t_ab_ij_tensor_initial, dtype=np.float64)
+        t_a_i_tensor = np.full((a), t_a_i_tensor_initial, dtype=complex)
+        t_ab_ij_tensor = np.full((site, a, a), t_ab_ij_tensor_initial, dtype=complex)
     else:
         t_a_i_tensor = t_a_i_tensor_initial
         t_ab_ij_tensor = t_ab_ij_tensor_initial
@@ -85,8 +85,8 @@ def t_periodic(
 
     iteration = 0
 
-    single = np.zeros((a), dtype=np.float64)
-    double = np.zeros((site, a, a), dtype=np.float64)
+    single = np.zeros((a), dtype=complex)
+    double = np.zeros((site, a, a), dtype=complex)
 
     terms.h_pp=qs.h_term(p, p)
     terms.h_pa=qs.h_term(p, a)
