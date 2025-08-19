@@ -248,6 +248,8 @@ def t_periodic(
 
     previous_energy = 0
 
+    print(qs.h_term(i, p))
+
     while True:
 
         energy = 0

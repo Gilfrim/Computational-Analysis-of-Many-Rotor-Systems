@@ -94,6 +94,9 @@ class QuantumSimulation:
         for u_a in range(a):
             for u_i in range(i):
                 update[u_a, u_i] = 1 / (eps[u_a + i] - eps[u_i])
+
+        # print(r_1_value.reshape(a))
+        # print(update.reshape(a) * r_1_value)
         return update.reshape(a) * r_1_value
 
     def update_two(self, r_2_value):
@@ -140,6 +143,7 @@ class QuantumSimulation:
         for z_s in [1, site-1]:
             if i_method >= 1:
                 T_C = self.t_term(x_s, z_s).reshape(a**2)
+                
                 # Term 2: A V T
                 if fast:
                     R_single += (A_ap @ (V_pC @ T_C))

@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.sparse as sp
+import itertools
 
 def m_to_p(energy_state:int)->int:
     """
@@ -54,6 +55,136 @@ def vector_in_p(state: int) -> np.ndarray:
 
     # Apply alternating transformation: 0, -1, 1, -2, 2, ...
     return ((-1)**k) * ((k + 1) // 2)
+
+def grouped_pairs_permutations(n: int) -> np.ndarray:
+    """
+    Produce all sequences of length 4 built from adjacent pairs (i, i+1),
+    allowing repeats, and including internal pair swaps.
+    Each output row is (u1, u2, l1, l2).
+    """
+
+    pairs = [(i, i+1) for i in range(n-1)]
+    seqs = set()
+
+    # choose two pairs with replacement (order matters): (Prow, Pcol)
+    for prow, pcol in itertools.product(pairs, repeat=2):
+        
+        # internal permutations of each pair
+        seqs.add((prow[0], prow[1], pcol[0], pcol[1], 0.75))
+
+        seqs.add((prow[1], prow[0], pcol[1], pcol[0], 0.75))
+
+        seqs.add((prow[0], prow[1], pcol[1], pcol[0], -0.25))
+
+        seqs.add((prow[1], prow[0], pcol[0], pcol[1], -0.25))
+
+    return sorted(seqs)
+
+def build_V_in_p_new(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
+    """
+    Constructs:
+    - K: a diagonal kinetic energy operator in the 'p' basis
+    - V: a sparse potential energy operator directly in the 'p' basis
+
+    Avoids constructing in the m basis and transforming later.
+    """
+
+    dim_V = state * state
+
+    # Construct a diagonal of Kinetic energy matrix in m basis.
+    m_vals = np.arange(-(state - 1) // 2, (state - 1) // 2 + 1)
+
+    # Construct index map m -> p.
+    perm = np.vectorize(m_to_p)(m_vals)  # Maps m-index → p-index
+
+    data_V = []
+    rows = []
+    cols = []
+
+    def index(p1: int, p2: int) -> int:
+        return p1 * state + p2
+    
+    indecies = grouped_pairs_permutations(n=state)
+
+    # Loop over (m1, m2) — this preserves physics
+    for indx in indecies:
+            p1 = perm[indx[0]]
+            p2 = perm[indx[2]]
+            p1p = perm[indx[1]]
+            p2p = perm[indx[3]]
+
+            i = index(p1, p2)
+            j = index(p1p, p2p)
+            
+            rows.append(i)
+            cols.append(j)
+            data_V.append(indx[4])
+
+    V = sp.csr_matrix((data_V, (rows, cols)), shape=(dim_V, dim_V), dtype=np.float64)
+
+    # Diagonal kinetic operator in p basis
+    p = vector_in_p(state)
+    K = sp.diags(p**2, offsets=0, format='csr')
+
+    return K, V*2
+
+def build_V_prime_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
+    """
+    Constructs:
+    - K: a diagonal kinetic energy operator in the 'p' basis
+    - V: a sparse potential energy operator directly in the 'p' basis
+
+    Avoids constructing in the m basis and transforming later.
+    """
+
+    dim_V = state **4
+
+    # Construct a diagonal of Kinetic energy matrix in m basis.
+    m_vals = np.arange(-(state - 1) // 2, (state - 1) // 2 + 1)
+
+    # Construct index map m -> p.
+    perm = np.vectorize(m_to_p)(m_vals)  # Maps m-index → p-index
+
+    data_V = []
+    rows = []
+    cols = []
+
+    def index(p1: int, p2: int) -> int:
+        return p1 * state**3 + p2 * state
+
+    # Loop over (m1, m2) — this preserves physics
+    for m1 in range(state):
+        for m2 in range(state):
+            p1 = perm[m1]
+            p2 = perm[m2]
+            i = index(p1, p2)
+            for dm1, dm2, coef in [
+                (1, 1, 1.5),
+                (-1, -1, 1.5),
+                (1, -1, -0.5),
+                (-1, 1, -0.5),]:
+
+                m1p = m1 + dm1
+                m2p = m2 + dm2
+                if 0 <= m1p < state and 0 <= m2p < state:
+                    p1p = perm[m1p]
+                    p2p = perm[m2p]
+                    j = index(p1p, p2p)
+
+                    for shift_state in range(0, state):
+                        for shift_index in range(0, state):
+                            rows.append(i + shift_index + state**2 * shift_state)
+                            cols.append(j + shift_index + state**2 * shift_state)
+                            data_V.append(coef)
+
+    V = sp.csr_matrix((data_V, (rows, cols)), shape=(dim_V, dim_V), dtype=np.float64)
+
+    # Diagonal kinetic operator in p basis
+    p = vector_in_p(state)
+    p_prime = np.array([[i]*state for i in p]).flatten()
+    K = sp.diags(p_prime**2, offsets=0, format='csr')
+
+    return K, V
 
 def build_V_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
     """

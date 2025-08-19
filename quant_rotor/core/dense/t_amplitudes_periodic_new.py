@@ -100,6 +100,7 @@ def t_periodic(
     terms.V_ipap=qs.v_term(i, p, a, p, 0, 1).reshape(p, a, p)
     terms.V_piap=qs.v_term(p, i, a, p, 0, 1).reshape(p, a, p)
     print("Done.")
+    
     while True:
 
         terms.a_term=qs.A_term(a)
@@ -128,17 +129,19 @@ def t_periodic(
             #     tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors.t_ab_ij_tensor[0, site_1]
 
         #energy calculations
-        # for site_x in range(site):
-        #     energy += np.einsum("ip, pi->", terms.h_ip, terms.b_term) #* 0.5
+        for site_x in range(site):
+            energy += terms.h_ip @ terms.b_term
 
-        #     for site_y in range(site_x + 1, site_x + site):
-        #         if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
-        #             V_iipp = terms.V_iipp
-        #             V_iiaa = terms.V_iiaa
-        #             # noinspection SpellCheckingInspection
-        #             energy += np.einsum("ijab, abij->", V_iiaa, qs.t_term(site_x, site_y % site)) * 0.5
-        #             # noinspection SpellCheckingInspection
-        #             energy += np.einsum("ijpq, pi, qj->", V_iipp, terms.b_term, terms.b_term) * 0.5
+            for site_y in range(site_x + 1, site_x + site):
+                if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
+                    V_iipp = terms.V_iipp
+                    V_iiaa = terms.V_iiaa
+                    T_xy = qs.t_term(site_x, site_y)
+
+                    # noinspection SpellCheckingInspection
+                    energy +=  np.sum(V_iiaa* (T_xy)) * 0.5
+                    # noinspection SpellCheckingInspection
+                    energy += (V_iipp @ terms.b_term @ terms.b_term) * 0.5
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
@@ -148,8 +151,6 @@ def t_periodic(
             raise ValueError("Diverges.")
 
         iteration += 1
-        # print(f"Iteration #: {iteration}")
-        # print(f"Energy: {np.real(energy)}\n")
 
     return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
 
