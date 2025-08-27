@@ -319,7 +319,7 @@ def t_periodic(
                 T_xy = qs.t_term(site_x, site_y)
 
                 # noinspection SpellCheckingInspection
-                energy +=  (np.sum(V_iiaa* (T_xy)) * 0.5)
+                energy +=  (np.sum(V_iiaa.multiply(T_xy)) * 0.5)
 
                 # noinspection SpellCheckingInspection
                 energy += (((V_iipp @ qs.terms.b_term).T @ qs.terms.b_term) * 0.5)[0,0]

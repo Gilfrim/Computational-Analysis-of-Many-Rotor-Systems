@@ -78,10 +78,7 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     for site_1 in range(1, site):
         qs.tensors.t_ab_ij_tensor[site_1] = dTab_ijdB[site_1]
 
-    two_max = 0
-    for do in qs.tensors.t_ab_ij_tensor:
-        if two_max < do.toarray().flat[np.argmax(np.abs(do.toarray()))]:
-            two_max = do.toarray().flat[np.argmax(np.abs(do.toarray()))]
+    two_max = (np.array([i.toarray() for i in qs.tensors.t_ab_ij_tensor])).flat[np.argmax(np.abs(np.array([i.toarray() for i in qs.tensors.t_ab_ij_tensor])))]
 
     qs.terms.a_term=qs.A_term_sparse(a)
     qs.terms.b_term=qs.B_term_sparse(i)
@@ -100,7 +97,7 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
                 T_xy = qs.t_term(site_x, site_y)
 
                 # noinspection SpellCheckingInspection
-                energy +=  (np.sum(V_iiaa* (T_xy)) * 0.5)
+                energy +=  (np.sum(V_iiaa.multiply(T_xy)) * 0.5)
 
                 # noinspection SpellCheckingInspection
                 energy += (((V_iipp @ qs.terms.b_term).T @ qs.terms.b_term) * 0.5)[0,0]

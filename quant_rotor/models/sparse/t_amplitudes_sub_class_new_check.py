@@ -221,7 +221,7 @@ class QuantumSimulation:
 
                 # Term 2: A V T
                 V_pC = self.terms.V_piaa
-                T_C = sp.csr_matrix(self.t_term(x_s, z_s).reshape(a**2, 1))
+                T_C = self.t_term(x_s, z_s).reshape(a**2, 1)
                 V_pQ = self.terms.V_pipp
 
                 R_single += (A_ap @ (V_pC @ T_C))
@@ -256,7 +256,7 @@ class QuantumSimulation:
 
             if i_method >= 2:
                 if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
-                    T_C = sp.csr_matrix(self.t_term(x_d, y_d).reshape(a, a))
+                    T_C = self.t_term(x_d, y_d).reshape(a, a)
                     T_C_flat = T_C.reshape(a**2, 1)
                     V_QC = self.terms.V_ppaa
                     V_pq = self.terms.V_iipp
@@ -273,10 +273,10 @@ class QuantumSimulation:
                     # Term 5: all connected permutations
                     for z in range(site-1):
                         if z not in {0, y_d} and z+1 not in {0, y_d} and z != z+1:
-                            T_0z_1 = sp.csr_matrix(self.t_term(x_d, z))
-                            T_yw_1 = sp.csr_matrix(self.t_term(y_d, z+1))
-                            T_0z_2 = sp.csr_matrix(self.t_term(x_d, z+1))
-                            T_yw_2 = sp.csr_matrix(self.t_term(y_d, z))
+                            T_0z_1 = self.t_term(x_d, z)
+                            T_yw_1 = self.t_term(y_d, z+1)
+                            T_0z_2 = self.t_term(x_d, z+1)
+                            T_yw_2 = self.t_term(y_d, z)
                             
                             R += T_0z_1 @ V_cd @ T_yw_1.T
                             R += T_0z_2 @ V_cd @ T_yw_2.T
@@ -297,7 +297,7 @@ class QuantumSimulation:
         x_d = 0
 
         if i_method >= 1:
-            T_cb = sp.csr_matrix(self.t_term(x_d, y_d))
+            T_cb = self.t_term(x_d, y_d)
 
             R += (A @ h_pc @ T_cb)
             R -= (T_cb * (h_p @ B)[0,0])
@@ -307,7 +307,7 @@ class QuantumSimulation:
                     if z != x_d and z != y_d:
 
                         V_ipap = self.terms.V_ipap.reshape(p*a, p)
-                        T_xz = sp.csr_matrix(self.t_term(x_d, z))
+                        T_xz = self.t_term(x_d, z)
                         V_pp = self.terms.V_iipp
                         V_pap = self.terms.V_piap.reshape(p*a, p)
 
