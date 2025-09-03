@@ -3,7 +3,7 @@ import scipy.sparse as sp
 from importlib.resources import files
 import opt_einsum as oe
 from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.dense.t_amplitudes_sub_class_new import QuantumSimulation, TensorData, SimulationParams, PrecalcalculatedTerms
+from quant_rotor.models.dense.t_amplitudes_sub_class_fast import QuantumSimulation, TensorData, SimulationParams, PrecalcalculatedTerms
 
 #printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)

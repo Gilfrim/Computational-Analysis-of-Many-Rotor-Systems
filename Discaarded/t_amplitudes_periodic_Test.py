@@ -3,7 +3,7 @@ import sys
 import scipy.sparse as sp
 import opt_einsum as oe
 from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-import quant_rotor.models.dense.t_amplitudes_sub_class_new as new
+import quant_rotor.models.dense.t_amplitudes_sub_class_fast as new
 import quant_rotor.models.dense.t_amplitudes_sub_class as old
 
 #printout settings for large matrices

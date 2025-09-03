@@ -1,5 +1,5 @@
 from quant_rotor.models.dense.de_solver_func import new_solve_ivp
-from quant_rotor.models.sparse.t_amplitudes_sub_class_new_check import QuantumSimulation, TensorData, SimulationParams, PrecalcalculatedTerms
+from quant_rotor.models.sparse.t_amplitudes_sub_class_fast import QuantumSimulation, TensorData, SimulationParams, PrecalcalculatedTerms
 import numpy as np 
 import opt_einsum as oe
 import thermofield_boltz_funcs as bz

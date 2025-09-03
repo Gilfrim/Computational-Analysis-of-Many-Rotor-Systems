@@ -1,9 +1,0 @@
-[2025-07-18 07:54:21] 
-===================== NEW STRESS TEST =====================
-[2025-07-18 07:54:21] Testing odd state/site values up to state=11, site=61
-
-[2025-07-18 07:54:21] Trying state=11, site=3...
-[2025-07-18 07:54:22] ✓ Success: dim=1331, nnz=440561, time=0.53s
-[2025-07-18 07:54:22] Trying state=11, site=5...
-[2025-07-18 07:55:54] ✓ Success: dim=161051, nnz=88739101, time=92.28s
-[2025-07-18 07:55:54] Trying state=11, site=7...

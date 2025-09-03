@@ -1,0 +1,180 @@
+\documentclass[a4paper,5pt]{article}
+\usepackage[a4paper,
+    left=2cm,
+    right=2cm,
+    top=1.5cm,
+    bottom=1.5cm]{geometry}
+
+% Encoding and language
+\usepackage[utf8]{inputenc}   % Handle UTF-8 characters
+\usepackage[T1]{fontenc}      % Better font encoding
+\usepackage[english]{babel}   % Language support
+
+% Math and symbols
+\usepackage{amsmath, amssymb}
+
+% Graphics
+\usepackage{graphicx}
+
+% Hyperlinks
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
+
+% Bibliography (comment out if not using yet)
+%\usepackage[backend=biber,style=authoryear]{biblatex}
+%\addbibresource{refs.bib}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{forest}
+
+\begin{document}
+
+\section{Code Documentation}
+
+This document is created to give a general overview of the code for the means of reviewing seeing
+and tracking progress as well as for traning purpuses.
+\newline 
+\newline The github repository contains more files which could be usefull but 
+this document would only be talking about the "quant\_rotor" library. The files in a discarded foulder
+are ether done projects or discarded ideas; files that are in the main foulder are ususally files with the work in 
+progress.
+
+\subsection[short]{Library File Structure and Breakdown}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=45pt},
+}
+  [quant\_rotor
+    [core]
+    [data]
+    [models]
+  ]
+\end{forest}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=45pt},
+}
+  [core
+    [dense
+      [de\_solve\_one\_thermal\_dense.py]
+      [de\_solve\_one\_thermal.py]
+      [de\_solve.py]
+      [hamiltonian\_big.py]
+      [hamiltonian.py]
+      [t\_amplitudes\_periodic\_new.py]
+      [t\_amplitudes\_periodic.py]
+    ]
+    [sparse
+      [de\_solve\_one\_thermal\_sparse.py]
+      [de\_solve.py]
+      [hamiltonian\_big.py]
+      [hamiltonian.py]
+      [t\_amplitudes\_periodic\_new\_check.py]
+    ]
+  ]
+\end{forest}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=45pt},
+}
+  [models
+    [dense
+      [de\_solver\_func.py]
+      [density\_matrix]
+      [stat\_mech\_thermo.py]
+      [support\_ham.py]
+      [t\_amplitudes\_guess.py]
+      [t\_amplitudes\_sub\_class\_new.py]
+      [t\_amplitudes\_sub\_class.py]
+    ]
+    [sparse
+      [support\_ham.py]
+      [model1.py]
+      [model1.py]
+      [model1.py]
+      [model1.py]
+      [model1.py]
+      [model1.py]
+      [model2.py]
+    ]
+  ]
+\end{forest}
+
+\section{Math Example}
+Here is an inline equation: \( E = mc^2 \).  
+
+And here is a displayed equation:
+\[
+    \int_0^\infty e^{-x^2} \, dx = \frac{\sqrt{\pi}}{2}.
+\]
+
+\section{Including a Figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{example-image} % replace with your own file
+    \caption{An example figure.}
+    \label{fig:example}
+\end{figure}
+
+\section{Conclusion}
+That’s all for now. Happy \LaTeX{} writing!
+
+% Uncomment if you use biblatex
+%\printbibliography
+
+\end{document}

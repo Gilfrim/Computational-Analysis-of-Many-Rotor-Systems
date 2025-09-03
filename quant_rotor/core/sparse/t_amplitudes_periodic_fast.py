@@ -3,7 +3,7 @@ import scipy.sparse as sp
 from importlib.resources import files
 import opt_einsum as oe
 from quant_rotor.models.sparse.support_ham import build_V_in_p
-from quant_rotor.models.sparse.t_amplitudes_sub_class_new import QuantumSimulation, TensorData, SimulationParams, PrecalcalculatedTerms
+from quant_rotor.models.sparse.t_amplitudes_sub_class_fast import QuantumSimulation, TensorData, SimulationParams, PrecalcalculatedTerms
 
 
 #printout settings for large matrices
@@ -175,7 +175,7 @@ def t_periodic(
     start_point: str="sin",
     low_state: int=1,
     t_a_i_tensor_initial: np.ndarray=0,
-    t_ab_ij_array_initial: np.ndarray=0
+    t_ab_ij_tensor_initial: np.ndarray=0
 ):
     """
     Create SimulationParams from raw input arguments.
@@ -194,22 +194,16 @@ def t_periodic(
 
     v_full = v_full*g
 
-    if fast:
-        if np.isscalar(t_a_i_tensor_initial) and np.isscalar(t_ab_ij_array_initial):
-            t_a_i_tensor = sp.csr_matrix((a, 1), dtype=complex)
-            t_ab_ij_array = np.array([sp.csr_matrix((a, a), dtype=float) for _ in range(site)], dtype=object)
-        else:
-            t_a_i_tensor = t_a_i_tensor_initial
-            t_ab_ij_array = t_ab_ij_array_initial
-    else:
-        if np.isscalar(t_a_i_tensor_initial) and np.isscalar(t_ab_ij_array_initial):
-            t_a_i_tensor = np.full((a), t_a_i_tensor_initial, dtype=complex)
-            t_ab_ij_array = np.full((site, a, a), t_ab_ij_array_initial, dtype=complex)
-        else:
-            t_a_i_tensor = t_a_i_tensor_initial
-            t_ab_ij_array = t_ab_ij_array_initial
+    if np.isscalar(t_a_i_tensor_initial) and np.isscalar(t_ab_ij_tensor_initial):
+        t_a_i_tensor = sp.csr_matrix((a, 1), dtype=complex)
+        t_ab_ij_tensor = np.array([sp.csr_matrix((a, a), dtype=float) for _ in range(site)], dtype=object)
 
-    #eigenvalues from h for update
+        # t_a_i_tensor = np.full((a), 0, dtype=complex)
+        # t_ab_ij_tensor = np.full((site, a, a), 0, dtype=complex)
+    else:
+        t_a_i_tensor = t_a_i_tensor_initial
+        t_ab_ij_tensor = t_ab_ij_tensor_initial
+
     if HF:
         HF_test(start_point, g, tensors, params)
     else:
@@ -231,7 +225,7 @@ def t_periodic(
 
     tensors = TensorData(
     t_a_i_tensor=t_a_i_tensor,
-    t_ab_ij_array=t_ab_ij_array,
+    t_ab_ij_tensor=t_ab_ij_tensor,
     h_full=h_full,
     v_full=v_full
     )
@@ -240,118 +234,94 @@ def t_periodic(
 
     qs = QuantumSimulation(params, tensors, terms)
 
-    del t_a_i_tensor, t_ab_ij_array, epsilon
+    del h_full, v_full, t_a_i_tensor, t_ab_ij_tensor
 
     iteration = 0
 
-    if fast:
-        single = sp.csr_matrix((a, 1), dtype=complex)
-        double = np.array([sp.csr_matrix((a, a), dtype=float) for _ in range(site)], dtype=object)
+    single = sp.csr_matrix((a, 1), dtype=complex)
+    double = np.array([sp.csr_matrix((a, a), dtype=float) for _ in range(site)], dtype=object)
 
-        terms.h_pp=qs.h_term_sparse(p, p)
-        terms.h_pa=qs.h_term_sparse(p, a)
-        terms.h_ip=qs.h_term_sparse(i, p)
-        terms.V_pppp=qs.v_term_sparse(p, p, p, p)
-        terms.V_ppaa=qs.v_term_sparse(p, p, a, a)
-        terms.V_iipp=qs.v_term_sparse(i, i, p, p).reshape(p, p)
-        terms.V_iiaa=qs.v_term_sparse(i, i, a, a).reshape(a, a)
-        terms.V_piaa=qs.v_term_sparse(p, i, a, a).reshape(p, a**2)
-        terms.V_pipp=qs.v_term_sparse(p, i, p, p).reshape(p, p**2)
-        terms.V_ipap=qs.v_term_sparse(i, p, a, p).reshape(p*a, p)
-        terms.V_piap=qs.v_term_sparse(p, i, a, p).reshape(p*a, p)
-    else:
-        single = np.zeros((a), dtype=complex)
-        double = np.zeros((site, a, a), dtype=complex)
+    # single = np.full((a), 0, dtype=complex)
+    # double = np.zeros((site, a, a), dtype = complex)
 
-        terms.h_pp=qs.h_term(p, p)
-        terms.h_pa=qs.h_term(p, a)
-        terms.h_ip=qs.h_term(i, p).reshape(p)
-        terms.V_pppp=qs.v_term(p, p, p, p).reshape(p**2, p**2)
-        terms.V_ppaa=qs.v_term(p, p, a, a).reshape(p**2, a**2)
-        terms.V_iipp=qs.v_term(i, i, p, p).reshape(p, p)
-        terms.V_iiaa=qs.v_term(i, i, a, a).reshape(a, a)
-        terms.V_piaa=qs.v_term(p, i, a, a).reshape(p, a**2)
-        terms.V_pipp=qs.v_term(p, i, p, p).reshape(p, p**2)
-        terms.V_ipap=qs.v_term(i, p, a, p).reshape(p, a, p)
-        terms.V_piap=qs.v_term(p, i, a, p).reshape(p, a, p)
+    terms.h_pp=qs.h_term_sparse(p, p)
+    terms.h_pa=qs.h_term_sparse(p, a)
+    terms.h_ip=qs.h_term_sparse(i, p)
+    terms.V_pppp=qs.v_term_sparse(p, p, p, p)
+    terms.V_ppaa=qs.v_term_sparse(p, p, a, a)
+    terms.V_iipp=qs.v_term_sparse(i, i, p, p).reshape(p, p)
+    terms.V_iiaa=qs.v_term_sparse(i, i, a, a).reshape(a, a)
+    terms.V_piaa=qs.v_term_sparse(p, i, a, a).reshape(p, a**2)
+    terms.V_pipp=qs.v_term_sparse(p, i, p, p).reshape(p, p**2)
+    terms.V_ipap=qs.v_term_sparse(i, p, a, p).reshape(p*a, p)
+    terms.V_piap=qs.v_term_sparse(p, i, a, p).reshape(p*a, p)
     print("Done.")
 
     while True:
 
-        if fast:
-            terms.a_term=qs.A_term_sparse(a)
-            terms.b_term=qs.B_term_sparse(i)
-            terms.bb_term=(terms.b_term @ terms.b_term.T).reshape(p**2, 1)
-            terms.aa_term=sp.kron(terms.a_term, terms.a_term, format="csr")
-        else:
-            terms.a_term=qs.A_term(a)
-            terms.b_term=qs.B_term(i)
-            terms.bb_term=oe.contract("q,s->qs", terms.b_term, terms.b_term).reshape(p**2)
-            terms.aa_term=oe.contract("ap,bq->abpq", terms.a_term, terms.a_term).reshape(a**2, p**2)
+        # terms.a_term=qs.A_term(a)
+        # terms.b_term=qs.B_term(i)
+        # terms.bb_term=sp.csr_matrix(oe.contract("q,s->qs", terms.b_term, terms.b_term).reshape(p**2)).T
+        # terms.aa_term=sp.csr_matrix(oe.contract("ap,bq->abpq", terms.a_term, terms.a_term).reshape(a**2, p**2))
+
+        # terms.a_term=sp.csr_matrix(qs.A_term(a))
+        # terms.b_term=sp.csr_matrix(qs.B_term(i)).T
+
+        terms.a_term=qs.A_term_sparse(a)
+        terms.b_term=qs.B_term_sparse(i)
+        terms.bb_term=(terms.b_term @ terms.b_term.T).reshape(p**2, 1)
+        terms.aa_term=sp.kron(terms.a_term, terms.a_term, format="csr")
+
+        # print(f"a: {np.allclose(terms.a_term.toarray(), qs.A_term_sparse(a).toarray(), 1e-10)}")
+        # print(f"aa: {np.allclose(terms.aa_term.toarray(), sp.kron(terms.a_term, terms.a_term, format="csr").toarray(), 1e-10)}")
+        # print(f"b: {np.allclose(terms.b_term.toarray(), qs.B_term_sparse(i).toarray(), 1e-10)}")
+        # print(f"bb: {np.allclose(terms.bb_term.toarray(), (terms.b_term @ terms.b_term.T).reshape(p**2, 1).toarray(), 1e-10)}")
 
         single = qs.residual_single()
         for y_site in range(1, site):
             double[y_site] = qs.residual_double_total(y_site)
 
-        # one_max from a single sparse vector/matrix `single`
-        if single.nnz == 0:
-            one_max = 0
-        else:
-            abs_data = np.abs(single.data)
-            one_max = single.data[np.argmax(abs_data)]
+        # one_max = single.flat[np.argmax(np.abs(single))]
+        # two_max = double.flat[np.argmax(np.abs(double))]
 
-        # two_max across a list of csr matrices `double`
-        all_data = np.concatenate([
-            m.data if m.nnz > 0 else np.empty(0, dtype=complex)  # keep dtype consistent
-            for m in double
-        ])
+        one_max = single.toarray().flat[np.argmax(np.abs(single.toarray()))]
+        two_max = 0
+        for do in double:
+            if two_max < do.toarray().flat[np.argmax(np.abs(do.toarray()))]:
+                two_max = do.toarray().flat[np.argmax(np.abs(do.toarray()))]
 
-        if all_data.size == 0:
-            two_max = 0
-        else:
-            two_max = all_data[np.argmax(np.abs(all_data))]
-
-        # print(f"1 max: {one_max}")
-        # print(f"2 max: {two_max}")
-
-        # print(single.toarray().reshape(a))
-
-        tensors.t_a_i_tensor -= qs.update_one_sparse(single)
+        tensors.t_a_i_tensor -= qs.update_one(single)
 
         for site_1 in range(1, site):
-            tensors.t_ab_ij_array[site_1] -= qs.update_two_sparse(double[site_1])
+            tensors.t_ab_ij_tensor[site_1] -= qs.update_two(double[site_1])
 
-        if fast:
-            if np.all(abs(np.array(single.data)) <= threshold) and np.all(abs(np.array([mat.toarray() for mat in double]).flatten()) <= threshold):
-                break
-        else:
-            if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
-                break
+        # if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
+        #     break
+
+        if np.all(abs(single.toarray()) <= threshold) and np.all(abs(np.array([mat.toarray() for mat in double])) <= threshold):
+            break
 
         #CHANGE BACK TO 10
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
-    
+
+        iteration += 1
+
     energy = 0
 
-    #energy calculations
     for site_x in range(site):
-        energy += terms.h_ip @ terms.b_term
+        energy += (qs.terms.h_ip @ qs.terms.b_term)[0, 0]
 
         for site_y in range(site_x + 1, site_x + site):
             if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
-                V_iipp = terms.V_iipp
-                V_iiaa = terms.V_iiaa
+                V_iipp = qs.terms.V_iipp
+                V_iiaa = qs.terms.V_iiaa
                 T_xy = qs.t_term(site_x, site_y)
 
                 # noinspection SpellCheckingInspection
-                energy +=  np.sum(V_iiaa* (T_xy)) * 0.5
+                energy +=  (np.sum(V_iiaa.multiply(T_xy)) * 0.5)
+
                 # noinspection SpellCheckingInspection
-                energy += (V_iipp @ terms.b_term @ terms.b_term) * 0.5
+                energy += (((V_iipp @ qs.terms.b_term).T @ qs.terms.b_term) * 0.5)[0,0]
 
-    return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_array
-
-# if __name__ == "__main__":
-
-#     t_periodic(5, 5, 1, 0, 0, 1e-8, 0.5, 3,  False, 3, True, "sin")
-#     print("Hello?")
+    return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
