@@ -1,4 +1,4 @@
-\documentclass[a4paper,5pt]{article}
+\documentclass[a4paper,10pt]{article}
 \usepackage[a4paper,
     left=2cm,
     right=2cm,
@@ -9,6 +9,8 @@
 \usepackage[utf8]{inputenc}   % Handle UTF-8 characters
 \usepackage[T1]{fontenc}      % Better font encoding
 \usepackage[english]{babel}   % Language support
+
+\setlength{\parindent}{0pt}
 
 % Math and symbols
 \usepackage{amsmath, amssymb}
@@ -30,17 +32,27 @@
 
 \begin{document}
 
-\section{Code Documentation}
+\section*{Code Documentation}
 
-This document is created to give a general overview of the code for the means of reviewing seeing
-and tracking progress as well as for traning purpuses.
+This document is created to give a general overview of the code for the means of reviewing
+and tracking progress as well as for training purposes.
 \newline 
-\newline The github repository contains more files which could be usefull but 
-this document would only be talking about the "quant\_rotor" library. The files in a discarded foulder
-are ether done projects or discarded ideas; files that are in the main foulder are ususally files with the work in 
-progress.
+\newline The GitHub repository contains more files that could be useful, but
+this document would only talk about the "quant\_rotor" library. The files in a discarded fouler are either completed projects or discarded ideas; files that are in the main fouler are usually files with the work in progress.
 
-\subsection[short]{Library File Structure and Breakdown}
+\section{Library File Structure and Breakdown}
+
+This section will provide a general overview for the library structure as well as a small note on every
+file and a reference to more material about those files.\newline
+
+The library is broken down into three main folders:
+\newline \newline
+- "core" contains the main files that are to be run or imported. They have the most high-level functions.
+
+- "data" was designed to hold any input of output of the code it is not in use at the moment.
+
+- "models" holds all supporting files and code which are used by "core".
+\newline
 
 \begin{forest}
 for tree={
@@ -70,6 +82,17 @@ for tree={
   ]
 \end{forest}
 
+Looking more specifically at the files They are marked with letters in parentheses as such:
+\newline \newline
+UD - for under development
+
+F - finished file
+
+FO - finished files gotten from external sources
+\newline \newline
+Additionally "core" and "models" are separated on two sub-folders which generally contain the same files but optimized for sparse or dense matrix 
+handling.(consult Wikipedia for sparse matrices and sparse in python Scipy)
+
 \begin{forest}
 for tree={
     font=\ttfamily,
@@ -93,20 +116,20 @@ for tree={
 }
   [core
     [dense
-      [de\_solve\_one\_thermal\_dense.py]
-      [de\_solve\_one\_thermal.py]
-      [de\_solve.py]
-      [hamiltonian\_big.py]
-      [hamiltonian.py]
-      [t\_amplitudes\_periodic\_new.py]
-      [t\_amplitudes\_periodic.py]
+      [de\_solve\_one\_thermal\_dense.py (UD)]
+      [de\_solve\_one\_thermal.py (F)]
+      [de\_solve.py (FO)]
+      [hamiltonian\_big.py (F)]
+      [hamiltonian.py (F)]
+      [t\_amplitudes\_periodic\_fast.py (UD)]
+      [t\_amplitudes\_periodic.py (F)]
+      [t\_amplitudes\_guess.py (F)]
     ]
     [sparse
-      [de\_solve\_one\_thermal\_sparse.py]
-      [de\_solve.py]
-      [hamiltonian\_big.py]
-      [hamiltonian.py]
-      [t\_amplitudes\_periodic\_new\_check.py]
+      [de\_solve\_one\_thermal\_sparse.py (UD)]
+      [hamiltonian\_big.py (F)]
+      [hamiltonian.py (F)]
+      [t\_amplitudes\_periodic\_fast.py (UD)]
     ]
   ]
 \end{forest}
@@ -134,47 +157,373 @@ for tree={
 }
   [models
     [dense
-      [de\_solver\_func.py]
-      [density\_matrix]
-      [stat\_mech\_thermo.py]
-      [support\_ham.py]
-      [t\_amplitudes\_guess.py]
-      [t\_amplitudes\_sub\_class\_new.py]
-      [t\_amplitudes\_sub\_class.py]
+      [de\_solver\_func.py (FO)]
+      [density\_matrix (F)]
+      [stat\_mech\_thermo.py (F)]
+      [support\_ham.py (F)]
+      [t\_amplitudes\_sub\_class\_fast.py (UD)]
+      [t\_amplitudes\_sub\_class.py (F)]
     ]
     [sparse
-      [support\_ham.py]
-      [model1.py]
-      [model1.py]
-      [model1.py]
-      [model1.py]
-      [model1.py]
-      [model1.py]
-      [model2.py]
+      [support\_ham.py (F)]
+      [t\_amplitudes\_sub\_class\_fast.py (UD)]
     ]
   ]
 \end{forest}
 
-\section{Math Example}
-Here is an inline equation: \( E = mc^2 \).  
+\section{File descriptions}
 
-And here is a displayed equation:
-\[
-    \int_0^\infty e^{-x^2} \, dx = \frac{\sqrt{\pi}}{2}.
-\]
+This section provides a short description of relevant files and their function structure from "core" with referencing to all files used from "models"; reference to any useful documentation on the topic. 
 
-\section{Including a Figure}
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.5\textwidth]{example-image} % replace with your own file
-    \caption{An example figure.}
-    \label{fig:example}
-\end{figure}
+\subsection[short]{Classic approach of constructing a Hamiltonian: "hamiltonian" (dense), \& "hamiltonian" (sparse)}
 
-\section{Conclusion}
-That’s all for now. Happy \LaTeX{} writing!
+Classical approach to constructing a Hamiltonian. (consult Configurational Coupled Cluster document Section 1 and 2)
 
-% Uncomment if you use biblatex
-%\printbibliography
+The files are updated and optimized versions of each other in the order of newer to older: "hamiltonian" (sparse) -> "hamiltonian" (dense).
+
+
+\textbf{\newline Structure of dense hamiltonian: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=60pt},
+}
+  [...hamiltonian
+    [quant\_rotor.models.dense.support\_ham]
+  ]
+\end{forest}
+
+\textbf{\newline Structure of sparse hamiltonian: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=60pt},
+}
+  [...hamiltonian
+    [quant\_rotor.models.sparse.support\_ham]
+  ]
+\end{forest}
+
+\subsection[short]{Reduced density matrix from ED approach: "hamiltonian\_big.py" (dense) \& "hamiltonian\_big.py" (sparse) }
+
+Approach to constructing a hamiltonian by approximation through reduced density matrices. (consult Configurational Coupled Cluster document Section 1 and 2)
+
+The files are updated and optimized versions of each other in the order of newer to older: "hamiltonian\_big" (sparse) -> "hamiltonian\_big" (dense).
+
+\textbf{\newline Structure of dense hamiltonian\_big: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=115pt},
+}
+  [...hamiltonian\_big
+    [quant\_rotor.models.dense.density\_matrix]
+    [quant\_rotor.core.dense.hamiltonian
+      [quant\_rotor.models.dense.support\_ham]
+    ]
+  ]
+\end{forest}
+
+\textbf{\newline \newline Structure of sparse hamiltonian\_big: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=115pt},
+}
+  [...hamiltonian\_big
+    [quant\_rotor.models.sparse.density\_matrix]
+    [quant\_rotor.core.sparse.hamiltonian
+      [quant\_rotor.models.sparse.support\_ham]
+    ]
+  ]
+\end{forest}
+
+\subsection[short]{Iterative procedure to solve for residuals: "t\_amplitudes\_periodic\_fast" (dense and sparse) \&
+"t\_amplitudes\_periodic" \& "t\_amplitudes\_guess"}
+
+This files provides iterative approach to CCC.(consult Configurational Coupled Cluster document Sections 3, 5, 6 and 7) The files are
+the updated and optimized versions of each other in the order of newer to older: "t\_amplitudes\_periodic\_fast" (dense) -> "t\_amplitudes\_periodic\_fast" (dense) -> "t\_amplitudes\_periodic".
+\newline \newline
+The "t\_amplitudes\_guess" file is used to make a prediction which than later be given to the iterative solver. Was introduce in attempt to 
+medigate the problem of bit g divergence. (consult Configurational Coupled Cluster document Section 8)
+
+\textbf{\newline Structure of t\_amplitudes\_guess: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=95pt},
+}
+  [...t\_amplitudes\_guess
+    [quant\_rotor.models.dense.support\_ham]
+  ]
+\end{forest}
+
+\textbf{\newline Structure of "t\_amplitudes\_periodic: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=95pt},
+}
+  [..."t\_amplitudes\_periodic
+    [quant\_rotor.models.dense.t\_amplitudes\_sub\_class]
+    [quant\_rotor.models.dense.support\_ham]
+  ]
+\end{forest}
+
+\textbf{\newline Structure of dense "t\_amplitudes\_periodic\_fast: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=95pt},
+}
+  [..."t\_amplitudes\_periodic
+    [quant\_rotor.models.dense.t\_amplitudes\_sub\_class\_fast]
+    [quant\_rotor.models.dense.support\_ham]
+  ]
+\end{forest}
+
+\textbf{\newline Structure of sparse "t\_amplitudes\_periodic\_fast: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=95pt},
+}
+  [..."t\_amplitudes\_periodic
+    [quant\_rotor.models.sparse.t\_amplitudes\_sub\_class\_fast]
+    [quant\_rotor.models.sparse.support\_ham]
+  ]
+\end{forest}
+
+\newpage
+\subsection[short]{Time-dependant CCC approach: "de\_solve\_one\_thermal\_dense" \newline \& "de\_solve\_one\_thermal" \& "de\_solve" \& de\_solve\_one\_thermal\_sparse}
+
+This files provides a Runge Kutta method for solving a differential equation to find the first and second residuals by time probagation.(consult Configurational Coubled Cluster document
+Section 10) The files are updated and optemised versions of each other in the order of newer to older: "de\_solve\_one\_thermal\_sparse" -> "de\_solve\_one\_thermal\_dense" -> "de\_solve\_one\_thermal" -> "de\_solve".
+
+\textbf{\newline Structure of de\_solve\_one\_thermal \& de\_solve: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=125pt},
+}
+  [...de\_solve\_one\_thermal\_dense \& de\_solve
+    [quant\_rotor.models.dense.de\_solver\_func]
+    [quant\_rotor.models.dense.t\_amplitudes\_sub\_class]
+    [quant\_rotor.models.dense.support\_ham]
+  ]
+\end{forest}
+
+\textbf{\newline Structure of de\_solve\_one\_thermal\_dense: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=95pt},
+}
+  [...de\_solve\_one\_thermal\_dense
+    [quant\_rotor.models.dense.de\_solver\_func]
+    [quant\_rotor.models.dense.t\_amplitudes\_sub\_class\_fast]
+    [quant\_rotor.models.sparse.support\_ham]
+  ]
+\end{forest}
+
+\textbf{\newline Structure of de\_solve\_one\_thermal\_sparse: \newline}
+
+\begin{forest}
+for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    inner xsep=7pt,
+    edge path={
+        \noexpand\path [draw, \forestoption{edge}]
+        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+        if n=1
+            {insert before={[,phantom]}}
+            {}
+    },
+    fit=band,
+    before computing xy={l=95pt},
+}
+  [...de\_solve\_one\_thermal\_sparse
+    [quant\_rotor.models.dense.de\_solver\_func]
+    [quant\_rotor.models.sparse.t\_amplitudes\_sub\_class\_fast]
+    [quant\_rotor.models.sparse.support\_ham]
+  ]
+\end{forest}
 
 \end{document}
