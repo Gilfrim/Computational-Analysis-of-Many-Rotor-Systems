@@ -72,39 +72,78 @@ def create_inverse_index_map(numer_unique_states: int) -> np.ndarray:
     return inverse_index_map
 
 def basis_m_to_p_matrix_conversion(matrix: np.ndarray, state: int)->np.ndarray:
-    """_summary_
+    """
+    Permute axes of a vector/tensor from m-basis ordering to p-basis ordering.
+
+    This function applies the p→m inverse index map (built from the basis size)
+    across all axes of `matrix` to produce the same data laid out in the
+    p-basis order. It works for 1D vectors, 2D matrices, or higher-order tensors
+    whose each axis has length ``d = state = 2*n + 1``.
+
+    The index map is constructed as:
+        ``perm = create_inverse_index_map((state - 1) // 2)``
+    and then applied to every axis via ``np.ix_``.
+
+    Examples
+    --------
+    Vector (1D):
+    >>> d = 5  # state
+    >>> v_m = np.array([-2, -1, 0, 1, 2])   # values aligned with m-order
+    >>> v_p = basis_m_to_p_matrix_conversion(v_m, state=d)
+    >>> v_p
+    array([ 0, -1,  1, -2,  2])
+
+    Matrix (2D): applies the same permutation to both axes.
+    For higher-order tensors, the permutation is applied to each axis.
 
     Parameters
     ----------
     matrix : np.ndarray
-        _description_
+        Input array in m-basis ordering. Can be 1D, 2D, or ND, but each axis
+        is expected to have length ``state``.
+    state : int
+        Total basis size ``d = 2*n + 1``. (Here `n` is the number of unique
+        positive/negative momentum states.)
 
     Returns
     -------
-    int
-        _description_
+    np.ndarray
+        A view/copy of `matrix` with all axes permuted into p-basis order.
+
+    Notes
+    -----
+    - This routine assumes **all axes** correspond to the same basis and
+      therefore uses the **same permutation** for each axis.
+    - If only some axes represent basis indices, apply the permutation
+      selectively to those axes instead of using `np.ix_` on all.
     """
 
+    # Number of dimensions of the input tensor (1D, 2D, ND…)
     dim = matrix.ndim
 
-    index_map = create_inverse_index_map((state-1)//2)
+    # Compute the p→m index map for a basis of size `state`
+    # Note: (state - 1) // 2 = numer_unique_states
+    index_map = create_inverse_index_map((state - 1) // 2)
 
-    index_maps = []
-    for i in range(dim):
-        index_maps.append(index_map)
+    # Replicate the same index map for each axis of the tensor
+    index_maps = [index_map] * dim
 
+    # Reorder the tensor along all axes simultaneously using np.ix_
     matrix = matrix[np.ix_(*index_maps)]
 
     return matrix
  
 def write_matrix_elements(numer_unique_states: int) -> tuple[np.ndarray, np.ndarray]:
-    """_summary_
+    """
+    Construct kinetic and potential energy operator matrices for a truncated rotor basis.
 
     Parameters
     ----------
     numer_unique_states : int
-        _description_
-
+        Number of unique momentum states to include in the truncated basis.
+        The total dimension of the basis is given by:
+        d = 2 * numer_unique_states + 1.
+    
     Returns
     -------
     tuple[np.ndarray, np.ndarray]

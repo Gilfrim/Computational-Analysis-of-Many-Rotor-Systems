@@ -1,42 +1,236 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-k_B=1.380649e-23
+k_B = 1.380649e-23
+"""float: Boltzmann constant in J·K⁻¹ (SI exact value).
+See: https://en.wikipedia.org/wiki/Boltzmann_constant
+"""
 
-def beta_func(t: float)-> float:
-    return 1/(k_B*t)
 
-def Z(eig_val: np.ndarray, beta_val: float)->complex:
+def beta_func(t: float) -> float:
+    """
+    Inverse temperature β = 1 / (k_B * T).
+
+    Parameters
+    ----------
+    t : float
+        Absolute temperature T in kelvin (K). Must be > 0.
+
+    Returns
+    -------
+    float
+        β = 1 / (k_B * T) in J⁻¹.
+
+    Notes
+    -----
+    - In statistical mechanics, β is the Lagrange multiplier for energy in
+      the canonical ensemble.
+    - For k_B = 1 (natural units), β = 1 / T.
+
+    References
+    ----------
+    .. Wikipedia::
+       - Inverse temperature: https://en.wikipedia.org/wiki/Inverse_temperature
+       - Boltzmann constant: https://en.wikipedia.org/wiki/Boltzmann_constant
+    """
+    if t <= 0:
+        raise ValueError("Temperature must be positive.")
+    return 1.0 / (k_B * t)
+
+
+def Z(eig_val: np.ndarray, beta_val: float) -> float:
+    """
+    Partition function Z(β) for a set of energy eigenvalues.
+
+    Parameters
+    ----------
+    eig_val : np.ndarray
+        1D array of energy eigenvalues E_n (in joules).
+    beta_val : float
+        Inverse temperature β = 1 / (k_B * T) (in J⁻¹).
+
+    Returns
+    -------
+    float
+        Partition function Z = Σ_n exp(-β E_n). Real and non-negative.
+
+    References
+    ----------
+    .. Wikipedia::
+       - Partition function (statistical mechanics):
+         https://en.wikipedia.org/wiki/Partition_function_(statistical_mechanics)
+       - Canonical ensemble:
+         https://en.wikipedia.org/wiki/Canonical_ensemble
+    """
     exp_vector = np.exp(-eig_val * beta_val)
-    return np.einsum('n->', exp_vector)
+    return float(np.einsum("n->", exp_vector))
 
 
-def P_n(eig_val: np.ndarray, beta_val: float)-> np.ndarray:
-    return (1/Z(eig_val, beta_val)) * np.exp(-eig_val*beta_val)
+def P(eig_val: np.ndarray, beta_val: float) -> np.ndarray:
+    """
+    Boltzmann probability distribution over eigenstates in the canonical ensemble.
+
+    Parameters
+    ----------
+    eig_val : np.ndarray
+        1D array of energy eigenvalues E_n (J).
+    beta_val : float
+        Inverse temperature β (J⁻¹).
+
+    Returns
+    -------
+    np.ndarray
+        1D array p_n = exp(-β E_n) / Z with Σ_n p_n = 1 (up to numerical error).
+
+    Notes
+    -----
+    - For extreme βE values, numerical underflow/overflow can occur. If needed,
+      stabilize with a log-sum-exp trick:
+      shift = E_min; p_n ∝ exp(-β (E_n - E_min)).
+
+    References
+    ----------
+    .. Wikipedia::
+       - Boltzmann distribution: https://en.wikipedia.org/wiki/Boltzmann_distribution
+       - Canonical ensemble: https://en.wikipedia.org/wiki/Canonical_ensemble
+    """
+    z = Z(eig_val, beta_val)
+    if z == 0 or not np.isfinite(z):
+        raise FloatingPointError("Partition function is zero or non-finite.")
+    return np.exp(-eig_val * beta_val) / z
 
 
-def U_stat(eig_val: np.ndarray, beta_val: float)-> complex:
-    P_n_val = P_n(eig_val, beta_val)
-    return (np.einsum('n->', P_n_val * eig_val))
+def U(eig_val: np.ndarray, beta_val: float) -> float:
+    """
+    Internal energy ⟨E⟩ in the canonical ensemble.
+
+    Parameters
+    ----------
+    eig_val : np.ndarray
+        1D array of energies E_n (J).
+    beta_val : float
+        Inverse temperature β (J⁻¹).
+
+    Returns
+    -------
+    float
+        Internal energy U = Σ_n p_n E_n (J).
+
+    References
+    ----------
+    .. Wikipedia::
+       - Internal energy (statistical mechanics):
+         https://en.wikipedia.org/wiki/Internal_energy#Statistical_mechanics
+       - Canonical ensemble:
+         https://en.wikipedia.org/wiki/Canonical_ensemble
+    """
+    p = P_n(eig_val, beta_val)
+    return float(np.einsum("n->", p * eig_val))
 
 
-def S(eig_val: np.ndarray, beta_val: float)-> complex:
-    P_n_val = P_n(eig_val, beta_val)
-    val = P_n_val * np.log(P_n_val)
-    return  np.einsum('n->', -val)
+def S(eig_val: np.ndarray, beta_val: float) -> float:
+    """
+    Gibbs (Shannon) entropy S = -Σ_n p_n log p_n for the canonical ensemble.
+
+    Parameters
+    ----------
+    eig_val : np.ndarray
+        1D array of energies E_n (J).
+    beta_val : float
+        Inverse temperature β (J⁻¹).
+
+    Returns
+    -------
+    float
+        Entropy S in nats (natural logarithm). Multiply by k_B for physical units,
+        or interpret this as S/k_B if your convention folds k_B into β.
+
+    Notes
+    -----
+    - This uses the natural log. If you prefer bits, divide by ln(2).
+    - We treat 0·log 0 := 0 by masking zeros to avoid NaNs.
+
+    References
+    ----------
+    .. Wikipedia::
+       - Entropy (statistical thermodynamics):
+         https://en.wikipedia.org/wiki/Entropy_(statistical_thermodynamics)
+       - Shannon entropy: https://en.wikipedia.org/wiki/Entropy_(information_theory)
+    """
+    p = P_n(eig_val, beta_val)
+    # Avoid 0*log(0) = NaN by masking zeros (limit is 0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        term = np.where(p > 0, p * np.log(p), 0.0)
+    return float(-np.einsum("n->", term))
 
 
-def A(eig_val: np.ndarray, beta_val: float)-> complex:
-    return (-1/beta_val) * np.log(Z(eig_val, beta_val))
+def A(eig_val: np.ndarray, beta_val: float) -> float:
+    """
+    Helmholtz free energy A = -(1/β) log Z for the canonical ensemble.
 
-def heat_capacity(eig_val: np.ndarray, beta_val: float):
+    Parameters
+    ----------
+    eig_val : np.ndarray
+        1D array of energies E_n (J).
+    beta_val : float
+        Inverse temperature β (J⁻¹).
 
-    P_n_val = P_n(eig_val, beta_val)
-    U_val = U(eig_val, beta_val)
-    variance = np.sum(P_n_val * (eig_val - U_val)**2)
+    Returns
+    -------
+    float
+        Helmholtz free energy A (J).
 
-    C = k_B * beta_val**2 * variance
-    return C
+    References
+    ----------
+    .. Wikipedia::
+       - Free energy: https://en.wikipedia.org/wiki/Free_energy
+       - Helmholtz free energy: https://en.wikipedia.org/wiki/Helmholtz_free_energy
+       - Partition function: https://en.wikipedia.org/wiki/Partition_function_(statistical_mechanics)
+    """
+    return float((-1.0 / beta_val) * np.log(Z(eig_val, beta_val)))
+
+
+def heat_capacity(eig_val: np.ndarray, beta_val: float) -> float:
+    """
+    Heat capacity C via energy fluctuations in the canonical ensemble.
+
+    Uses the fluctuation–dissipation relation:
+        Var(E) = ⟨E²⟩ - ⟨E⟩²,   C = k_B * β² * Var(E)
+
+    Parameters
+    ----------
+    eig_val : np.ndarray
+        1D array of energies E_n (J).
+    beta_val : float
+        Inverse temperature β (J⁻¹).
+
+    Returns
+    -------
+    float
+        Heat capacity C (J/K).
+
+    Notes
+    -----
+    - Equivalent expressions:
+        C = d⟨E⟩/dT
+        C = (Var(E)) / (k_B T²)  = k_B β² Var(E)
+      since β = 1/(k_B T).
+    - Numerically, this uses the variance under the Boltzmann distribution.
+
+    References
+    ----------
+    .. Wikipedia::
+       - Heat capacity: https://en.wikipedia.org/wiki/Heat_capacity
+       - Fluctuation–dissipation theorem:
+         https://en.wikipedia.org/wiki/Fluctuation%E2%80%93dissipation_theorem
+       - Canonical ensemble:
+         https://en.wikipedia.org/wiki/Canonical_ensemble
+    """
+    p = P_n(eig_val, beta_val)
+    U = U_stat(eig_val, beta_val)
+    variance = float(np.sum(p * (eig_val - U) ** 2))
+    return float(k_B * (beta_val ** 2) * variance)
 
 def generate_graphs(eig_val: np.ndarray, site: int):
 
