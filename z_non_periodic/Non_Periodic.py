@@ -381,6 +381,8 @@ def update_two(r_2_value:np.array)->np.array:
 
     return np.multiply(update_2, r_2_value)
 
+print(v_full)
+
 def t_non_periodic():
 
     t_a_i_tensor_new = np.full((sites, a, i), 0, dtype=complex)

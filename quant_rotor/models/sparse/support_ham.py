@@ -80,54 +80,6 @@ def grouped_pairs_permutations(n: int) -> np.ndarray:
 
     return sorted(seqs)
 
-def build_V_in_p_new(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
-    """
-    Constructs:
-    - K: a diagonal kinetic energy operator in the 'p' basis
-    - V: a sparse potential energy operator directly in the 'p' basis
-
-    Avoids constructing in the m basis and transforming later.
-    """
-
-    dim_V = state * state
-
-    # Construct a diagonal of Kinetic energy matrix in m basis.
-    m_vals = np.arange(-(state - 1) // 2, (state - 1) // 2 + 1)
-
-    # Construct index map m -> p.
-    perm = np.vectorize(m_to_p)(m_vals)  # Maps m-index → p-index
-
-    data_V = []
-    rows = []
-    cols = []
-
-    def index(p1: int, p2: int) -> int:
-        return p1 * state + p2
-    
-    indecies = grouped_pairs_permutations(n=state)
-
-    # Loop over (m1, m2) — this preserves physics
-    for indx in indecies:
-            p1 = perm[indx[0]]
-            p2 = perm[indx[2]]
-            p1p = perm[indx[1]]
-            p2p = perm[indx[3]]
-
-            i = index(p1, p2)
-            j = index(p1p, p2p)
-            
-            rows.append(i)
-            cols.append(j)
-            data_V.append(indx[4])
-
-    V = sp.csr_matrix((data_V, (rows, cols)), shape=(dim_V, dim_V), dtype=np.float64)
-
-    # Diagonal kinetic operator in p basis
-    p = vector_in_p(state)
-    K = sp.diags(p**2, offsets=0, format='csr')
-
-    return K, V*2
-
 def build_V_prime_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
     """
     Constructs:
@@ -218,10 +170,10 @@ def build_V_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
             i = index(p1, p2)
 
             for dm1, dm2, coef in [
-                (1, 1, 0.75),
-                (-1, -1, 0.75),
-                (1, -1, -0.25),
-                (-1, 1, -0.25),
+                (1, 1, 0.075),
+                (-1, -1, 0.075),
+                (1, -1, -0.025),
+                (-1, 1, -0.025),
             ]:
                 m1p = m1 + dm1
                 m2p = m2 + dm2
@@ -239,7 +191,7 @@ def build_V_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
     p = vector_in_p(state)
     K = sp.diags(p**2, offsets=0, format='csr')
 
-    return K, V*2
+    return K, V
 
 def H_kinetic_sparse(state: int, site: int, K: sp.spmatrix) -> sp.csr_matrix:
     """

@@ -82,7 +82,7 @@ def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.n
     H_mu = hamiltonian_dense(state, site, g_val, l_val, K_mu, V_mu, True)[0]
 
     # It is importatnt to keep the return in this format since hamiltonian_general uses this structure. 
-    return H_mu, K_mu, V_mu, matrix_p_to_NO
+    return H_mu, K_mu, V_mu
 
 def hamiltonian_general_dense(states: int, sites: int, g_val: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
@@ -114,4 +114,4 @@ def hamiltonian_general_dense(states: int, sites: int, g_val: float) -> tuple[np
         # Make an approximation of the Hamiltonian, Kinetic and Potential energy matrices for the bigger system.
         H_K_V = hamiltonian_big_dense(states, current_site, g_val, H_K_V)
 
-    return H_K_V
+    return H_K_V[0], H_K_V[1], H_K_V[2]

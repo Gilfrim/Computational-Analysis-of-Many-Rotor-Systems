@@ -9,6 +9,15 @@
 \usepackage[utf8]{inputenc}   % Handle UTF-8 characters
 \usepackage[T1]{fontenc}      % Better font encoding
 \usepackage[english]{babel}   % Language support
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{gray!10},
+  frame=single,
+  breaklines=true
+}
 
 \setlength{\parindent}{0pt}
 
@@ -525,5 +534,17 @@ for tree={
     [quant\_rotor.models.sparse.support\_ham]
   ]
 \end{forest}
+
+\section[]{Script examples}
+
+This section will provide examples of calling functions, description of the output, simple testing procedures and a high level descriptions. 
+Any files referenced in this section will be located in  "script\_examples". (if you use jupiter there will be a jupiter compiled file with all of the scripts combined and ready to run) 
+
+\begin{lstlisting}[language=Python, caption={Example script}]
+# Python script block
+print("Hello, world!")
+for i in range(5):
+    print(i)
+\end{lstlisting}
 
 \end{document}

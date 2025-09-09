@@ -159,7 +159,7 @@ def HF_test(start_point: str, g: float, tensors: TensorData ,params: SimulationP
 
         params.epsilon = fock_final_val
 
-def t_periodic(
+def t_non_periodic(
     site: int,
     state: int,
     g: float,
