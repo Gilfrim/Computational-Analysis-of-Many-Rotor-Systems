@@ -38,7 +38,7 @@ This document is created to give a general overview of the code for the means of
 and tracking progress as well as for training purposes.
 \newline 
 \newline The GitHub repository contains more files that could be useful, but
-this document would only talk about the "quant\_rotor" library. The files in a discarded fouler are either completed projects or discarded ideas; files that are in the main fouler are usually files with the work in progress.
+this document would only talk about the "quant\_rotor" library. The files in a discarded folder are either completed projects or discarded ideas; files that are in the main fouler are usually files with the work in progress.
 
 \section{Library File Structure and Breakdown}
 
@@ -313,7 +313,7 @@ This files provides iterative approach to CCC.(consult Configurational Coupled C
 the updated and optimized versions of each other in the order of newer to older: "t\_amplitudes\_periodic\_fast" (dense) -> "t\_amplitudes\_periodic\_fast" (dense) -> "t\_amplitudes\_periodic".
 \newline \newline
 The "t\_amplitudes\_guess" file is used to make a prediction which than later be given to the iterative solver. Was introduce in attempt to 
-medigate the problem of bit g divergence. (consult Configurational Coupled Cluster document Section 8)
+medigate the problem of bit g. (consult Configurational Coupled Cluster document Section 8)
 
 \textbf{\newline Structure of t\_amplitudes\_guess: \newline}
 
@@ -431,10 +431,10 @@ for tree={
 \end{forest}
 
 \newpage
-\subsection[short]{Time-dependant CCC approach: "de\_solve\_one\_thermal\_dense" \newline \& "de\_solve\_one\_thermal" \& "de\_solve" \& de\_solve\_one\_thermal\_sparse}
+\subsection[short]{Time-dependent CCC approach: "de\_solve\_one\_thermal\_dense" \newline \& "de\_solve\_one\_thermal" \& "de\_solve" \& de\_solve\_one\_thermal\_sparse}
 
 This files provides a Runge Kutta method for solving a differential equation to find the first and second residuals by time probagation.(consult Configurational Coubled Cluster document
-Section 10) The files are updated and optemised versions of each other in the order of newer to older: "de\_solve\_one\_thermal\_sparse" -> "de\_solve\_one\_thermal\_dense" -> "de\_solve\_one\_thermal" -> "de\_solve".
+Section 10) The files are updated and optimised versions of each other in the order of newer to older: "de\_solve\_one\_thermal\_sparse" -> "de\_solve\_one\_thermal\_dense" -> "de\_solve\_one\_thermal" -> "de\_solve".
 
 \textbf{\newline Structure of de\_solve\_one\_thermal \& de\_solve: \newline}
 

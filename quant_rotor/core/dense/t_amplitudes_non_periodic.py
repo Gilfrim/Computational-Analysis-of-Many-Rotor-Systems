@@ -178,7 +178,7 @@ def t_periodic(
     Parameters
     ----------
     site : int
-        The number of rotors (sites) in the system.
+        The number of rotors (site) in the system.
     state : int
         Total number states in the system, counting the ground state. Ex: system of -1, 0, 1 would be a system of 3 states.
     g_val : float
@@ -218,12 +218,12 @@ def t_periodic(
     p = state
     i = low_state
     a = p - i
-    periodic = True
+    periodic = False
 
     # Load .npy matrices directly from the package
     K, V = write_matrix_elements((state-1)//2)
 
-    V = V + V.T - np.diag(np.diag(V))
+    V = (V + V.T - np.diag(np.diag(V)))/2
     V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
 
     h_full = basis_m_to_p_matrix_conversion(K, state)
@@ -263,6 +263,9 @@ def t_periodic(
 
     qs = QuantumSimulation(params, tensors)
 
+    print(h_full)
+    print(v_full)
+
     del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
 
     # if HF:
@@ -278,18 +281,17 @@ def t_periodic(
 
     previous_energy = 0
 
-    print(qs.h_term(i, p))
+
 
     while True:
 
         energy = 0
 
-        single[0] = qs.residual_single(0)
-        for y_site in range(1, site):
-            single[y_site] = single[0]
-            double[0, y_site] = qs.residual_double_total(0, y_site)
-            for x_site in range(1, site):
-                double[x_site, (x_site + y_site) % site] = double[0, y_site]
+        for x_site in range(site):
+            single[x_site] = qs.residual_single(x_site)
+            for y_site in range(site):
+                if x_site < y_site:
+                    double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
 
         # if HF:
         #     #middle = np.zeros((p, q))
@@ -315,26 +317,26 @@ def t_periodic(
         one_max = single.flat[np.argmax(np.abs(single))]
         two_max = double.flat[np.argmax(np.abs(double))]
 
-        # print(f"1 max: {one_max}")
-        # print(f"2 max: {two_max}")
+        print(f"1 max: {one_max}")
+        print(f"2 max: {two_max}\n")
 
-        tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
-
-        for site_1 in range(1, site):
-            tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
-            tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
-            for site_2 in range(1, site):
-                tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors.t_ab_ij_tensor[0, site_1]
+        #calculates update values for residuals
+        for site_u_1 in range(site):
+            tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single[site_u_1])
+            for site_u_2 in range(site):
+                if site_u_1 < site_u_2:
+                    tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(double[site_u_1, site_u_2])
+                    #t_ab_ij_tensor[site_u_2, site_u_1] -= update_two(double[site_u_1, site_u_2])
 
         #energy calculations
         for site_x in range(site):
             energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) #* 0.5
-
-            for site_y in range(site_x + 1, site):
-                # noinspection SpellCheckingInspection
-                energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y % site), qs.t_term(site_x, site_y % site)) * 0.5
-                # noinspection SpellCheckingInspection
-                energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y % site), qs.B_term(i, site_x), qs.B_term(i, site_y % site)) * 0.5
+            for site_y in range(site):
+                if site_x < site_y:
+                    # noinspection SpellCheckingInspection
+                    energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y), qs.t_term(site_x, site_y))
+                    # noinspection SpellCheckingInspection
+                    energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y), qs.B_term(i, site_x), qs.B_term(i, site_y))
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break

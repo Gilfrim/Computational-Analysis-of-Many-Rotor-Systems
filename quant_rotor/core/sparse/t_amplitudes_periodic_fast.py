@@ -312,7 +312,7 @@ def t_periodic(
     for site_x in range(site):
         energy += (qs.terms.h_ip @ qs.terms.b_term)[0, 0]
 
-        for site_y in range(site_x + 1, site_x + site):
+        for site_y in range(site_x + 1, site):
             if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
                 V_iipp = qs.terms.V_iipp
                 V_iiaa = qs.terms.V_iiaa
