@@ -80,7 +80,7 @@ def grouped_pairs_permutations(n: int) -> np.ndarray:
 
     return sorted(seqs)
 
-def build_V_prime_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
+def build_V_prime_in_p(state: int, tau: float) -> tuple[sp.csr_matrix, sp.csr_matrix]:
     """
     Constructs:
     - K: a diagonal kinetic energy operator in the 'p' basis
@@ -111,10 +111,10 @@ def build_V_prime_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
             p2 = perm[m2]
             i = index(p1, p2)
             for dm1, dm2, coef in [
-                (1, 1, 1.5),
-                (-1, -1, 1.5),
-                (1, -1, -0.5),
-                (-1, 1, -0.5),]:
+                (1, 1, 0.75 * np.exp(1j * 2 * tau)),
+                (-1, -1, 0.75 * np.exp(1j * 2 * tau)),
+                (1, -1, -0.25),
+                (-1, 1, -0.25),]:
 
                 m1p = m1 + dm1
                 m2p = m2 + dm2
@@ -138,7 +138,7 @@ def build_V_prime_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
 
     return K, V
 
-def build_V_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
+def build_V_in_p(state: int, tau: float) -> tuple[sp.csr_matrix, sp.csr_matrix]:
     """
     Constructs:
     - K: a diagonal kinetic energy operator in the 'p' basis
@@ -170,10 +170,10 @@ def build_V_in_p(state: int) -> tuple[sp.csr_matrix, sp.csr_matrix]:
             i = index(p1, p2)
 
             for dm1, dm2, coef in [
-                (1, 1, 0.075),
-                (-1, -1, 0.075),
-                (1, -1, -0.025),
-                (-1, 1, -0.025),
+                (1, 1, 0.75 * np.exp(1j * 2 * tau)),
+                (-1, -1, 0.75 * np.exp(1j * 2 * tau)),
+                (1, -1, -0.25),
+                (-1, 1, -0.25),
             ]:
                 m1p = m1 + dm1
                 m2p = m2 + dm2

@@ -1,7 +1,7 @@
 import numpy as np
 from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion, H_kinetic, H_potential
 
-def hamiltonian_dense(state: int, site: int, g_val: float, l_val: float=0, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False)->tuple[np.ndarray, np.ndarray, np.ndarray]:
+def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodic: bool=True, l_val: float=0, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False)->tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Constructs the Kinetic, Potential, and dense Hamiltonian operators for a specified system,
     described by the number of states, sites, and g-value modifier to the potential energy.
@@ -17,6 +17,9 @@ def hamiltonian_dense(state: int, site: int, g_val: float, l_val: float=0, K_imp
         The number of rotors (sites) in the system.
     g_val : float
         The constant multiplier for the potential energy. Typically in the range 0 <= g <= 1.
+    tau : float, optional
+        Dipolar plains chain angle.
+        Defalts to complanar or 0.
     l_val : float, optional
         A multiplier for the kinetic energy. Creates a tridiagonal matrix with zeros on the
         diagonal and l_val / sqrt(pi) on the off-diagonals. Defaults to 0 (no modification).
@@ -45,7 +48,7 @@ def hamiltonian_dense(state: int, site: int, g_val: float, l_val: float=0, K_imp
     if Import == False:
 
         # Create a Kinetic and Potential energy matricies.
-        K, V = write_matrix_elements((state-1) // 2)
+        K, V = write_matrix_elements((state-1) // 2, tau)
 
         # Optional modifier for the one body (Kinetic energy) operator. 
         # Creates and adds a tridiagonal matrix with 0 along the center diagonal and two shifted diagonals determened 
@@ -75,7 +78,7 @@ def hamiltonian_dense(state: int, site: int, g_val: float, l_val: float=0, K_imp
 
     # Construct a Kinetic and Potential hamiltonian.
     K_final = H_kinetic(state, site, K_in_p)
-    V_final = H_potential(state, site, V_in_p, g_val)
+    V_final = H_potential(state, site, V_in_p, g_val, periodic)
 
     # Add to get the final hamiltonian.
     H_final = K_final + V_final

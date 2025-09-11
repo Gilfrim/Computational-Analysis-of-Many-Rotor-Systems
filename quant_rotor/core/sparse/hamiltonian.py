@@ -2,7 +2,7 @@ import numpy as np
 from quant_rotor.models.sparse.support_ham import build_V_in_p, H_kinetic_sparse, H_potential_sparse
 import scipy.sparse as sp
 
-def hamiltonian_sparse(state: int, site: int, g_val: float, l_val: float=0, K_import: sp.csr_matrix=[], V_import: sp.csr_matrix=[], Import: bool=False, spar: bool=False, general: bool=False)->tuple[sp.csr_matrix, sp.csr_matrix, sp.csr_matrix]:
+def hamiltonian_sparse(state: int, site: int, g_val: float, tau: float=0, l_val: float=0, K_import: sp.csr_matrix=[], V_import: sp.csr_matrix=[], Import: bool=False, spar: bool=False, general: bool=False)->tuple[sp.csr_matrix, sp.csr_matrix, sp.csr_matrix]:
     """
     Constructs the Kinetic, Potential, and dense Hamiltonian operators for a specified system,
     described by the number of states, sites, and g-value modifier to the potential energy.
@@ -18,6 +18,8 @@ def hamiltonian_sparse(state: int, site: int, g_val: float, l_val: float=0, K_im
         The number of rotors (sites) in the system.
     g_val : float
         The constant multiplier for the potential energy. Typically in the range 0 <= g <= 1.
+    tau : float, optional
+        Dipolar plains chain angle.
     l_val : float, optional
         A multiplier for the kinetic energy. Creates a tridiagonal matrix with zeros on the
         diagonal and l_val / sqrt(pi) on the off-diagonals. Defaults to 0 (no modification).
@@ -45,7 +47,7 @@ def hamiltonian_sparse(state: int, site: int, g_val: float, l_val: float=0, K_im
     # Check if you are importing a Kinetic and Potential energy matrix or creating one from the scratch.
     if Import == False:
         # Create a Kinetic and Potential energy matricies.
-        K_in_p, V_in_p = build_V_in_p(state)
+        K_in_p, V_in_p = build_V_in_p(state, tau)
 
     else:
         # In case of importing skiping ass of the steps and assumes the Kinetic and Potential energy matricies are in the coreect shape and in p basis.

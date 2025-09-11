@@ -133,7 +133,7 @@ def basis_m_to_p_matrix_conversion(matrix: np.ndarray, state: int)->np.ndarray:
 
     return matrix
  
-def write_matrix_elements(numer_unique_states: int) -> tuple[np.ndarray, np.ndarray]:
+def write_matrix_elements(numer_unique_states: int, tau: float) -> tuple[np.ndarray, np.ndarray]:
     """
     Construct kinetic and potential energy operator matrices for a truncated rotor basis.
 
@@ -143,6 +143,8 @@ def write_matrix_elements(numer_unique_states: int) -> tuple[np.ndarray, np.ndar
         Number of unique momentum states to include in the truncated basis.
         The total dimension of the basis is given by:
         d = 2 * numer_unique_states + 1.
+    tau : float
+        Dipolar plains chain angle.
     
     Returns
     -------
@@ -154,25 +156,25 @@ def write_matrix_elements(numer_unique_states: int) -> tuple[np.ndarray, np.ndar
     d = 2 * numer_unique_states + 1
 
     # Generate Kinetic Energy Matrix
-    K = np.zeros((d, d))
+    K = np.zeros((d, d), dtype=complex)
     for i in range(d):
         for j in range(i, d):
             K[i, j] = free_one_body(i, j, numer_unique_states)
 
     # Generate Potential Energy Matrix
-    V = np.zeros((d**2, d**2))
+    V = np.zeros((d**2, d**2), dtype=complex)
     for i in range(d):
         for j in range(d):
             for k in range(d):
                 for l in range(d):
                     # if k * d + l >= i * d + j:
-                        V[i*d + j, k*d + l] = interaction_two_body_coplanar(i, j, k, l)
+                        V[i*d + j, k*d + l] = interaction_two_body_coplanar(i, j, k, l, tau)
 
     return K, V
 
 def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
     """
-    Constructs the sparse kinetic energy Hamiltonian in a many-body tensor-product space,
+    Constructs the dense kinetic energy Hamiltonian in a many-body tensor-product space,
     using a single-particle operator K applied independently to each site.
 
     Parameters
@@ -200,7 +202,7 @@ def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
         n_lambda = states**(x)
         n_mu = states**(sites - x - 1)
 
-        # Iterate through all elements of the Potential energy matrix operator.
+        # Iterate through all elements of the Kinetic energy matrix operator.
         for p in range(states):
             for p_prime in range(states):
 
@@ -222,9 +224,9 @@ def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
                         K_H[i, j] += val
     return K_H
  
-def H_potential(states: int, sites: int, V: np.ndarray, g_val: float) -> np.ndarray:
+def H_potential(states: int, sites: int, V: np.ndarray, g_val: float, periodic: bool) -> np.ndarray:
     """
-    Constructs the sparse Potential energy Hamiltonian using a two-site interaction operator V
+    Constructs the dense Potential energy Hamiltonian using a two-site interaction operator V
     and coupling constant g_val. The interaction acts on nearest-neighbor pairs (periodic).
 
     Parameters
@@ -237,17 +239,24 @@ def H_potential(states: int, sites: int, V: np.ndarray, g_val: float) -> np.ndar
         Dense potential energy matrix in the p-basis, shape (state² * state²).
     g_val : float
         The constant multiplier for the Potential energy. Typically in the range 0 <= g <= 1.
+    periodic : bool
+        Defines if the hamiltonian for the periodic system or the non-peirodic system.
 
     Returns
     -------
-    csr_matrix
+    np.ndarray
         Sparse many-body Potential energy Hamiltonian operator.
     """
 
     # Create a matrix of the shape of Potential energy Hamiltonian filled with zeros.
     V_H = np.zeros((states**sites, states**sites), dtype=complex)
 
-    for x in range(sites):
+    if periodic:
+        site_range = sites
+    else:
+        site_range = sites-1
+
+    for x in range(site_range):
         # With x defining the first site of two-body interaction, we define the second dynamically.
         y = (x+1) % sites
 
@@ -313,7 +322,7 @@ def free_one_body(i: int, j: int, max_m: int) -> float:
     else:
         return 0.0
  
-def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int) -> float:
+def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int, tau: float) -> complex:
     """
     Computes the two-body matrix element ⟨i1, i2|V|j1, j2⟩ of the dipole-dipole interaction
     between two planar rotors aligned along the x-axis, in the momentum basis.
@@ -338,10 +347,12 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int) -> float:
         First particle's column index (ket momentum).
     j2 : int
         Second particle's column index (ket momentum).
+    tau : float
+        Dipolar plains chain angle.
 
     Returns
     -------
-    float
+    complex
         The matrix element ⟨i1, i2|V|j1, j2⟩. Non-zero only if |i1 - j1| = |i2 - j2| = 1.
     """
     # Selection rule: both i1 and i2 must differ by ±1 from j1 and j2 respectively.
@@ -355,7 +366,7 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int) -> float:
     if i1 == j1 + 1:
         if i2 == j2 + 1:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return 0.75  # ⟨m1+1, m2+1|
+            return 0.75 * np.exp(1j * 2 * tau)  # ⟨m1+1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> -0.25")
             return -0.25 # ⟨m1+1, m2−1|
@@ -365,4 +376,4 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int) -> float:
             return -0.25 # ⟨m1−1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return 0.75  # ⟨m1−1, m2−1|
+            return 0.75 * np.exp(1j * 2 * tau)  # ⟨m1−1, m2−1|
