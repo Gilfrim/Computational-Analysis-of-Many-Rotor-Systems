@@ -263,9 +263,6 @@ def t_non_periodic(
 
     qs = QuantumSimulation(params, tensors)
 
-    print(h_full)
-    print(v_full)
-
     del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
 
     # if HF:
@@ -317,8 +314,8 @@ def t_non_periodic(
         one_max = single.flat[np.argmax(np.abs(single))]
         two_max = double.flat[np.argmax(np.abs(double))]
 
-        print(f"1 max: {one_max}")
-        print(f"2 max: {two_max}\n")
+        # print(f"1 max: {one_max}")
+        # print(f"2 max: {two_max}\n")
 
         #calculates update values for residuals
         for site_u_1 in range(site):

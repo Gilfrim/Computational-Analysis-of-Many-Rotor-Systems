@@ -138,7 +138,7 @@ def build_V_prime_in_p(state: int, tau: float) -> tuple[sp.csr_matrix, sp.csr_ma
 
     return K, V
 
-def build_V_in_p(state: int, tau: float) -> tuple[sp.csr_matrix, sp.csr_matrix]:
+def build_V_in_p(state: int, tau: float=0) -> tuple[sp.csr_matrix, sp.csr_matrix]:
     """
     Constructs:
     - K: a diagonal kinetic energy operator in the 'p' basis

@@ -19,7 +19,10 @@ def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodi
         The constant multiplier for the potential energy. Typically in the range 0 <= g <= 1.
     tau : float, optional
         Dipolar plains chain angle.
-        Defalts to complanar or 0.
+        Defaults to complanar or 0.
+    periodic : bool
+        Defines if the hamiltonian for the periodic system or the non-peirodic system.
+        Defaults to True.
     l_val : float, optional
         A multiplier for the kinetic energy. Creates a tridiagonal matrix with zeros on the
         diagonal and l_val / sqrt(pi) on the off-diagonals. Defaults to 0 (no modification).

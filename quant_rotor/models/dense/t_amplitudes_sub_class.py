@@ -69,7 +69,7 @@ class QuantumSimulation:
 
     def update_one(self, r_1_value):
         a, i, eps = self.params.a, self.params.i, self.params.epsilon
-        update = np.zeros((a, i))
+        update = np.zeros((a, i), dtype=complex)
         for u_a in range(a):
             for u_i in range(i):
                 update[u_a, u_i] = 1 / (eps[u_a + i] - eps[u_i])
@@ -77,7 +77,7 @@ class QuantumSimulation:
 
     def update_two(self, r_2_value):
         a, i, eps = self.params.a, self.params.i, self.params.epsilon
-        update = np.zeros((a, a, i, i))
+        update = np.zeros((a, a, i, i), dtype=complex)
         for u_a in range(a):
             for u_b in range(a):
                 for u_i in range(i):
@@ -101,7 +101,6 @@ class QuantumSimulation:
                 R_single += np.einsum("ap, plqs, qi, sl->ai", self.A_term(a, x_s), self.v_term(p, i, p, p, x_s, z_s), self.B_term(i, x_s), self.B_term(i, z_s))
 
         return R_single
-
 
     def residual_double_sym(self, x_d: int, y_d: int) -> np.ndarray:
         site, i_method, p, i, a = self.params.site, self.params.i_method, self.params.p, self.params.i, self.params.a

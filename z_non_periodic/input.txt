@@ -1,7 +1,7 @@
 #number of sites (int)
-sites = 5
+sites = 3
 #number of possible states, p (int) odd
-states = 7
+states = 11
 
 #number of possible low states, i (int) odd
 low states = 1

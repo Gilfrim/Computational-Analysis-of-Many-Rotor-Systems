@@ -133,7 +133,7 @@ def basis_m_to_p_matrix_conversion(matrix: np.ndarray, state: int)->np.ndarray:
 
     return matrix
  
-def write_matrix_elements(numer_unique_states: int, tau: float) -> tuple[np.ndarray, np.ndarray]:
+def write_matrix_elements(numer_unique_states: int, tau: float=0) -> tuple[np.ndarray, np.ndarray]:
     """
     Construct kinetic and potential energy operator matrices for a truncated rotor basis.
 

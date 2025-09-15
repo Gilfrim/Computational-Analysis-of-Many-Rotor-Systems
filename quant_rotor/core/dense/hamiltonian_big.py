@@ -3,7 +3,7 @@ import scipy.sparse as sp
 from quant_rotor.core.dense.hamiltonian import hamiltonian_dense
 from quant_rotor.models.dense.density_matrix import density_matrix_1
 
-def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.ndarray, np.ndarray, np.ndarray], tau:float, l_val: float=0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.ndarray, np.ndarray, np.ndarray], tau:float, periodic: bool, l_val: float=0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Takes in a system of rotors and scales it to a specified larger system. The approximation is taken from assuming the ground state of the 
@@ -27,6 +27,8 @@ def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.n
         Dence Hamiltonian of shape (state^site, state^site) constructed from above Kinetic and Potential.
     tau : float, optional
         Dipolar plains chain angle.
+    periodic : bool
+        Defines if the hamiltonian for the periodic system or the non-peirodic system.
     l_val : float, optional
         A multiplier for the kinetic energy. Creates a tridiagonal matrix with zeros on the
         diagonal and l_val / sqrt(pi) on the off-diagonals. Defaults to 0 (no modification).
@@ -86,7 +88,7 @@ def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.n
     # It is importatnt to keep the return in this format since hamiltonian_general uses this structure. 
     return H_mu, K_mu, V_mu
 
-def hamiltonian_general_dense(states: int, sites: int, g_val: float, tau: float=0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def hamiltonian_general_dense(states: int, sites: int, g_val: float, tau: float=0, periodic: bool=True) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Interates through systems progressively increasing the nubmer of cites.
@@ -101,6 +103,9 @@ def hamiltonian_general_dense(states: int, sites: int, g_val: float, tau: float=
         The constant multiplier for the potential energy. Usually in the range of 0 <= g <= 1.
     tau : float, optional
         Dipolar plains chain angle.
+    periodic : bool
+        Defines if the hamiltonian for the periodic system or the non-peirodic system.
+        Defaults to True.
 
     Returns
     -------
@@ -111,11 +116,11 @@ def hamiltonian_general_dense(states: int, sites: int, g_val: float, tau: float=
         Dence Hamiltonian of shape (state^site, state^site) constructed from above Kinetic and Potential.
     """
     # Create the original full hamiltonian
-    H_K_V = hamiltonian_dense(11, 3, g_val, tau)
+    H_K_V = hamiltonian_dense(11, 3, g_val, tau, periodic)
     
     # Iterate through every new system by increasing the size of the system by 2 sites every eteration.
     for current_site in range(3, sites + 2, 2):
         # Make an approximation of the Hamiltonian, Kinetic and Potential energy matrices for the bigger system.
-        H_K_V = hamiltonian_big_dense(states, current_site, g_val, H_K_V, tau)
+        H_K_V = hamiltonian_big_dense(states, current_site, g_val, H_K_V, tau, periodic)
 
     return H_K_V[0], H_K_V[1], H_K_V[2]

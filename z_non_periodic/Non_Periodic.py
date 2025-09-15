@@ -202,8 +202,11 @@ for v_axis_0 in range(p):
 del v_dict
 
 #t1 and t2 amplitude tensors
-t_a_i_tensor = np.full((sites, a, i), initial)
-t_ab_ij_tensor = np.full((sites, sites, a, b, i, j), initial)
+# t_a_i_tensor = np.full((sites, a, i), initial)
+# t_ab_ij_tensor = np.full((sites, sites, a, b, i, j), initial)
+
+t_a_i_tensor = np.random.rand(sites, a, i)
+t_ab_ij_tensor = np.random.rand(sites, sites, a, a, i, i)
 
 #eigenvalues from h for update
 epsilon = np.diag(h_full)
@@ -381,8 +384,6 @@ def update_two(r_2_value:np.array)->np.array:
 
     return np.multiply(update_2, r_2_value)
 
-print(v_full)
-
 def t_non_periodic():
 
     t_a_i_tensor_new = np.full((sites, a, i), 0, dtype=complex)
@@ -402,8 +403,8 @@ def t_non_periodic():
     )
 
     tensors = TensorData(
-    t_a_i_tensor=t_a_i_tensor_new,
-    t_ab_ij_tensor=t_ab_ij_tensor_new,
+    t_a_i_tensor=t_a_i_tensor,
+    t_ab_ij_tensor=t_ab_ij_tensor,
     h_full=h_full,
     v_full=v_full
     )
@@ -419,106 +420,125 @@ def t_non_periodic():
     single = np.zeros((sites, a, i))
     double = np.zeros((sites, sites, a, b, i ,j))
 
+    double_new[0, 1] = qs.residual_double_non_sym_2(0, 1)
+    double[0, 1] = residual_double_non_sym_2(0, 1)
+    print("Doubles:", np.array_equal(double_new[0, 1], double[0, 1]))
+    print(double_new[0, 1] - double[0, 1])
+    print(double[0, 1])
+
     #used to calculate change in energy between iterations
     previous_energy = 0
     #runs until residual < threshold
     #should maybe also add if iterative > value ask to continue prompt or break
-    while True:
-        energy = 0
-        energy_new = 0
 
-        for x_site in range(sites):
-            single_new[x_site] = qs.residual_single(x_site)
-            for y_site in range(sites):
-                if x_site < y_site:
-                    double_new[x_site, y_site] = qs.residual_double_total(x_site, y_site)
 
-        for x_site in range(sites):
-            single[x_site] = residual_single(x_site)
-            for y_site in range(sites):
-                if x_site < y_site:
-                    double[x_site, y_site] = residual_double_total(x_site, y_site)
+    # while True:
+    #     energy = 0
+    #     energy_new = 0
 
-        # print("Singles & Doubles Check:")
-        # if np.array_equal(single_new, single):
-        #     print("Singles:", np.array_equal(single_new, single))
-        # else:
-        #     print("Singls:", np.abs(single - single_new))
+    #     print("\nBegining")
 
-        # print("Doubles:", np.array_equal(double_new, double))
-        # else:
-        #     print("Doubles:", np.abs(double - double_new))
+    #     for x_site in range(sites):
+    #         single_new[x_site] = qs.residual_single(x_site)
+    #         single[x_site] = residual_single(x_site)
 
-        #prints largest magnitude value from both residual equations
-        #nice to see while to get a feel for how long it might take to run
-        # print(f"1 max: {np.max(np.abs(single))}")
-        # print(f"2 max: {np.max(np.abs(double))}\n")
+    #         print(np.array_equal(single_new[x_site], single[x_site]))
 
-        #checks if both residuals are all < threshold
-        #ends program
-        if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
-            break
+    #         for y_site in range(sites):
+    #             if x_site < y_site:
+    #                 double_new[x_site, y_site] = qs.residual_double_total(x_site, y_site)
+    #                 double[x_site, y_site] = residual_double_total(x_site, y_site)
 
-        #checks for program diverging to infinity
-        if np.isnan(single).any() or np.isnan(double).any() or np.isinf(single).any() or np.isinf(double).any():
-            raise ValueError("Diverges (inf or nan)")
+    #                 print("Doubles:", np.array_equal(double_new[x_site, y_site], double[x_site, y_site]))
 
-        for site_u_1 in range(sites):
-            tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single_new[site_u_1])
-            for site_u_2 in range(sites):
-                if site_u_1 < site_u_2:
-                    tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(double_new[site_u_1, site_u_2])
+    #     for x_site in range(sites):
+    #         single[x_site] = residual_single(x_site)
+    #         for y_site in range(sites):
+    #             if x_site < y_site:
+    #                 double[x_site, y_site] = residual_double_total(x_site, y_site)
 
-        #calculates update values for residuals
-        for site_u_1 in range(sites):
-            t_a_i_tensor[site_u_1] -= update_one(single[site_u_1])
-            for site_u_2 in range(sites):
-                if site_u_1 < site_u_2:
-                    t_ab_ij_tensor[site_u_1, site_u_2] -= update_two(double[site_u_1, site_u_2])
-                    #t_ab_ij_tensor[site_u_2, site_u_1] -= update_two(double[site_u_1, site_u_2])
+    #     print("end\n\n")
 
-        # print("t_1 & t_2 Check:")
-        # if np.array_equal(tensors.t_a_i_tensor, t_a_i_tensor):
-        #     print("t_1:", np.array_equal(tensors.t_a_i_tensor, t_a_i_tensor))
-        # else:
-        #     print("t_1:", np.abs(t_a_i_tensor - tensors.t_a_i_tensor))
+    #     print("Singles & Doubles Check:")
+    #     if np.array_equal(single_new, single):
+    #         print("Singles:", np.array_equal(single_new, single))
+    #     else:
+    #         print("Singls:", np.abs(single - single_new))
+
+    #     print("Doubles:", np.array_equal(double_new, double))
+        
+    #     # print("Doubles:", np.abs(double - double_new))
+
+    #     #prints largest magnitude value from both residual equations
+    #     #nice to see while to get a feel for how long it might take to run
+    #     # print(f"1 max: {np.max(np.abs(single))}")
+    #     # print(f"2 max: {np.max(np.abs(double))}\n")
+
+    #     #checks if both residuals are all < threshold
+    #     #ends program
+    #     if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
+    #         break
+
+    #     #checks for program diverging to infinity
+    #     if np.isnan(single).any() or np.isnan(double).any() or np.isinf(single).any() or np.isinf(double).any():
+    #         raise ValueError("Diverges (inf or nan)")
+
+    #     for site_u_1 in range(sites):
+    #         tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single_new[site_u_1])
+    #         for site_u_2 in range(sites):
+    #             if site_u_1 < site_u_2:
+    #                 tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(double_new[site_u_1, site_u_2])
+
+    #     #calculates update values for residuals
+    #     for site_u_1 in range(sites):
+    #         t_a_i_tensor[site_u_1] -= update_one(single[site_u_1])
+    #         for site_u_2 in range(sites):
+    #             if site_u_1 < site_u_2:
+    #                 t_ab_ij_tensor[site_u_1, site_u_2] -= update_two(double[site_u_1, site_u_2])
+    #                 #t_ab_ij_tensor[site_u_2, site_u_1] -= update_two(double[site_u_1, site_u_2])
+
+    #     print("t_1 & t_2 Check:")
+    #     if np.array_equal(tensors.t_a_i_tensor, t_a_i_tensor):
+    #         print("t_1:", np.array_equal(tensors.t_a_i_tensor, t_a_i_tensor))
+    #     else:
+    #         print("t_1:", np.abs(t_a_i_tensor - tensors.t_a_i_tensor))
 
         
-        # print("t_2:", np.array_equal(tensors.t_ab_ij_tensor, t_ab_ij_tensor))
-        # else:
-        #     print("t_2:", np.abs(t_ab_ij_tensor - tensors.t_ab_ij_tensor))
+    #     print("t_2:", np.array_equal(tensors.t_ab_ij_tensor, t_ab_ij_tensor))
 
-        for site_x in range(sites):
-            energy_new += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) #* 0.5
-            for site_y in range(sites):
-                if site_x < site_y:
-                    # noinspection SpellCheckingInspection
-                    energy_new += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y), qs.t_term(site_x, site_y))
-                    # noinspection SpellCheckingInspection
-                    energy_new += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y), qs.B_term(i, site_x), qs.B_term(i, site_y))
+    #     # print("t_2:", np.abs(t_ab_ij_tensor - tensors.t_ab_ij_tensor))
 
-        #energy calculations
-        for site_x in range(sites):
-            energy += np.einsum("ip, pi->", h_term(i, p, site_x), B_term(p, i, site_x))
-            for site_y in range(sites):
-                if site_x < site_y:
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum("ijab, abij->", v_term(i, j, a, b, site_x, site_y), t_term(a, b, i, j, site_x, site_y))
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum("ijpq, pi, qj->", v_term(i, j, p, q, site_x, site_y), B_term(p, i, site_x), B_term(q, j, site_y))
+    #     for site_x in range(sites):
+    #         energy_new += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) #* 0.5
+    #         for site_y in range(sites):
+    #             if site_x < site_y:
+    #                 # noinspection SpellCheckingInspection
+    #                 energy_new += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y), qs.t_term(site_x, site_y))
+    #                 # noinspection SpellCheckingInspection
+    #                 energy_new += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y), qs.B_term(i, site_x), qs.B_term(i, site_y))
 
-        # if np.array_equal(energy_new, energy):
-        #     print("Energy:", np.array_equal(energy_new, energy))
-        # else:
-        #     print("Energy:", np.abs(energy_new - energy))
+    #     #energy calculations
+    #     for site_x in range(sites):
+    #         energy += np.einsum("ip, pi->", h_term(i, p, site_x), B_term(p, i, site_x))
+    #         for site_y in range(sites):
+    #             if site_x < site_y:
+    #                 # noinspection SpellCheckingInspection
+    #                 energy += np.einsum("ijab, abij->", v_term(i, j, a, b, site_x, site_y), t_term(a, b, i, j, site_x, site_y))
+    #                 # noinspection SpellCheckingInspection
+    #                 energy += np.einsum("ijpq, pi, qj->", v_term(i, j, p, q, site_x, site_y), B_term(p, i, site_x), B_term(q, j, site_y))
 
-        #calculates difference between current and previous energy value
-        delta_energy = energy - previous_energy
-        #updates previous energy
-        previous_energy = energy
+    #     if np.array_equal(energy_new, energy):
+    #         print("Energy:", np.array_equal(energy_new, energy))
+    #     else:
+    #         print("Energy:", np.abs(energy_new - energy))
 
-        iteration += 1
-        # print(f"Iteration #: {iteration}")
-        # print(f"Energy: {float(energy)}")
+    #     #calculates difference between current and previous energy value
+    #     delta_energy = energy - previous_energy
+    #     #updates previous energy
+    #     previous_energy = energy
+
+    #     iteration += 1
+    #     # print(f"Iteration #: {iteration}")
+    #     # print(f"Energy: {float(energy)}")
 
     return np.max(np.abs(single)), np.max(np.abs(double)), previous_energy, t_a_i_tensor, t_ab_ij_tensor
