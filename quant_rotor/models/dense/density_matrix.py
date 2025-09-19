@@ -1,5 +1,10 @@
 import numpy as np
-from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
+
+from quant_rotor.models.dense.support_ham import (
+    basis_m_to_p_matrix_conversion,
+    write_matrix_elements,
+)
+
 
 def density_matrix_1(states: int, sites: int, eigvector: np.ndarray, choose_site: int) -> np.ndarray:
 
@@ -56,7 +61,7 @@ def density_matrix_2(states: int, sites: int, eigvector: np.ndarray, x: int, y: 
                     for Lambda in range(int(n_lambda)):
                         for mu in range(int(n_mu)):
                             for nu in range(int(n_nu)):
-                                
+
                                 i = mu + q*n_mu + nu*states*n_mu + p*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
                                 j = mu + q_prime*n_mu + nu*states*n_mu + p_prime*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
 
@@ -72,7 +77,7 @@ def dencity_energy(states: int, sites: int, g: int, psi_vec: np.ndarray)-> float
 
     V = V + V.T - np.diag(np.diag(V))
     V = V.reshape(states,states,states,states)
-    V *= g 
+    V *= g
 
     K = basis_m_to_p_matrix_conversion(K)
     V = basis_m_to_p_matrix_conversion(V)
@@ -82,7 +87,7 @@ def dencity_energy(states: int, sites: int, g: int, psi_vec: np.ndarray)-> float
 
     for x in range(sites):
         for y in range(x + 1, sites):
-            
+
             D_x = density_matrix_1(states, sites, psi_vec, x)
             D_xy = density_matrix_2(states, sites, psi_vec, x, y)
             D_xy = D_xy.reshape(states, states, states, states)

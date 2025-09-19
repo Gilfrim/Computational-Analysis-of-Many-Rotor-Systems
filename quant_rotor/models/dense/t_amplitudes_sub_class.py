@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+
 import numpy as np
+
 
 @dataclass
 class SimulationParams:
@@ -36,7 +38,6 @@ class QuantumSimulation:
         a_h_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (h_upper, h_lower)]
         return self.tensors.h_full[a_h_shift[0]:h_upper + a_h_shift[0], a_h_shift[1]:h_lower + a_h_shift[1]]
 
-    
     def v_term(self, v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2):
         if self.params.periodic:
             if abs(v_site_1 - v_site_2) == 1 or abs(v_site_1 - v_site_2) == (self.params.site - 1):
@@ -52,7 +53,7 @@ class QuantumSimulation:
         else:
             if self.params.gap and ((v_site_1 == self.params.gap_site and v_site_2 == self.params.gap_site + 1) or (v_site_1 == self.params.gap_site + 1 and v_site_2 == self.params.gap_site)):
                 return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
-            
+
             if abs(v_site_1 - v_site_2) == 1:
                 a_v_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]
                 return self.tensors.v_full[
@@ -113,7 +114,7 @@ class QuantumSimulation:
                 R += np.einsum("ap, bq, pqcd, cdij->abij", self.A_term(a, x_d), self.A_term(a, x_d), self.v_term(p, p, a, a, x_d, y_d), self.t_term(x_d, y_d))
 
                 R -= np.einsum("abkl, klpq, pi, qj->abij", self.t_term(x_d, y_d), self.v_term(i, i, p, p, x_d, y_d), self.B_term(i, x_d), self.B_term(i, y_d))
-                
+
                 if i_method == 3 and site >= 4:
                     R -= np.einsum("abkl, klcd, cdij->abij", self.t_term(x_d, y_d), self.v_term(i, i, a, a, x_d, y_d), self.t_term(x_d, y_d))
 
@@ -164,7 +165,7 @@ class QuantumSimulation:
 
     def residual_double_total(self, x_d: int, y_d: int) -> np.ndarray:
         return (self.residual_double_sym(x_d, y_d) + self.residual_double_non_sym_1(x_d, y_d) + self.residual_double_non_sym_2(x_d, y_d))
-    
+
     def transformation_test(self):
         state = self.params.state
         h_full = self.tensors.h_full.copy()

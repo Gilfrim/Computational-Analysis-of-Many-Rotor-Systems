@@ -1,5 +1,12 @@
 import numpy as np
-from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion, H_kinetic, H_potential
+
+from quant_rotor.models.dense.support_ham import (
+    H_kinetic,
+    H_potential,
+    basis_m_to_p_matrix_conversion,
+    write_matrix_elements,
+)
+
 
 def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodic: bool=True, l_val: float=0, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False)->tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -53,8 +60,8 @@ def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodi
         # Create a Kinetic and Potential energy matricies.
         K, V = write_matrix_elements((state-1) // 2, tau)
 
-        # Optional modifier for the one body (Kinetic energy) operator. 
-        # Creates and adds a tridiagonal matrix with 0 along the center diagonal and two shifted diagonals determened 
+        # Optional modifier for the one body (Kinetic energy) operator.
+        # Creates and adds a tridiagonal matrix with 0 along the center diagonal and two shifted diagonals determened
         # by the value "l" to the Kinetic energy matrix.
         # l = l_val * 1/np.sqrt(2)
         # L_sparce = diags([l, 0, l], offsets=[-1, 0, 1], shape=(state, state))
@@ -72,7 +79,7 @@ def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodi
         V_in_p = basis_m_to_p_matrix_conversion(V_tensor, state)
 
         # Reshape a Potential energy matrix back from (state, state, state, state) -> (state^2, state^2).
-        V_in_p = V_in_p.reshape(state**2, state**2)
+        V_in_p = V_in_p.reshape(state**2, state**2) * g_val
 
     else:
         # In case of importing skiping ass of the steps and assumes the Kinetic and Potential energy matricies are in the coreect shape and in p basis.
@@ -81,10 +88,10 @@ def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodi
 
     # Construct a Kinetic and Potential hamiltonian.
     K_final = H_kinetic(state, site, K_in_p)
-    V_final = H_potential(state, site, V_in_p, g_val, periodic)
+    V_final = H_potential(state, site, V_in_p, 1, periodic)
 
     # Add to get the final hamiltonian.
     H_final = K_final + V_final
 
-    # It is importatnt to keep the return in this format since hamiltonian_big.py functions are using this structure. 
+    # It is importatnt to keep the return in this format since hamiltonian_big.py functions are using this structure.
     return H_final, K_in_p, V_in_p

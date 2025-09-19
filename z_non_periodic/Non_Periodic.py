@@ -1,14 +1,22 @@
-import numpy as np
 import csv
+
+import numpy as np
+
 import z_non_periodic.functions as func
+from quant_rotor.models.dense.support_ham import (
+    basis_m_to_p_matrix_conversion,
+    write_matrix_elements,
+)
+from quant_rotor.models.dense.t_amplitudes_sub_class import (
+    QuantumSimulation,
+    SimulationParams,
+    TensorData,
+)
 
-from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
-
-#printout settings for large matrices
+# printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
 
-#expected data type of input variables and file location
+# expected data type of input variables and file location
 expected_types = {"sites": [int, "file_path_input"],
                   "states": [int, "file_path_input"],
                   "low_states": [int, "file_path_input"],
@@ -20,12 +28,12 @@ expected_types = {"sites": [int, "file_path_input"],
                   "gap_site": [int, "file_path_testing"],
                   "transform": [bool, "file_path_testing"]}
 
-#makes set of all possible input variables
+# makes set of all possible input variables
 missing_keys = set(expected_types.keys())
 errors = []
 values = {}
 
-#reads through the input file for variables
+# reads through the input file for variables
 file_path_input = "z_non_periodic/input.txt"
 with open(file_path_input, "r") as input_file:
     for line in input_file:
@@ -60,14 +68,14 @@ with open(file_path_input, "r") as input_file:
                 #if they don't match adds error to list of errors
                 errors.append(f"{globals()[expected_types[key][1]]}, {key}: couldn't convert to {expected_type.__name__}")
 
-#deletes variables that are no longer needed
+# deletes variables that are no longer needed
 del file_path_input
 del input_file
 del line
 del key
 del value
 
-#reads through the testing file for variables
+# reads through the testing file for variables
 file_path_testing = "z_non_periodic/testing.txt"
 with open(file_path_testing, "r") as testing_file:
     for line_testing in testing_file:
@@ -107,14 +115,14 @@ with open(file_path_testing, "r") as testing_file:
                 #if they don't match adds error to list of errors
                 errors.append(f"{globals()[expected_types[key_testing][1]]}, {key_testing}: couldn't convert to {expected_type.__name__}")
 
-#delete variables that are no longer needed
+# delete variables that are no longer needed
 del file_path_testing
 del testing_file
 del line_testing
 del key_testing
 del value_testing
 
-#adds missing keys to error list
+# adds missing keys to error list
 if missing_keys:
     errors.append(f"Missing required values:")
     for missing in missing_keys:
@@ -123,14 +131,14 @@ if missing_keys:
 del expected_types
 del missing_keys
 
-#raise list of errors
+# raise list of errors
 if errors:
     #raise ValueError("Invalid input detected:\n" + "\n".join(errors))
     raise ValueError(f"Invalid input:\n{"\n".join(errors)}")
 
 del errors
 
-#makes variables from text files
+# makes variables from text files
 sites = values["sites"]
 states = values["states"]
 low_states = values["low_states"]
@@ -144,22 +152,22 @@ transform = values["transform"]
 
 del values
 
-#state variables
-#could just use p, i, a
-#makes checking einsums and such a bit easier
+# state variables
+# could just use p, i, a
+# makes checking einsums and such a bit easier
 p = q = r = s = states
 i = j = k = l = low_states
 a = b = c = d = p - i
 
-#checks for i and a sharing same state level
+# checks for i and a sharing same state level
 if i %2 == 0 or a %2 != 0:
     raise ValueError("Overlap between low and high stats, will cause divide by zero in denominator update")
 
 m_max = abs(func.p_to_m(states - 1))
 m_max_shaeer = 5
 
-#for states > 11 would need to have shaeers code generate csv files with m_max > 5
-#gets h values from csv files made with Shaeer's code and puts them into a dictionary
+# for states > 11 would need to have shaeers code generate csv files with m_max > 5
+# gets h values from csv files made with Shaeer's code and puts them into a dictionary
 h_dict = dict()
 with open(r"z_non_periodic/matrix_elements_K.csv", mode = "r",newline = "") as csvfile_h:
     reader_h = csv.reader(csvfile_h, delimiter = ",")
@@ -169,16 +177,16 @@ with open(r"z_non_periodic/matrix_elements_K.csv", mode = "r",newline = "") as c
         if float(row_h[2]) != 0.0:
             h_dict[((int(row_h[0]) - m_max_shaeer), (int(row_h[1]) - m_max_shaeer))] = float(row_h[2])
 
-#creates h term of size (p, p) so that it can be sliced
+# creates h term of size (p, p) so that it can be sliced
 h_full = np.zeros((p, p))
 for h_row in range(p):
     for h_col in range(p):
         h_full[h_row, h_col] = h_dict.get((func.p_to_m(h_row), func.p_to_m(h_col)), 0)
 
-#h_dict is no longer needed due to h_full
+# h_dict is no longer needed due to h_full
 del h_dict
 
-#gets v values from csv file made Shaeer's code and puts them into a dictionary
+# gets v values from csv file made Shaeer's code and puts them into a dictionary
 v_dict = dict()
 with open(r"z_non_periodic/matrix_elements_V.csv", mode = "r",newline = "") as csvfile_v:
     reader_v = csv.reader(csvfile_v, delimiter = ",")
@@ -190,7 +198,7 @@ with open(r"z_non_periodic/matrix_elements_V.csv", mode = "r",newline = "") as c
             if int(row_v[0]) != int(row_v[2]) and int(row_v[1]) != int(row_v[3]):
                 v_dict[((int(row_v[2]) - m_max_shaeer), (int(row_v[3]) - m_max_shaeer), (int(row_v[0]) - m_max_shaeer), (int(row_v[1]) - m_max_shaeer))] = float(row_v[4])
 
-#creates maximum size v term (p, p, p, p) so that it can be sliced
+# creates maximum size v term (p, p, p, p) so that it can be sliced
 v_full = np.zeros((p, p, p, p))
 for v_axis_0 in range(p):
     for v_axis_1 in range(p):
@@ -198,17 +206,17 @@ for v_axis_0 in range(p):
             for v_axis_3 in range(p):
                 v_full[v_axis_0, v_axis_1, v_axis_2, v_axis_3] = g * v_dict.get((func.p_to_m(v_axis_0), func.p_to_m(v_axis_1), func.p_to_m(v_axis_2), func.p_to_m(v_axis_3)), 0)
 
-#v_dict no longer needed due to v_full
+# v_dict no longer needed due to v_full
 del v_dict
 
-#t1 and t2 amplitude tensors
+# t1 and t2 amplitude tensors
 # t_a_i_tensor = np.full((sites, a, i), initial)
 # t_ab_ij_tensor = np.full((sites, sites, a, b, i, j), initial)
 
 t_a_i_tensor = np.random.rand(sites, a, i)
 t_ab_ij_tensor = np.random.rand(sites, sites, a, a, i, i)
 
-#eigenvalues from h for update
+# eigenvalues from h for update
 epsilon = np.diag(h_full)
 
 def A_term(a_upper: int, a_lower: int, a_site: int)->np.array:
@@ -227,8 +235,8 @@ def B_term(b_upper: int, b_lower: int, b_site)->np.array:
     B = np.vstack((np.identity(b_lower), t_a_i_tensor[b_site]))
     return B
 
-#unitary transformation test
-#same as transformation test.py
+# unitary transformation test
+# same as transformation test.py
 if transform:
     h_off = h_full.copy()
 
@@ -269,8 +277,8 @@ def t_term(t_upper_1: int, t_upper_2: int, t_lower_1: int, t_lower_2: int, t_sit
     """Slices t_ab_ij to give t amplitudes for 2 sites"""
     return t_ab_ij_tensor[t_site_1, t_site_2]
 
-#"# noinspection SpellCheckingInspection" are for pycharm to ignore the einsum strings it thinks are typos  i.e. "plcd"
-#not needed, I found the typo errors annoying
+# "# noinspection SpellCheckingInspection" are for pycharm to ignore the einsum strings it thinks are typos  i.e. "plcd"
+# not needed, I found the typo errors annoying
 
 def residual_single(x_s:int)->np.array:
     """Calculates R^{a}_{i}(x) singles equation"""
@@ -414,9 +422,9 @@ def t_non_periodic():
     single_new = np.zeros((sites, a, i), dtype = complex)
     double_new = np.zeros((sites, sites, a, a, i ,i), dtype = complex)
 
-    #iteration counter
+    # iteration counter
     iteration = 0
-    #single and double residual initialization
+    # single and double residual initialization
     single = np.zeros((sites, a, i))
     double = np.zeros((sites, sites, a, b, i ,j))
 
@@ -426,11 +434,10 @@ def t_non_periodic():
     print(double_new[0, 1] - double[0, 1])
     print(double[0, 1])
 
-    #used to calculate change in energy between iterations
+    # used to calculate change in energy between iterations
     previous_energy = 0
-    #runs until residual < threshold
-    #should maybe also add if iterative > value ask to continue prompt or break
-
+    # runs until residual < threshold
+    # should maybe also add if iterative > value ask to continue prompt or break
 
     # while True:
     #     energy = 0
@@ -466,7 +473,7 @@ def t_non_periodic():
     #         print("Singls:", np.abs(single - single_new))
 
     #     print("Doubles:", np.array_equal(double_new, double))
-        
+
     #     # print("Doubles:", np.abs(double - double_new))
 
     #     #prints largest magnitude value from both residual equations
@@ -503,7 +510,6 @@ def t_non_periodic():
     #     else:
     #         print("t_1:", np.abs(t_a_i_tensor - tensors.t_a_i_tensor))
 
-        
     #     print("t_2:", np.array_equal(tensors.t_ab_ij_tensor, t_ab_ij_tensor))
 
     #     # print("t_2:", np.abs(t_ab_ij_tensor - tensors.t_ab_ij_tensor))

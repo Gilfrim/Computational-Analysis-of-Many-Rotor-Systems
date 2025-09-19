@@ -1,10 +1,12 @@
+import itertools
+
 import numpy as np
 import scipy.sparse as sp
-import itertools
+
 
 def m_to_p(energy_state:int)->int:
     """
-    Taking am energy state returns an indes in p basis that this state is associated with. 
+    Taking am energy state returns an indes in p basis that this state is associated with.
 
     Expample is given with a vector which would be done by calling this function in a for loop inerating over the elements of the vector
     or by vectorysing the function.
@@ -12,10 +14,10 @@ def m_to_p(energy_state:int)->int:
     Ex: (-2, -1, 0, 1, 2) -> (3, 1, 0, 2, 4)
 
     Logic: Sicne in the p basis the vector would look like this:(0, -1, 1, -2, 2) (in our case the it doesn't matter if the positive
-    is first or nevative since the values are getting squared later) 
+    is first or nevative since the values are getting squared later)
     To get a mappint from (-2, -1, 0, 1, 2) -> (0, -1, 1, -2, 2) we construct a piecevise function.
 
-    f(x) = {2|x+1| + 1, x < 0; 2x, x >= 0} 
+    f(x) = {2|x+1| + 1, x < 0; 2x, x >= 0}
 
     Parameters
     ----------
@@ -33,10 +35,10 @@ def vector_in_p(state: int) -> np.ndarray:
     """
     Generates a 1D integer array representing the diagonal of Kinetic energy matrix in the 'p' basis.
 
-    The returned vector alternates between non-positive and positive integer state 
+    The returned vector alternates between non-positive and positive integer state
     in the following order: (0, -1, 1, -2, 2, -3, 3, ...), up to the specified length.
     This indexing is useful in quantum rotor models and similar systems where
-    the natural ordering of angular momentum state is rearranged to group 
+    the natural ordering of angular momentum state is rearranged to group
     symmetric contributions.
 
     Parameters
@@ -55,30 +57,6 @@ def vector_in_p(state: int) -> np.ndarray:
 
     # Apply alternating transformation: 0, -1, 1, -2, 2, ...
     return ((-1)**k) * ((k + 1) // 2)
-
-def grouped_pairs_permutations(n: int) -> np.ndarray:
-    """
-    Produce all sequences of length 4 built from adjacent pairs (i, i+1),
-    allowing repeats, and including internal pair swaps.
-    Each output row is (u1, u2, l1, l2).
-    """
-
-    pairs = [(i, i+1) for i in range(n-1)]
-    seqs = set()
-
-    # choose two pairs with replacement (order matters): (Prow, Pcol)
-    for prow, pcol in itertools.product(pairs, repeat=2):
-        
-        # internal permutations of each pair
-        seqs.add((prow[0], prow[1], pcol[0], pcol[1], 0.75))
-
-        seqs.add((prow[1], prow[0], pcol[1], pcol[0], 0.75))
-
-        seqs.add((prow[0], prow[1], pcol[1], pcol[0], -0.25))
-
-        seqs.add((prow[1], prow[0], pcol[0], pcol[1], -0.25))
-
-    return sorted(seqs)
 
 def build_V_prime_in_p(state: int, tau: float) -> tuple[sp.csr_matrix, sp.csr_matrix]:
     """
@@ -222,7 +200,7 @@ def H_kinetic_sparse(state: int, site: int, K: sp.spmatrix) -> sp.csr_matrix:
 
     for x in range(site):
 
-        # Define the total number of elements in the matrix operator, which represent the left and right sites that are not interacting 
+        # Define the total number of elements in the matrix operator, which represent the left and right sites that are not interacting
         # by n_lambda and n_mu respectively.
         n_lambda = state ** x
         n_mu = state ** (site - x - 1)
@@ -243,7 +221,7 @@ def H_kinetic_sparse(state: int, site: int, K: sp.spmatrix) -> sp.csr_matrix:
                     # Calculate the indices in the hamiltonian.
                     i = base + p * stride_p + mu
                     j = base + p_prime * stride_p + mu
-                    
+
                     # Uppend them to a new rows, collumns and data arrays.
                     rows.append(i)
                     cols.append(j)
@@ -285,7 +263,7 @@ def H_potential_sparse(state: int, site: int, V: sp.spmatrix, g_val: float) -> s
         # With x defining the first site of two-body interaction, we define the second dynamically.
         y = (x + 1) % site
 
-        # Define the total number of elements in the matrix operator, which represent the left, right, and center sites that are not interacting 
+        # Define the total number of elements in the matrix operator, which represent the left, right, and center sites that are not interacting
         # by n_lambda, n_mu, n_nu, respectively.
         n_lambda = state ** (x % (site - 1))
         n_mu = state ** ((site - y - 1) % (site - 1))
@@ -298,7 +276,9 @@ def H_potential_sparse(state: int, site: int, V: sp.spmatrix, g_val: float) -> s
         stride_lambda = n_nu * n_mu * state ** 2
 
         # Create a new list of row, column and data indecies.
-        for row_2s, col_2s, val in zip(V.row, V.col, V.data): # Iterate only through non-zero elements of the 
+        for row_2s, col_2s, val in zip(
+            V.row, V.col, V.data
+        ):  # Iterate only through non-zero elements of the
             # Unflatten the indices.
             p, q = divmod(row_2s, state)
             p_prime, q_prime = divmod(col_2s, state)
