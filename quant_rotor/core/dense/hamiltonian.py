@@ -69,7 +69,7 @@ def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodi
         # K = K + L_dense
 
         # Symmetrization of a Potential energy matrix.
-        V_symetric = V + V.T - np.diag(np.diag(V))
+        V_symetric = (V + V.T - np.diag(np.diag(V)))/2
 
         # Reshape a potential energy matrix from (state^2, state^2) -> (state, state, state, state).
         V_tensor = V_symetric.reshape(state, state, state, state)

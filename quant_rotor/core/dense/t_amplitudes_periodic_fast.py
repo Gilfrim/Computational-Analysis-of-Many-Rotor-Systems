@@ -1,9 +1,16 @@
-import numpy as np
-import scipy.sparse as sp
 from importlib.resources import files
+
+import numpy as np
 import opt_einsum as oe
-from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.dense.t_amplitudes_sub_class_fast import QuantumSimulation, TensorData, SimulationParams, PrecalcalculatedTerms
+import scipy.sparse as sp
+
+from quant_rotor.models.dense.t_amplitudes_sub_class_fast import (
+    PrecalcalculatedTerms,
+    QuantumSimulation,
+    SimulationParams,
+    TensorData,
+)
+from quant_rotor.models.sparse.support_ham import build_V_in_p
 
 #printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
@@ -12,7 +19,7 @@ def t_periodic(
     site: int,
     state: int,
     g: float,
-    fast: bool, 
+    fast: bool,
     i_method: int = 3,
     threshold: float=1e-8,
     gap: bool = False,
@@ -36,15 +43,11 @@ def t_periodic(
     periodic = True
 
     # Load .npy matrices directly from the package
-    K, V = write_matrix_elements((state-1)//2)
+    h_full, v_full = build_V_in_p(state)
 
-    V = V + V.T - np.diag(np.diag(V))
-    V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
+    v_full = v_full*g
 
-    h_full = basis_m_to_p_matrix_conversion(K, state).astype(complex)
-    v_full = basis_m_to_p_matrix_conversion(V_tensor, state).astype(complex)
-
-    v_full = v_full * g
+    h_full, v_full = h_full.toarray(), v_full.toarray().reshape(state, state, state, state)
 
     if np.isscalar(t_a_i_tensor_initial) and np.isscalar(t_ab_ij_tensor_initial):
         t_a_i_tensor = np.full((a), t_a_i_tensor_initial, dtype=complex)
@@ -81,7 +84,7 @@ def t_periodic(
 
     qs = QuantumSimulation(params, tensors, terms)
 
-    del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
+    del h_full, v_full, t_a_i_tensor, t_ab_ij_tensor
 
     iteration = 0
 
@@ -100,7 +103,7 @@ def t_periodic(
     terms.V_ipap=qs.v_term(i, p, a, p, 0, 1).reshape(p, a, p)
     terms.V_piap=qs.v_term(p, i, a, p, 0, 1).reshape(p, a, p)
     print("Done.")
-    
+
     while True:
 
         terms.a_term=qs.A_term(a)

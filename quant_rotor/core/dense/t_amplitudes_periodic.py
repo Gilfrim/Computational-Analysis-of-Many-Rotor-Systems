@@ -1,15 +1,22 @@
 import numpy as np
-from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
 
+from quant_rotor.models.dense.support_ham import (
+    basis_m_to_p_matrix_conversion,
+    write_matrix_elements,
+)
+from quant_rotor.models.dense.t_amplitudes_sub_class import (
+    QuantumSimulation,
+    SimulationParams,
+    TensorData,
+)
 
 #printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
 
 def HF_test(start_point: str, g: float, tensors: TensorData ,params: SimulationParams):
-        
+
         h_full, v_full = tensors.h_full, tensors.v_full
-        
+
         state, i, = params.state, params.i
     #crit point negative is just for testing should change
         crit_point = -0.5
@@ -229,7 +236,7 @@ def t_periodic(
     h_full = basis_m_to_p_matrix_conversion(K, state)
     v_full = basis_m_to_p_matrix_conversion(V_tensor, state)
 
-    v_full = v_full * g
+    v_full = (v_full * g) / 2
 
     if np.isscalar(t_a_i_tensor_initial) and np.isscalar(t_ab_ij_tensor_initial):
         t_a_i_tensor = np.full((site, a, i), t_a_i_tensor_initial, dtype=complex)

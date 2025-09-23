@@ -69,8 +69,6 @@ def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.n
     # Create a list of indecies associated to eigenstates in decreasing order.
     index_d = np.argsort(-eig_val_D)
 
-    print(eig_val_D[index_d])
-
     # Makes a change of basis matrix.
     matrix_p_to_NO = matrix_p_to_NO_full[:, index_d[:state]]
 
@@ -83,32 +81,25 @@ def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.n
     # Create a change of basis matrix for a reshaped potential.
     matrix_p_to_NO_V = np.kron(matrix_p_to_NO, matrix_p_to_NO)
 
-    print(matrix_p_to_NO.shape)
-    print(V.shape)
-
-    # matrix_p_to_NO_V_test = np.einsum("", matrix_p_to_NO, matrix_p_to_NO)
-
     # Apply the change of basis to Potential energy matrix.
     V_mu = matrix_p_to_NO_V.conj().T @ V @ matrix_p_to_NO_V
 
-    print("mu", V_mu.shape)
+    # A way to check the coreectness of np.kron with einsum
 
-    v_full = oe.contract(
-        "iM,jW,ijab,aN,bV->MWNV",
-        matrix_p_to_NO.conj(),
-        matrix_p_to_NO.conj(),
-        V.reshape(state_old, state_old, state_old, state_old),
-        matrix_p_to_NO,
-        matrix_p_to_NO,
-        optimize="optimal",
-    ).reshape(state**2, state**2)
+    # V_mu_check = oe.contract(
+    #     "iM,jW,ijab,aN,bV->MWNV",
+    #     matrix_p_to_NO.conj(),
+    #     matrix_p_to_NO.conj(),
+    #     V.reshape(state_old, state_old, state_old, state_old),
+    #     matrix_p_to_NO,
+    #     matrix_p_to_NO,
+    #     optimize="optimal",
+    # ).reshape(state**2, state**2)
 
-    print(np.allclose(v_full, V_mu, atol=1e-15))
+    # print(np.allclose(V_mu, V_mu_check))
 
     # Import the changed Kinetic and Potential energy matrices to create the associated hamiltonial.
-    H_mu = hamiltonian_dense(
-        state, site, g_val, K_import=K_mu, V_import=V_mu, Import=True
-    )
+    H_mu = hamiltonian_dense(state, site, g_val, K_import=K_mu, V_import=V_mu, Import=True)
 
     # It is importatnt to keep the return in this format since hamiltonian_general uses this structure.
     return H_mu[0], K_mu, V_mu, matrix_p_to_NO

@@ -42,11 +42,14 @@
 
 \begin{document}
 
+\tableofcontents
+
 \section*{Code Documentation}
+\addcontentsline{toc}{section}{Code Documentation}
 
 This document is created to give a general overview of the code for the means of reviewing and tracking progress as well as for training purposes.
 
-\textbf{Important! Read the introductions to every section very carefully because the trees usually represent different things in different sections.}
+\textbf{\itshape Important! Read the introductions to every section very carefully because the trees represent different things in different sections.}
 
 The GitHub repository contains more files that could be useful, but
 this document would only talk about the "quant\_rotor" library. The files in a discarded folder are either completed projects or discarded ideas; files that are in the main fouler are usually files with the work in progress.
@@ -57,6 +60,7 @@ this document would only talk about the "quant\_rotor" library. The files in a d
 
 
 \section*{Library File Structure and Breakdown}
+\addcontentsline{toc}{section}{Library File Structure and Breakdown}
 
 This section will provide a general overview for the library structure as well as a small note on every
 file and a reference to more material about those files.\newline
@@ -76,12 +80,14 @@ The library is broken down into three main folders:
 for tree={
   font=\ttfamily\small,
   grow'=0,
-  anchor=west, child anchor=west,
-  % no global calign here
+  anchor=west, child anchor=west, parent anchor=east,
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
   before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=80pt},
 }
   [quant\_rotor
     [core
@@ -143,13 +149,15 @@ This section provides a short description of relevant files and their interactio
 
 Additionally, this section will present the description of the functions and function structure as well as notes on the ways to test them.
 
+\textbf{\itshape Take note of "..." they are usually hyperlinks to the omitted parts.}
+
 
 
 
 
 \section{"Models" files description}
 
-This section describes files in "models". Take note of "..." they are usually hyperlinks to the omitted parts.
+This section describes files in "models".
 
 
 
@@ -179,12 +187,14 @@ The first tree shows the file structure and right after the associated function 
 for tree={
   font=\ttfamily\small,
   grow'=0,
-  anchor=west, child anchor=west,
-  % no global calign here
+  anchor=west, child anchor=west, parent anchor=east,
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
   before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=140pt},
 }
   [write\_matrix\_elements
     [free\_one\_body]
@@ -196,12 +206,14 @@ for tree={
 for tree={
   font=\ttfamily\small,
   grow'=0,
-  anchor=west, child anchor=west,
-  % no global calign here
+  anchor=west, child anchor=west, parent anchor=east,
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
   before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=160pt},
 }
   [basis\_m\_to\_p\_matrix\_conversion
     [create\_inverse\_index\_map
@@ -214,12 +226,14 @@ for tree={
 for tree={
   font=\ttfamily\small,
   grow'=0,
-  anchor=west, child anchor=west,
-  % no global calign here
+  anchor=west, child anchor=west, parent anchor=east,
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
   before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=100pt},
 }
   [H\_kinetic]
 \end{forest}
@@ -228,12 +242,14 @@ for tree={
 for tree={
   font=\ttfamily\small,
   grow'=0,
-  anchor=west, child anchor=west,
-  % no global calign here
+  anchor=west, child anchor=west, parent anchor=east,
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
   before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=100pt},
 }
   [H\_potential]
 \end{forest}
@@ -254,12 +270,14 @@ for tree={
 for tree={
   font=\ttfamily\small,
   grow'=0,
-  anchor=west, child anchor=west,
-  % no global calign here
+  anchor=west, child anchor=west, parent anchor=east,
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
   before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=120pt},
 }
   [build\_V\_prime\_in\_p
     [vector\_in\_p
@@ -272,12 +290,14 @@ for tree={
 for tree={
   font=\ttfamily\small,
   grow'=0,
-  anchor=west, child anchor=west,
-  % no global calign here
+  anchor=west, child anchor=west, parent anchor=east,
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
   before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=100pt},
 }
   [build\_V\_in\_p
     [vector\_in\_p
@@ -290,12 +310,14 @@ for tree={
 for tree={
   font=\ttfamily\small,
   grow'=0,
-  anchor=west, child anchor=west,
-  % no global calign here
+  anchor=west, child anchor=west, parent anchor=east,
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
   before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=40pt},
 }
   [H\_kinetic\_sparse]
 \end{forest}
@@ -305,11 +327,14 @@ for tree={
   font=\ttfamily\small,
   grow'=0,
   anchor=west, child anchor=west,
-  % no global calign here
+  parent anchor=east,
+  fit=band,                       % <-- reserve width of all nodes at this level
+  before computing xy={l=8pt},    % <-- gutter after the parent text
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
-  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=40pt},
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(\forestregister{l},0) |- (.child anchor)\forestoption{edge label};
+  },
 }
   [H\_potential\_sparse]
 \end{forest}
@@ -324,11 +349,41 @@ This section will talk about how to test each of the functions. Ideally for the 
 
 \noindent\rule{\linewidth}{0.4pt}
 
+\textbf{write\_matrix\_elements}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{basis\_m\_to\_p\_matrix\_conversion}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{H\_kinetic}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{H\_potential}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+
+\textbf{\newline Sparse support\_ham:}
+
+\noindent\rule{\linewidth}{0.4pt}
+
 \textbf{build\_V\_prime\_in\_p}: ---fill---
 
 ---fill---
 
 \noindent\rule{\linewidth}{0.4pt}
+
 
 \textbf{build\_V\_in\_p}: ---fill---
 
@@ -350,7 +405,6 @@ This section will talk about how to test each of the functions. Ideally for the 
 
 
 
-
 \subsection{Density matrix calculation: "density\_matrix.py" (dense)}
 
 Approach to constructing one site and two sites reduced density matrices (RDM). (consult Configurational Coupled Cluster document Section 9)
@@ -364,71 +418,87 @@ The first tree shows the file structure and right after the associated function 
 
 \textbf{\newline File structure of dense density\_matrix: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=100pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [...density\_matrix
     [support\_ham]
   ]
 \end{forest}
+\end{mdframed}
 
 
 \textbf{\newline Function tructure of dense density\_matrix: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=100pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
-  [
-    [density\_matrix\_1]
-    [density\_matrix\_2]
-    [dencity\_energy
-      [write\_matrix\_elements
-        [...]
-      ]
-      [basis\_m\_to\_p\_matrix\_conversion
-        [...]
-      ]
-      [density\_matrix\_1]
-      [density\_matrix\_1]
+  [density\_matrix\_1]
+\end{forest}
+
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [density\_matrix\_2]
+\end{forest}
+
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [dencity\_energy
+    [write\_matrix\_elements
+      [...]
     ]
+    [basis\_m\_to\_p\_matrix\_conversion
+      [...]
+    ]
+    [density\_matrix\_1]
+    [density\_matrix\_1]
   ]
 \end{forest}
+\end{mdframed}
 
 
 
@@ -492,16 +562,19 @@ The first tree shows the file structure and right after the associated function 
 
 \textbf{\newline Function tructure of dense t\_amplitudes\_sub\_class.py \& t\_amplitudes\_sub\_class\_fast.py (dense and sparse): \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
   font=\ttfamily\small,
   grow'=0,
-  anchor=west, child anchor=west,
-  % no global calign here
+  anchor=west, child anchor=west, parent anchor=east,
   s sep=2pt, l sep=6pt, inner xsep=3pt,
-  edge path={\noexpand\path[draw] (!u.parent anchor) -- (.child anchor)\forestoption{edge label};},
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
   before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
-  before computing xy={l=140pt},
 }
   [class(QuantumSimulation)
     [A\_term]
@@ -545,6 +618,7 @@ for tree={
     ]
   ]
 \end{forest}
+\end{mdframed}
 
 
 
@@ -651,55 +725,42 @@ The files which are on the same level with functions mean that you can find thos
 
 \textbf{\newline File tructure of dense hamiltonian: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=60pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [...hamiltonian
     [quant\_rotor.models.dense.support\_ham]
   ]
 \end{forest}
+\end{mdframed}
 
 
 \textbf{\newline Function tructure of dense hamiltonian: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=60pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [hamiltonian\_dense
     [write\_matrix\_elements]
@@ -708,59 +769,47 @@ for tree={
     [H\_potential]
   ]
 \end{forest}
+\end{mdframed}
 
 
 \textbf{\newline File structure of sparse hamiltonian: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=60pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [...hamiltonian
     [quant\_rotor.models.sparse.support\_ham]
   ]
 \end{forest}
+\end{mdframed}
 
 
 \textbf{\newline Function structure of sparse hamiltonian: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=70pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [hamiltonian\_sparse
     [build\_V\_in\_p]
@@ -768,6 +817,7 @@ for tree={
     [H\_potential\_sparse]
   ]
 \end{forest}
+\end{mdframed}
 
 
 
@@ -843,26 +893,19 @@ The first tree shows the file structure and right after the associated function 
 
 \textbf{\newline File structure of dense hamiltonian\_big: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=115pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [...hamiltonian\_big
     [quant\_rotor.models.dense.density\_matrix]
@@ -871,30 +914,24 @@ for tree={
     ]
   ]
 \end{forest}
+\end{mdframed}
 
 
-\textbf{\newline Function tructure of dense hamiltonian\_big: \newline}
+\textbf{\newline Function structure of dense hamiltonian\_big: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=90pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [hamiltonian\_general\_dense
     [hamiltonian\_big\_dense
@@ -910,30 +947,24 @@ for tree={
     ]
   ]
 \end{forest}
+\end{mdframed}
 
 
 \textbf{\newline File structure of sparse hamiltonian\_big: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=115pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [...hamiltonian\_big
     [quant\_rotor.models.sparse.density\_matrix]
@@ -942,37 +973,88 @@ for tree={
     ]
   ]
 \end{forest}
+\end{mdframed}
 
 
 \textbf{\newline Function structure of sparse hamiltonian\_big: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=70pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
-  [hamiltonian\_sparse
-    [build\_V\_in\_p]
-    [H\_kinetic\_sparse]
-    [H\_potential\_sparse]
+  [hamiltonian\_general\_sparse
+    [hamiltonian\_big\_sparse
+      [density\_matrix\_1
+        [...]
+      ]
+      [hamiltonian\_sparse
+        [...]
+      ]
+    ]
+    [hamiltonian\_sparse
+      [...]
+    ]
   ]
 \end{forest}
+\end{mdframed}
+
+
+
+\subsubsection{Testing procedures}
+
+This section will talk about how to test each of the functions. Ideally for the simplicity and speed one would test the functions with the previous iteration of the function but in absence of that option there are tests that can be done to ensure the correctness.
+
+
+\textbf{\newline Dense hamiltonian\_big:}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{hamiltonian\_general\_dense \& hamiltonian\_big\_dense}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{hamiltonian\_dense}: ...
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{density\_matrix\_1}: ...
+
+\noindent\rule{\linewidth}{0.4pt}
+
+
+
+\textbf{\newline Sparse hamiltonian\_big:}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{hamiltonian\_general\_sparse \& hamiltonian\_big\_sparse}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{hamiltonian\_sparse}: ...
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{density\_matrix\_1}: ...
+
+\noindent\rule{\linewidth}{0.4pt}
+
+
+
 
 \subsection{Iterative procedure to solve for residuals: "t\_amplitudes\_periodic\_fast" (dense and sparse) \&
 "t\_amplitudes\_periodic" \& "t\_amplitudes\_guess"}
@@ -984,120 +1066,337 @@ The "t\_amplitudes\_guess" file is used to make a prediction which than later be
 medigate the problem of bit g. (consult Configurational Coupled Cluster document Section 8)
 
 
-\textbf{\newline Structure of t\_amplitudes\_guess: \newline}
+\subsubsection{File and Function structure}
 
+The first tree shows the file structure and right after the associated function structure. The files which are on the same level with functions mean that you can find those function in the associated files.
+
+\textbf{\newline File structure of t\_amplitudes\_guess: \newline}
+
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=95pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [...t\_amplitudes\_guess
     [quant\_rotor.models.dense.support\_ham]
   ]
 \end{forest}
+\end{mdframed}
 
-\textbf{\newline Structure of "t\_amplitudes\_periodic: \newline}
+\textbf{\newline Function structure of t\_amplitudes\_guess: \newline}
+
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [intermediate\_normalisation]
+\end{forest}
 
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=95pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
-  [..."t\_amplitudes\_periodic
+  [t\_1\_amplitutde]
+\end{forest}
+
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [t\_2\_amplitutde]
+\end{forest}
+
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [amplitute\_energy
+    [write\_matrix\_elements]
+    [basis\_m\_to\_p\_matrix\_conversion]
+    [t\_1\_amplitutde]
+    [t\_2\_amplitutde]
+  ]
+\end{forest}
+
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [t\_1\_amplitude\_guess\_ground\_state
+    [intermediate\_normalisation]
+    [t\_1\_amplitutde]
+  ]
+\end{forest}
+
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [t\_2\_amplitude\_guess\_ground\_state
+    [intermediate\_normalisation]
+    [t\_2\_amplitutde]
+  ]
+\end{forest}
+\end{mdframed}
+
+\textbf{\newline File structure of "t\_amplitudes\_periodic: \newline}
+
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [...t\_amplitudes\_periodic
     [quant\_rotor.models.dense.t\_amplitudes\_sub\_class]
     [quant\_rotor.models.dense.support\_ham]
   ]
 \end{forest}
+\end{mdframed}
 
-\textbf{\newline Structure of dense "t\_amplitudes\_periodic\_fast: \newline}
+\textbf{\newline Function structure of "t\_amplitudes\_periodic: \newline}
+
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [HF\_test]
+\end{forest}
 
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=95pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
-  [..."t\_amplitudes\_periodic
+  [t\_periodic
+    [write\_matrix\_elements]
+    [basis\_m\_to\_p\_matrix\_conversion]
+    [class(QuantumSimulation)
+      [residual\_single]
+      [residual\_double\_total]
+      [update\_one]
+      [update\_two]
+      [B\_term]
+      [h\_term]
+      [v\_term]
+      [t\_term]
+    ]
+  ]
+\end{forest}
+\end{mdframed}
+
+\textbf{\newline File structure of dense \& sparse "t\_amplitudes\_periodic\_fast: \newline}
+
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
+\begin{forest}
+for tree={
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
+}
+  [...t\_amplitudes\_periodic
     [quant\_rotor.models.dense.t\_amplitudes\_sub\_class\_fast]
-    [quant\_rotor.models.dense.support\_ham]
+    [quant\_rotor.models.sprase.support\_ham]
   ]
 \end{forest}
+\end{mdframed}
 
-\textbf{\newline Structure of sparse "t\_amplitudes\_periodic\_fast: \newline}
+\textbf{\newline Function structure of dense "t\_amplitudes\_periodic\_fast: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=95pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
-  [..."t\_amplitudes\_periodic
-    [quant\_rotor.models.sparse.t\_amplitudes\_sub\_class\_fast]
-    [quant\_rotor.models.sparse.support\_ham]
+  [t\_periodic
+    [build\_V\_in\_p]
+    [class(QuantumSimulation)
+      [residual\_single]
+      [residual\_double\_total]
+      [update\_one]
+      [update\_two]
+      [B\_term]
+      [h\_term]
+      [v\_term]
+      [t\_term]
+    ]
   ]
 \end{forest}
+\end{mdframed}
+
+
+
+\subsubsection{Testing procedures}
+
+This section will talk about how to test each of the functions. Ideally for the simplicity and speed one would test the functions with the previous iteration of the function but in absence of that option there are tests that can be done to ensure the correctness.
+
+
+\textbf{\newline Dense t\_amplitudes\_guess:}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{intermediate\_normalisation}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{t\_1\_amplitutde}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{t\_2\_amplitutde}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{amplitute\_energy}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{t\_1\_amplitude\_guess\_ground\_state}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{t\_2\_amplitude\_guess\_ground\_state}: ---fill---
+
+---fill---
+
+\noindent\rule{\linewidth}{0.4pt}
+
+
+\textbf{\newline Dense t\_amplitudes\_periodic \& Dense/Sparse t\_amplitudes\_periodic\_fast:}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{write\_matrix\_elements}: ...
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{basis\_m\_to\_p\_matrix\_conversion}: ...
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{build\_V\_in\_p}: ...
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\textbf{class(QuantumSimulation)}: ...
+
+\noindent\rule{\linewidth}{0.4pt}
 
 
 
@@ -1108,28 +1407,27 @@ This files provides a Runge Kutta method for solving a differential equation to 
 Section 10) The files are updated and optimised versions of each other in the order of newer to older: "de\_solve\_one\_thermal\_sparse" -> "de\_solve\_one\_thermal\_dense" -> "de\_solve\_one\_thermal" -> "de\_solve".
 
 
-\textbf{\newline Structure of de\_solve\_one\_thermal \& de\_solve: \newline}
 
+\subsubsection{File and Function structure}
+
+The first tree shows the file structure and right after the associated function structure. The files which are on the same level with functions mean that you can find those function in the associated files.
+
+
+\textbf{\newline File tructure of de\_solve\_one\_thermal \& de\_solve: \newline}
+
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=125pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [...de\_solve\_one\_thermal\_dense \& de\_solve
     [quant\_rotor.models.dense.de\_solver\_func]
@@ -1137,30 +1435,24 @@ for tree={
     [quant\_rotor.models.dense.support\_ham]
   ]
 \end{forest}
+\end{mdframed}
 
 
-\textbf{\newline Structure of de\_solve\_one\_thermal\_dense: \newline}
+\textbf{\newline File structure of de\_solve\_one\_thermal\_dense: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=95pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [...de\_solve\_one\_thermal\_dense
     [quant\_rotor.models.dense.de\_solver\_func]
@@ -1168,30 +1460,24 @@ for tree={
     [quant\_rotor.models.sparse.support\_ham]
   ]
 \end{forest}
+\end{mdframed}
 
 
-\textbf{\newline Structure of de\_solve\_one\_thermal\_sparse: \newline}
+\textbf{\newline File structure of de\_solve\_one\_thermal\_sparse: \newline}
 
+\begin{mdframed}[linewidth=0.5pt, roundcorner=5pt]
 \begin{forest}
 for tree={
-    font=\ttfamily,
-    grow'=0,
-    child anchor=west,
-    parent anchor=south,
-    anchor=west,
-    calign=first,
-    inner xsep=7pt,
-    edge path={
-        \noexpand\path [draw, \forestoption{edge}]
-        (!u.parent anchor) -- +(5pt,0) |- (.child anchor)\forestoption{edge label};
-    },
-    before typesetting nodes={
-        if n=1
-            {insert before={[,phantom]}}
-            {}
-    },
-    fit=band,
-    before computing xy={l=95pt},
+  font=\ttfamily\small,
+  grow'=0,
+  anchor=west, child anchor=west, parent anchor=east,
+  s sep=2pt, l sep=6pt, inner xsep=3pt,
+  % simple edge; constant 8pt elbow avoids any math/registers
+  edge path={
+    \noexpand\path[draw]
+      (!u.east) -- +(8pt,0) |- (.child anchor)\forestoption{edge label};
+  },
+  before typesetting nodes={if n=1{insert before={[,phantom]}}{}},
 }
   [...de\_solve\_one\_thermal\_sparse
     [quant\_rotor.models.dense.de\_solver\_func]
@@ -1199,4 +1485,13 @@ for tree={
     [quant\_rotor.models.sparse.support\_ham]
   ]
 \end{forest}
+\end{mdframed}
+
+
+
+\subsubsection{Testing procedures}
+
+This section will talk about how to test each of the functions. Ideally for the simplicity and speed one would test the functions with the previous iteration of the function but in absence of that option there are tests that can be done to ensure the correctness.
+
+
 \end{document}

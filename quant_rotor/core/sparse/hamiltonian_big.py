@@ -1,11 +1,13 @@
 import numpy as np
 import scipy.sparse as sp
+
 from quant_rotor.core.sparse.hamiltonian import hamiltonian_sparse
 from quant_rotor.models.dense.density_matrix import density_matrix_1
 
+
 def hamiltonian_big_sparse(state: int, site: int, g_val: float, H_K_V: list[np.ndarray], tau: float, l_val: float=0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
-    """    
+    """
     Parameters
     ----------
     state : int
@@ -14,7 +16,7 @@ def hamiltonian_big_sparse(state: int, site: int, g_val: float, H_K_V: list[np.n
         The number of rotors in the system.
     g_val : float
         The constant multiplier for the potential energy. Usually in the range of 0 <= g <= 1.
-    H_K_V:         
+    H_K_V:
         Returns a tuple of Kinetic energy matrix, Potential energy matrix and a Hamiltonian in the respective order.
         Dence Kinetic energy matrix in basis p and dimension of (state, state).
         Dence Potential energy matrix n basis p and shape of (state, state, state, state) simetric along the diagonal.
@@ -41,7 +43,7 @@ def hamiltonian_big_sparse(state: int, site: int, g_val: float, H_K_V: list[np.n
     state_old = int(K.shape[0])
     site_old = int(np.log(H.shape[0]) / np.log(state_old))
 
-    _, psi_vec = sp.linalg.eigsh(H, k=1, which='SA')
+    _, psi_vec = sp.linalg.eigsh(H, k=1, which='SA', tol=1e-19, maxiter=2000)
 
     rho_site_0 = density_matrix_1(state_old, site_old, psi_vec, 0)
 
@@ -57,11 +59,11 @@ def hamiltonian_big_sparse(state: int, site: int, g_val: float, H_K_V: list[np.n
 
     V_mu = left @ V @ right
 
-    H_mu = hamiltonian_sparse(state, site, g_val, l_val, K_mu, V_mu, True)[0]
+    H_mu = hamiltonian_sparse(state, site, g_val, K_import=K_mu, V_import=V_mu, Import=True)[0]
 
-    return H_mu, K_mu, V_mu, matrix_p_to_NO_full[:, index_d[:state]]
+    return H_mu, K_mu, V_mu
 
-def hamiltonian_general_sparse(states: int, sites: int, g_val: float, tau: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def hamiltonian_general_sparse(states: int, sites: int, g_val: float, tau: float=0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Iterages through hamiltonian systems using the hamiltonian_big_sparse to optimise the process of producing the hamiltonian.
@@ -87,7 +89,7 @@ def hamiltonian_general_sparse(states: int, sites: int, g_val: float, tau: float
     """
 
     H_K_V = hamiltonian_sparse(11, 3, g_val, tau, spar=False)
-    for current_site in range(3, sites + 2, 2):
-        H_K_V = hamiltonian_big_sparse(states, current_site, g_val, H_K_V, tau)
+
+    H_K_V = hamiltonian_big_sparse(states, sites, g_val, H_K_V, tau)
 
     return H_K_V
