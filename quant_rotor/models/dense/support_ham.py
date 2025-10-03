@@ -175,6 +175,98 @@ def write_matrix_elements(numer_unique_states: int, tau: float=0) -> tuple[np.nd
 
     return K, V
 
+
+# def write_matrix_elements(d_unique: int, tau: float = 0.0, mode: str = "chem"):
+#     """
+#     mode:
+#       - "raw" : V = <ij|kl>      (unsymmetrized)
+#       - "chem": V = <ij||kl>     (antisym on ket only), still (d**2, d**2)
+#     Returns:
+#       K: (d, d)
+#       V: (d**2, d**2)
+#     """
+#     d = 2 * d_unique + 1
+
+#     # --- K (make Hermitian explicitly) ---
+#     K = np.zeros((d, d), dtype=complex)
+#     for i in range(d):
+#         for j in range(d):
+#             K[i, j] = free_one_body(i, j, d_unique)
+#     K = 0.5 * (K + K.conj().T)
+
+#     # --- V_raw[i,j,k,l] = <ij|V|kl> ---
+#     V_raw = np.zeros((d, d, d, d), dtype=complex)
+#     for i in range(d):
+#         for j in range(d):
+#             for k in range(d):
+#                 for l in range(d):
+#                     V_raw[i, j, k, l] = interaction_two_body_coplanar(i, j, k, l, tau)
+
+#     if mode == "raw":
+#         V_use = V_raw
+#     elif mode == "chem":
+#         # <ij||kl> = <ij|kl> - <ij|lk>  (antisymmetrize on the ket side)
+#         V_use = V_raw - V_raw[:, :, :, :].swapaxes(2, 3)
+#     else:
+#         raise ValueError("mode must be 'raw' or 'chem'")
+
+#     V_mat = V_use.reshape(d * d, d * d)  # <-- shape matches your downstream code
+#     return K, V_mat
+
+
+def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
+    """
+    Constructs the dense kinetic energy Hamiltonian in a many-body tensor-product space,
+    using a single-particle operator K applied independently to each site.
+
+    Parameters
+    ----------
+    state : int
+        Total number states in the system, counting the ground state. Ex: system of -1, 0, 1 would be a system of 3 states.
+    site : int
+        The number of rotors (sites) in the system.
+    K : np.ndarray
+        Dense Kinetic energy matrix in the p-basis, shape (state, state).
+
+    Returns
+    -------
+    np.ndarray
+        Dense many-body kinetic Hamiltonian.
+    """
+
+    # Create a matrix of the shape of Kinetic energy Hamiltonian filled with zeros.
+    K_H = np.zeros((states**sites, states**sites), dtype=complex)
+
+    for x in range(sites):
+
+        # Define the total number of elements in the matrix operator, which represent the left and right sites that are not interacting
+        # by n_lambda and n_mu respectively.
+        n_lambda = states ** (x)
+        n_mu = states ** (sites - x - 1)
+
+        # Iterate through all elements of the Kinetic energy matrix operator.
+        for p in range(states):
+            for p_prime in range(states):
+
+                # Extract an associated element.
+                val = K[p, p_prime]
+
+                # Check if element is non zero.
+                if val == 0:
+                    continue  # skip writing 0s
+
+                for Lambda in range(int(n_lambda)):
+                    for mu in range(int(n_mu)):
+
+                        # Calculate the indices in the hamiltonian.
+                        i = mu + p * n_mu + Lambda * states * n_mu
+                        j = mu + p_prime * n_mu + Lambda * states * n_mu
+
+                        # Assign a values to associated.
+                        K_H[i, j] += val
+    return K_H
+
+
 def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
     """
     Constructs the dense kinetic energy Hamiltonian in a many-body tensor-product space,
@@ -369,7 +461,7 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int, tau: float
     if i1 == j1 + 1:
         if i2 == j2 + 1:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return 0.75  # * np.exp(1j * 2 * tau)  # ⟨m1+1, m2+1|
+            return 0.75  # ⟨m1+1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> -0.25")
             return -0.25 # ⟨m1+1, m2−1|
@@ -379,4 +471,34 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int, tau: float
             return -0.25 # ⟨m1−1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return 0.75  # * np.exp(1j * 2 * tau)  # ⟨m1−1, m2−1|            return 0.75 #* np.exp(1j * 2 * tau)  # ⟨m1−1, m2−1|
+            return 0.75  # ⟨m1−1, m2−1|
+
+
+def interaction_yiyj(i1, i2, j1, j2):
+
+    # returns <i1,i2|yiyj|j1,j2> where
+    # yiyj = -0.25 \sum_{m1, m2} (|m1, m2> <m1+1, m2+1| + |m1, m2> <m1-1, m2-1|) + 0.25 \sum_{m1, m2} (|m1, m2> <m1-1, m2+1| + |m1, m2> <m1+1, m2-1|)
+    if (abs(i1 - j1) != 1) or (abs(i2 - j2) != 1):
+        return 0.0
+    elif i1 - j1 == i2 - j2:
+        return -0.25
+    else:
+        return 0.25
+
+
+def interaction_xixj(i1, i2, j1, j2):
+
+    # returns <i1,i2|xixj|j1,j2> where
+    # xixj = 0.25 \sum_{m1, m2} (|m1, m2> <m1+1, m2+1| + |m1, m2> <m1-1, m2-1|) + 0.25 \sum_{m1, m2} (|m1, m2> <m1-1, m2+1| + |m1, m2> <m1+1, m2-1|)
+    if (abs(i1 - j1) != 1) or (abs(i2 - j2) != 1):
+        return 0.0
+    else:
+        return 0.25
+
+
+def interaction_general_angle(i1, i2, j1, j2, tau):
+
+    v_xi_xj = interaction_xixj(i1, i2, j1, j2)
+    v_yi_yj = interaction_yiyj(i1, i2, j1, j2)
+
+    return v_yi_yj + (1.0 - 3.0 * (np.cos(tau)) ** 2) * v_xi_xj

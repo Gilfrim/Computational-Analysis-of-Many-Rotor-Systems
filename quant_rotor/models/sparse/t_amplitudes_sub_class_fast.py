@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+
 import numpy as np
-import scipy.sparse as sp
 import opt_einsum as oe
+import scipy.sparse as sp
+
 
 @dataclass
 class SimulationParams:
@@ -54,7 +56,7 @@ class QuantumSimulation:
     def A_term_sparse(self, a_upper: int) -> sp.csr_matrix:
         """
         Constructs the sparse A^{a}_{p} transformation matrix used in coupled-cluster
-        single-excitation operations. The matrix is composed of a negated t^{a}_{i} block 
+        single-excitation operations. The matrix is composed of a negated t^{a}_{i} block
         concatenated with an identity matrix, formatted for use with sparse backends.
 
         Parameters
@@ -65,7 +67,7 @@ class QuantumSimulation:
         Returns
         -------
         sp.csr_matrix
-            A sparse matrix of shape (a, i + a), where the left block contains 
+            A sparse matrix of shape (a, i + a), where the left block contains
             -t^{a}_{i} and the right block is an identity matrix I^{a}_{a}.
         """
         t_ai = sp.csr_matrix(self.tensors.t_a_i_tensor.reshape(self.params.a, self.params.i))
@@ -77,8 +79,8 @@ class QuantumSimulation:
 
     def B_term_sparse(self, b_lower: int) -> sp.csr_matrix:
         """
-        Constructs the sparse B^{p}_{i} transformation vector used in coupled-cluster 
-        projection operations. This consists of a vertical concatenation of an all-ones 
+        Constructs the sparse B^{p}_{i} transformation vector used in coupled-cluster
+        projection operations. This consists of a vertical concatenation of an all-ones
         vector and the t^{a}_{i} tensor.
 
         Parameters
@@ -89,7 +91,7 @@ class QuantumSimulation:
         Returns
         -------
         sp.csr_matrix
-            A sparse column vector of shape (i + a, 1), where the first block is filled 
+            A sparse column vector of shape (i + a, 1), where the first block is filled
             with ones (for occupied modes), and the second block is t^{a}_{i}.
         """
         ones_i = sp.csr_matrix(np.ones((b_lower, 1)))
@@ -97,34 +99,35 @@ class QuantumSimulation:
         return sp.vstack([ones_i, t_ai], format='csr')
 
     def h_term_sparse(self, h_u: int, h_l: int) -> sp.csr_matrix:
-            """
-            Extracts a sub-block from the 2D sparse matrix `h_full`, representing a
-            2-index tensor H^{u}_{l} or H_{uv} depending on the context.
+        """
+        Extracts a sub-block from the 2D sparse matrix `h_full`, representing a
+        2-index tensor H^{u}_{l} or H_{uv} depending on the context.
 
-            Parameters
-            ----------
-            h_u : int
-                Dimension of the upper index.
-            h_l : int
-                Dimension of the lower index.
+        Parameters
+        ----------
+        h_u : int
+            Dimension of the upper index.
+        h_l : int
+            Dimension of the lower index.
 
-            Returns
-            -------
-            sp.csr_matrix
-                Sparse submatrix of shape (h_u, h_l)
-            """
-            a, i = self.params.a, self.params.i
-            dim_total = a + i
+        Returns
+        -------
+        sp.csr_matrix
+            Sparse submatrix of shape (h_u, h_l)
+        """
+        a, i = self.params.a, self.params.i
+        dim_total = a + i
 
-            def shift(size): return i if size == a else 0
+        def shift(size):
+            return i if size == a else 0
 
-            u_shift = shift(h_u)
-            l_shift = shift(h_l)
+        u_shift = shift(h_u)
+        l_shift = shift(h_l)
 
-            row_indices = [u_shift + u for u in range(h_u)]
-            col_indices = [l_shift + l for l in range(h_l)]
+        row_indices = [u_shift + u for u in range(h_u)]
+        col_indices = [l_shift + l for l in range(h_l)]
 
-            return self.tensors.h_full[np.ix_(row_indices, col_indices)]
+        return self.tensors.h_full[np.ix_(row_indices, col_indices)]
 
     def v_term_sparse(self, v_u1: int, v_u2: int, v_l1: int, v_l2: int) -> sp.csr_matrix:
         """
@@ -187,9 +190,9 @@ class QuantumSimulation:
         update = sp.csr_matrix((a, a), dtype=complex)
         for u_a in range(a):
             for u_b in range(a):
-                        update[u_a, u_b] = 1 / (eps[u_a + i] + eps[u_b + i] - 2*eps[0])
+                update[u_a, u_b] = 1 / (eps[u_a + i] + eps[u_b + i] - 2 * eps[0])
         return update.multiply(r_2_value)
-    
+
     def residual_single(self) -> np.ndarray:
         """
         Computes the single excitation residual R^{a}_{i} for site x_s = 0
@@ -225,16 +228,15 @@ class QuantumSimulation:
                 V_pQ = self.terms.V_pipp
 
                 R_single += (A_ap @ (V_pC @ T_C))
-                
+
             # Term 3: A V B B
             R_single += (A_ap @ (V_pQ @ BB_Q))
 
         return R_single
 
-
     def residual_double_sym(self, y_d: int) -> np.ndarray:
         """
-        Computes symmetric double residual R^{ab}_{ij}(0, y_d) 
+        Computes symmetric double residual R^{ab}_{ij}(0, y_d)
         assuming site x_d = 0 is fixed and y_d varies.
         Uses optimized tensor contractions via opt_einsum.
         """
@@ -277,7 +279,7 @@ class QuantumSimulation:
                             T_yw_1 = self.t_term(y_d, z+1)
                             T_0z_2 = self.t_term(x_d, z+1)
                             T_yw_2 = self.t_term(y_d, z)
-                            
+
                             R += T_0z_1 @ V_cd @ T_yw_1.T
                             R += T_0z_2 @ V_cd @ T_yw_2.T
         return R
@@ -306,17 +308,17 @@ class QuantumSimulation:
                 for z in range(site):
                     if z != x_d and z != y_d:
 
-                        V_ipap = self.terms.V_ipap.reshape(p*a, p)
+                        V_ipap = self.terms.V_ipap
                         T_xz = self.t_term(x_d, z)
                         V_pp = self.terms.V_iipp
-                        V_pap = self.terms.V_piap.reshape(p*a, p)
+                        V_pap = self.terms.V_piap
 
                         if abs(z - y_d) == 1 or abs(z - y_d) == (site - 1):
 
                             # Term 3
                             R += (T_xz @ (A @ (V_ipap @ B).reshape(p, a)).T)
 
-                            # Term 4                                
+                            # Term 4
                             R += (T_cb @ (A @ (V_pap @ B).reshape(p, a)).T)
 
                         if abs(0 - z) == 1 or abs(0 - z) == (site - 1):

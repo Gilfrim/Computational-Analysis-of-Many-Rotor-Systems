@@ -1,6 +1,12 @@
 import numpy as np
-from quant_rotor.models.sparse.support_ham import build_V_in_p, H_kinetic_sparse, H_potential_sparse
 import scipy.sparse as sp
+
+from quant_rotor.models.sparse.support_ham import (
+    H_kinetic_sparse,
+    H_potential_sparse,
+    build_V_in_p,
+)
+
 
 def hamiltonian_sparse(state: int, site: int, g_val: float, tau: float=0, l_val: float=0, K_import: sp.csr_matrix=[], V_import: sp.csr_matrix=[], Import: bool=False, spar: bool=False, general: bool=False)->tuple[sp.csr_matrix, sp.csr_matrix, sp.csr_matrix]:
     """
@@ -61,5 +67,5 @@ def hamiltonian_sparse(state: int, site: int, g_val: float, tau: float=0, l_val:
     # Add to get the final hamiltonian.
     H_final = K_final + V_final
 
-    # It is importatnt to keep the return in this format since hamiltonian_big.py functions are using this structure. 
+    # It is importatnt to keep the return in this format since hamiltonian_big.py functions are using this structure.
     return H_final, K_in_p, V_in_p

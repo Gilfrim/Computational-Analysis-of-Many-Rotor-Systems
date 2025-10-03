@@ -89,10 +89,11 @@ def build_V_prime_in_p(state: int, tau: float) -> tuple[sp.csr_matrix, sp.csr_ma
             p2 = perm[m2]
             i = index(p1, p2)
             for dm1, dm2, coef in [
-                (1, 1, 0.75 * np.exp(1j * 2 * tau)),
-                (-1, -1, 0.75 * np.exp(1j * 2 * tau)),
+                (1, 1, 0.75),
+                (-1, -1, 0.75),
                 (1, -1, -0.25),
-                (-1, 1, -0.25),]:
+                (-1, 1, -0.25),
+            ]:
 
                 m1p = m1 + dm1
                 m2p = m2 + dm2

@@ -1,0 +1,259 @@
+\documentclass[a4paper,11pt]{article}
+
+% Page setup
+\usepackage[a4paper,margin=2.5cm]{geometry}
+
+% Fonts & encoding
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% Math
+\usepackage{amsmath, amssymb, amsthm}
+
+% Graphics
+\usepackage{graphicx}
+
+% Hyperlinks
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+
+% Optional: numbered equations only if referenced
+%\usepackage{mathtools}
+%\mathtoolsset{showonlyrefs}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{braket}   % Convenient Dirac notation
+
+
+\title{Sample Document with Equations}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+
+\tableofcontents
+
+\section{Equations}
+
+
+\subsection*{Slide 5}
+
+\begin{equation}
+\hat{H} = \hat{K} + g\hat{V}
+\end{equation}
+
+
+\subsection*{Slide 6}
+\addcontentsline{toc}{subsection}{Slide 6}
+
+\begin{align}
+  \hat{H} &= \sum_{x}\sum_{p, p'} h^{p}_{p'}(x) \hat{e}^{p}_{p'}(x) + g \sum_{x \ne y}\sum_{p, p', q, q'} V^{pq}_{p'q'}(x, y) \hat{e}^{p}_{p'}(x) \hat{e}^{q}_{q'}(y) \\
+  &\equiv \sum_{x}\sum_{p, p'} \hat{h}^{p}_{p'}(x) + g \sum_{x \ne y}\sum_{p, p', q, q'} \hat{V}^{pq}_{p'q'}(x, y) \\
+\end{align}
+
+\begin{equation}
+  \hat{e}^{p}_{p'}(x) = \ket{p}\bra{p'}(x)
+\end{equation}
+
+\begin{equation}
+  \hat{e}(x) = (cos(\varphi), sin(\varphi))
+\end{equation}
+
+\begin{equation}
+\hat{H} = \sum_{i=1}^{N} \hat{h}_{i} + g \sum_{i=1}^{N-1} [\hat{e}_{i}\hat{e}_{i+1} + g(1-3\cos\gamma)(\hat{e}_{i}\hat{r})(\hat{e}_{i+1}\hat{r})]
+\end{equation}
+
+\begin{equation}
+  \langle p, q \vert \hat{V} \vert p', q' \rangle
+\end{equation}
+
+\begin{equation}
+  \lvert p - q \rvert = \lvert p' - q' \rvert = 1
+\end{equation}
+
+
+\subsection*{Slide 7}
+\addcontentsline{toc}{subsection}{Slide 7}
+
+\begin{equation}
+\dim(\hat H) = N \times N
+\end{equation}
+
+\begin{equation}
+N = \mathrm{state}^{\mathrm{site}}
+\end{equation}
+
+
+\subsection*{Slide 8}
+\addcontentsline{toc}{subsection}{Slide 8}
+
+\begin{equation}
+M_{dense}(state^{site}) = \frac{8 \,\bigl(\mathrm{state}^{\mathrm{site}}\bigr)^{2}}{1024^{3}}
+\end{equation}
+
+\begin{equation}
+M_{sparse}(state^{site}) = \frac{24(2state - 2)^{2} state^{site - 2}}{1024^{3}}
+\end{equation}
+
+\begin{equation}
+M_{dense}(state^{site}) \approx state^{2 \times site}
+\end{equation}
+
+\begin{equation}
+M_{sparse}(state^{site}) \approx state^{site - 2}
+\end{equation}
+
+
+\subsection*{Slide 9}
+\addcontentsline{toc}{subsection}{Slide 9}
+
+\begin{equation}
+    \phi : M \longrightarrow P, \qquad
+    \phi(m) =
+    \begin{cases}
+    \text{2|m +1| +1}, & m<0\\[6pt]
+    \text{2m}, & m\ge 0
+    \end{cases}
+\end{equation}
+
+\begin{equation}
+M = \{-n,\dots,n\}, \quad
+P = \{0,\dots,2n\} \;(\text{so } N=2n)
+\end{equation}
+
+\begin{align}
+  \braket{\lambda, p', \mu|h|\lambda, p, \mu} &= \hat{h}^{p}_{p'} \\
+  \braket{\lambda, p', \nu, q', \mu|V|\lambda, p, \nu, q, \mu} &= \hat{V}^{pq}_{p'q'} \\
+\end{align}
+
+
+\subsection*{Slide 10}
+\addcontentsline{toc}{subsection}{Slide 10}
+
+\begin{align}
+  \hat{H} &= \sum_{x}\sum_{p, p'} h^{p}_{p'}(x) \hat{e}^{p}_{p'}(x) + g \sum_{x \ne y}\sum_{p, p', q, q'} V^{pq}_{p'q'}(x, y) \hat{e}^{p}_{p'}(x) \hat{e}^{q}_{q'}(y) \\
+  &\equiv \sum_{x}\sum_{p, p'} \hat{h}^{p}_{p'}(x) + g \sum_{x \ne y}\sum_{p, p', q, q'} \hat{V}^{pq}_{p'q'}(x, y) \\
+\end{align}
+
+
+\subsection*{Slide 12}
+\addcontentsline{toc}{subsection}{Slide 12}
+
+\begin{equation}
+\hat{D}_{1} = D^{p}_{p'} = \sum_{\lambda, \mu} C^*_{(\lambda, p, \mu)} C_{(\lambda, p', \mu)}
+\end{equation}
+
+\begin{equation}
+\hat{D}_{1}\boldsymbol{\psi}_{i} = N_{i}\boldsymbol{\psi}_{i}, \qquad 0\le N_{i}\le 1
+\end{equation}
+
+\begin{equation}
+f : \mathbb{R} \longrightarrow \mathbb{R}, \qquad f(x)=x^2
+\end{equation}
+
+\begin{equation}
+U_{NO} = \bigl[\,\boldsymbol{\psi}_1\;\boldsymbol{\psi}_2\;\cdots\;\boldsymbol{\psi}_n\,\bigr]
+\end{equation}
+
+\begin{align}
+\boldsymbol{\hat{h}} &= U_{NO}^{\dagger} \cdot \hat{V} \cdot U_{NO} \\
+\boldsymbol{\hat{V}} &= (U_{NO} \otimes U_{NO})^{\dagger} \cdot \hat{V} \cdot (U_{NO} \otimes U_{NO}) \\
+\boldsymbol{\hat{H}} &= \sum_{x}\sum_{p, p'} \boldsymbol{\hat{h}}^{p}_{p'}(x) + g \sum_{x<y}\sum_{p, p', q, q'} \boldsymbol{\hat{V}}^{pq}_{p'q'}(x, y) \\
+\end{align}
+
+
+\subsection*{Slide 14}
+\addcontentsline{toc}{subsection}{Slide 14}
+
+\begin{equation}
+\hat{D}_{1} = D^{p}_{p'} = \sum_{\lambda, \mu} C^*_{(\lambda, p, \mu)} C_{(\lambda, p', \mu)}
+\end{equation}
+
+\begin{equation}
+\lambda_1, \lambda_2 \approx 0.495081, 0.495081
+\end{equation}
+
+\begin{equation}
+\mathbf{v}_1 =
+\begin{pmatrix}
+-9.770\times 10^{-1} \\
+ 0 \\
+ 0 \\
+ 1.507\times 10^{-1} \\
+ 1.507\times 10^{-1} \\
+ 0 \\
+ 0 \\
+-1.727\times 10^{-3} \\
+-1.727\times 10^{-3} \\
+ 0 \\
+ 0
+\end{pmatrix},
+\quad
+\mathbf{v}_2 =
+\begin{pmatrix}
+ 0 \\
+-8.765\times 10^{-4} \\
+ 8.765\times 10^{-4} \\
+ 0 \\
+ 0 \\
+ 3.192\times 10^{-5} \\
+-3.192\times 10^{-5} \\
+ 0 \\
+ 0 \\
+-1.509\times 10^{-7} \\
+ 1.509\times 10^{-7}
+\end{pmatrix}.
+\end{equation}
+
+\subsection*{Slide 20}
+\addcontentsline{toc}{subsection}{Slide 20}
+
+\begin{equation}
+(-1) \frac{d}{d \tau} \ket{\Psi(\tau)}= \hat{H}\ket{\boldmath{\Psi}(\tau)}
+\end{equation}
+
+\begin{equation}
+\ket{\Psi(\tau)}= e^{\hat{T}(\tau)}\ket{0}
+\end{equation}
+
+\begin{equation}
+(-1) \frac{d t_{\lambda}}{d \tau}= R_{\lambda}
+\end{equation}
+
+
+\subsection*{Slide 22}
+\addcontentsline{toc}{subsection}{Slide 22}
+
+\begin{align}
+\hat{h}^{p}_{p'}(0)  &= \hat{h}^{p}_{p'}(x)  \qquad 0\le x \le N_{sites} \\
+\hat{V}^{pq}_{p'q'}(0, 1) &= \hat{V}^{pq}_{p'q'}(x, x+1)  \qquad 0\le x \le N_{sites} - 1 \\
+\hat{V}^{pq}_{p'q'}(x, y) &= \hat{V}^{pq}_{p'q'}(y, x)  \qquad 0\le x, y \le N_{sites}, |x - y| = 1 \\
+\end{align}
+
+\begin{align}
+  Rt^{ab}_{ij}(x < y) &= Rs^{ab}_{ij}(x< y) + Rn^{ab}_{ij}(x, y) + Rn^{ab}_{ij}(y, x) \\
+  &= Rs^{ab}_{ij}(x< y) + 2 \times Rn^{ab}_{ij}(x, y) \\
+\end{align}
+
+
+\subsection*{Slide 22}
+\addcontentsline{toc}{subsection}{Slide 22}
+
+\begin{equation}
+D(\mathrm{state},\mathrm{site}) = \frac{E_{\mathrm{state}}}{E_{\mathrm{site}}}
+= \frac{\mathrm{site}}{\ln(\mathrm{state})}.
+\end{equation}
+
+
+\subsection*{Slide 24}
+\addcontentsline{toc}{subsection}{Slide 24}
+
+\begin{equation*}
+A^{a}_{p}(x)\,A^{b}_{q}(y)\,V^{pq}_{cd}(x,y)\,t^{cd}_{ij}(x,y)
+\;\longrightarrow\;
+A^{a}_{p}(x)\,A^{b}_{q}(y)\,V^{pq}_{cd}(x,y)\,t^{cd}_{\boldsymbol{\cdot} \ \boldsymbol{\cdot}}(x,y)
+\;\longrightarrow\;
+A A^{B=ab}_{Q=pq}(x,y)\,V^{Q}_{C}(x,y)\,t^{C}_{\ \boldsymbol{\cdot}}(x,y)
+\end{equation*}
+
+\end{document}

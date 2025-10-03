@@ -1,10 +1,17 @@
-from quant_rotor.models.dense.de_solver_func import new_solve_ivp
-from quant_rotor.models.dense.t_amplitudes_sub_class_fast import QuantumSimulation, TensorData, SimulationParams, PrecalcalculatedTerms
-import numpy as np 
+import numpy as np
 import opt_einsum as oe
-import quant_rotor.models.dense.thermofield_boltz_funcs as bz
 import scipy.sparse as sp
+
+import quant_rotor.models.dense.thermofield_boltz_funcs as bz
+from quant_rotor.models.dense.de_solver_func import new_solve_ivp
+from quant_rotor.models.dense.t_amplitudes_sub_class_fast import (
+    PrecalcalculatedTerms,
+    QuantumSimulation,
+    SimulationParams,
+    TensorData,
+)
 from quant_rotor.models.sparse.support_ham import build_V_prime_in_p
+
 
 def residual_double():
      return 0
@@ -19,57 +26,61 @@ def get_list_shape(lst):
     return tuple(shape)
 
 def postprocess_rk45_integration_results(sol,t0_stored, state, site):
-        
-        # Copy the time value arrays
-        time = sol.t.copy()
 
-        # initialize the arrays to store the autocorrelation function
-        true_evaluated_t0 = np.zeros_like(time, dtype=np.complex128)
-        true_evaluated_T_ai = np.zeros_like(time, dtype=np.complex128)
-        true_evaluated_two_max = np.zeros_like(time, dtype=np.complex128)
-         
-        # only extract the values which correspond to time steps in the solution
-        # since we save C(t) for all integration steps, but only some are accepted
-        
-        t_dict = {t: (dT_0dB, T_ai, two_max) for (t, dT_0dB, T_ai, two_max) in t0_stored}
-        
-        for idx, t in enumerate(sol.t):
-            dT_0dB, T_ai, two_max = t_dict[t]
-            true_evaluated_t0[idx] = dT_0dB[0]
-            true_evaluated_T_ai[idx] = T_ai
-            true_evaluated_two_max[idx] = two_max
+    # Copy the time value arrays
+    time = sol.t.copy()
 
-        return(time,true_evaluated_t0, true_evaluated_T_ai, true_evaluated_two_max)
-    
-      
+    # initialize the arrays to store the autocorrelation function
+    true_evaluated_t0 = np.zeros_like(time, dtype=np.complex128)
+    true_evaluated_T_ai = np.zeros_like(time, dtype=np.complex128)
+    true_evaluated_two_max = np.zeros_like(time, dtype=np.complex128)
+
+    # only extract the values which correspond to time steps in the solution
+    # since we save C(t) for all integration steps, but only some are accepted
+
+    t_dict = {t: (dT_0dB, T_ai, two_max) for (t, dT_0dB, T_ai, two_max) in t0_stored}
+
+    for idx, t in enumerate(sol.t):
+        dT_0dB, T_ai, two_max = t_dict[t]
+        true_evaluated_t0[idx] = dT_0dB[0]
+        true_evaluated_T_ai[idx] = T_ai
+        true_evaluated_two_max[idx] = two_max
+
+    return (time, true_evaluated_t0, true_evaluated_T_ai, true_evaluated_two_max)
+
+
 def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, params: SimulationParams, tensors: TensorData, qs: QuantumSimulation) -> np.ndarray:
     """Set of coupled odes for a given time step numerically for the 1 electron hamiltonian_dict for the T_ai and T_0 equation for use
-    in the scipy ode solver  
+    in the scipy ode solver
 
     Parameters
     ----------
     t : float
-        Some value of time 
+        Some value of time
     T_ai_T_0_flat : np.array
-        Flattened T_ai matrix concatenated with the T_0 value to be used in their respective ODE  
+        Flattened T_ai matrix concatenated with the T_0 value to be used in their respective ODE
     H : np.array
-        1 electron hamiltonian_dict 
+        1 electron hamiltonian_dict
     reference_state : int
         Number of electron to create the reference configuration used to the initial value problem of the coupled TDCC odes
         ex. reference_state = 2, has corresponding occupation number vector (1,1,0,0)
     thermofield : bool, optional
-        Parameter for whether the hamiltonian_dict used is the thermofield hamiltonian_dict such that the correct partition of the hamiltonian_dict 
+        Parameter for whether the hamiltonian_dict used is the thermofield hamiltonian_dict such that the correct partition of the hamiltonian_dict
         is used, by default False
 
     Returns
     -------
     np.array
-        the flattened array containing the derivative of the T_ai and T_0 for a given time step, the 2 derivatives are concatenated 
-        to make a 1d array  
-    """  
+        the flattened array containing the derivative of the T_ai and T_0 for a given time step, the 2 derivatives are concatenated
+        to make a 1d array
+    """
     site, a, p, i = params.site, params.a, params.p, params.i
 
-    dTab_ijdB_sol, dTa_idB_sol, T_ai = comb_flat[:-a-1], comb_flat[-a-1:-1], comb_flat[-1] 
+    dTab_ijdB_sol, dTa_idB_sol, T_ai = (
+        comb_flat[: -a - 1],
+        comb_flat[-a - 1 : -1],
+        comb_flat[-1],
+    )
     dTab_ijdB = dTab_ijdB_sol.reshape(site, a, a)
     dTa_idB = dTa_idB_sol.reshape(a)
 
@@ -97,7 +108,9 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
                 T_xy = qs.t_term(site_x, site_y)
 
                 # noinspection SpellCheckingInspection
-                energy +=  np.sum(V_iiaa* (T_xy)) * 0.5
+                energy += np.sum(V_iiaa * (T_xy)) * 0.5
+
+                print(T_xy)
                 # noinspection SpellCheckingInspection
                 energy += (V_iipp @ qs.terms.b_term @ qs.terms.b_term) * 0.5
 
@@ -118,23 +131,48 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     t0_stored.append((t, dT_0dB, T_ai, two_max))
     return (comb_flat)
 
-def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., nof_points=10000, K_import: np.ndarray=[], V_import: np.ndarray=[], import_K_V_TF = False, import_K_V_NO = False) -> tuple:
+
+def integration_scheme(
+    site: int,
+    state: int,
+    g: float,
+    t_init: float = 0.0,
+    t_final: float = 10.0,
+    nof_points: int = 10000,
+    TF: bool = False,
+) -> tuple:
     """"""
 
     # Load .npy matrices directly from the package
-    K, V = build_V_prime_in_p(state)
-    I = np.eye(state)
+    K, V = build_V_prime_in_p(state, tau=0)
 
-    U, _ = bz.thermofield_change_of_basis(I)
+    if TF:
+        I = np.eye(state)
 
-    U_sparse = sp.csr_matrix(U)
+        U, _ = bz.thermofield_change_of_basis(I)
 
-    h_full = (U_sparse.T @ K @ U_sparse).toarray()
+        U_sparse = sp.csr_matrix(U)
 
-    v_full = oe.contract('Mi,Wj,ijab,aN,bV->MWNV', U, U, V.toarray().reshape(state**2, state**2, state**2, state**2), U, U, optimize='optimal')
-    v_full = v_full * g
+        h_full = (U_sparse.T @ K @ U_sparse).toarray()
 
-    state = state**2
+        v_full = oe.contract(
+            "Mi,Wj,ijab,aN,bV->MWNV",
+            U,
+            U,
+            V.toarray().reshape(state**2, state**2, state**2, state**2),
+            U,
+            U,
+            optimize="optimal",
+        )
+        v_full = v_full * g
+    else:
+        h_full = K.toarray()
+        v_full = V.toarray().reshape(state**2, state**2, state**2, state**2) * g
+
+    print(np.max(h_full))
+    print(np.max(v_full))
+
+    # state = state**2
     p = state
     i = 1
     a = p - i
@@ -142,7 +180,7 @@ def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., 
     t_a_i_tensor = np.full((a), 0, dtype=complex)
     t_ab_ij_tensor = np.full((site, a, a), 0, dtype=complex)
 
-    #eigenvalues from h for update
+    # eigenvalues from h for update
     epsilon = np.diag(h_full)
 
     params = SimulationParams(
@@ -169,13 +207,13 @@ def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., 
     qs = QuantumSimulation(params, tensors, terms)
 
     del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor
-    
+
     # Initialize T_0 (reference amplitude) as complex zero
     t_0 = complex(0)
     # Initialize T_ai amplitudes as zeros
     single = np.zeros((a), dtype = complex)
     double = np.zeros((site, a, a), dtype = complex)
-    
+
     terms.h_pp=qs.h_term(p, p)
     terms.h_pa=qs.h_term(p, a)
     terms.h_ip=qs.h_term(i, p).reshape(p)
@@ -188,17 +226,19 @@ def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., 
     terms.V_ipap=qs.v_term(i, p, a, p, 0, 1).reshape(p, a, p)
     terms.V_piap=qs.v_term(p, i, a, p, 0, 1).reshape(p, a, p)
 
+    print(terms.V_iiaa)
+
     # Concatenate flattened T_ai and T_0 into a single array for the ODE solver
     init_amps = np.concatenate((double.flatten(), single.flatten(), np.array([t_0])))
 
     step_size = (t_final - t_init) / nof_points
 
     # prepare the initial y_tensor
-    t0_stored = [(0, 0, 0, 0)]  # time, value 
+    t0_stored = [(0, 0, 0, 0)]  # time, value
 
     # Arguments to pass to the ODE function
     arguments = (t0_stored, params, tensors, qs)
-    
+
     # specify the precision of the integrator so that the output for the test models is numerically identical
     relative_tolerance = 1e-9
     absolute_tolerance = 1e-10
@@ -209,7 +249,7 @@ def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., 
     # call the integrator
     # ------------------------------------------------------------------------
     integration_function = tdcc_differential_equation
-    
+
     sol = new_solve_ivp(
         fun=integration_function,  # the function we are integrating
         # method="RK45",  # the integration method we are using
@@ -236,7 +276,7 @@ def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., 
     # ------------------------------------------------------------------------
     # now we extract the relevant information from the integrator object `sol`
     # ------------------------------------------------------------------------
-    
+
     time, T_0, t_0_sol, two_max = postprocess_rk45_integration_results(sol,t0_stored, state, site)
-    
+
     return(time, T_0, t_0_sol, two_max)

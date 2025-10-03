@@ -68,11 +68,8 @@ def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodi
         # L_dense = L_sparce.toarray()
         # K = K + L_dense
 
-        # Symmetrization of a Potential energy matrix.
-        V_symetric = (V + V.T - np.diag(np.diag(V)))/2
-
         # Reshape a potential energy matrix from (state^2, state^2) -> (state, state, state, state).
-        V_tensor = V_symetric.reshape(state, state, state, state)
+        V_tensor = V.reshape(state, state, state, state)
 
         # Transform Kinnetic and Potential energy matricies from m basis to p basis.
         K_in_p = basis_m_to_p_matrix_conversion(K, state)
@@ -88,7 +85,7 @@ def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodi
 
     # Construct a Kinetic and Potential hamiltonian.
     K_final = H_kinetic(state, site, K_in_p)
-    V_final = H_potential(state, site, V_in_p, 1, periodic)
+    V_final = H_potential(state, site, V_in_p, g_val, periodic)
 
     # Add to get the final hamiltonian.
     H_final = K_final + V_final
