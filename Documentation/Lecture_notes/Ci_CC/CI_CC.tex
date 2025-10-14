@@ -1,0 +1,193 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{physics}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+
+\title{Lecture Notes: Configuration Interaction and Coupled Cluster Theory}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+Up to now we considered the use of small expansions (Configuration Interaction, CI) to calculate approximate:
+\begin{itemize}
+    \item Ionization potentials
+    \item Electron affinities
+    \item Excitation energies
+\end{itemize}
+
+These use the excitations of the Hartree--Fock (HF) ground-state determinant.
+
+\[
+E(\Psi) = \langle \Psi | H | \Psi \rangle
+\]
+
+Such expansions often give good \textit{total energies} (about 99\% of the correlation energy) but are \textbf{not size-consistent}.
+On a chemical scale, large errors appear.
+CI cannot be reliably used to calculate reaction energies or potential energy surfaces.
+
+\section{Beyond CI}
+
+We need to go beyond simple CI. The simplest approach is still the \textit{variational principle}.
+
+\subsection{Single-Reference Approaches}
+
+\begin{enumerate}
+    \item \textbf{Configuration Interaction (CISD, CEPA)} \\
+    Problems:
+    \begin{itemize}
+        \item Not size-consistent (\(E_{AB} \neq E_A + E_B\))
+        \item Often insufficient for high accuracy
+    \end{itemize}
+
+    \item \textbf{Fixing Size-Consistency: Coupled Cluster (CC)} \\
+    CCSD(T) is excellent for good HF references, but:
+    \begin{itemize}
+        \item Limited for bond breaking
+        \item Poor convergence outside a good one-particle basis set
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Multi-Reference and Advanced Methods}
+
+\begin{itemize}
+    \item Solving the \textbf{multi-reference problem}:
+    \begin{itemize}
+        \item MR--CI
+        \item MR--ACPF (size-consistent)
+        \item MR--CC
+    \end{itemize}
+
+    \item \textbf{Excited States:}
+    \begin{itemize}
+        \item Equation-of-Motion Coupled Cluster (EOM-CC, CCSDT)
+        \item Similarity-transformed Fock
+    \end{itemize}
+
+    \item \textbf{Large Systems:}
+    \begin{itemize}
+        \item Local correlation
+        \item Explicit correlation (F12 methods)
+    \end{itemize}
+\end{itemize}
+
+\section{Configuration Interaction (CI)}
+
+We approximate the wavefunction as:
+\[
+\Psi = \Phi_0 + \sum_i c_i \Phi_i + \sum_{ij} c_{ij} \Phi_{ij} + \cdots
+\]
+
+\begin{itemize}
+    \item CISD: singles + doubles excitations.
+    \item Full CI: all possible \(N\)-fold excitations for \(N\) electrons.
+\end{itemize}
+
+\subsection{Hartree--Fock Singles and Brillouin Condition}
+
+For a singly excited determinant:
+\[
+\langle \Phi_i^a | H | \Phi_{\mathrm{HF}} \rangle = F_{ai}
+\]
+
+In HF orbitals, the \textbf{Brillouin condition} applies:
+\[
+\langle \Phi_i^a | H | \Phi_{\mathrm{HF}} \rangle = 0
+\]
+
+Thus the HF energy cannot be lowered by adding only single excitations.
+
+\section{Limitations of CI}
+
+\subsection{Size Consistency}
+
+CISD and higher single-reference CI are \textbf{not size-consistent}:
+\[
+E_{AB} \neq E_A + E_B
+\]
+
+This violates the extensivity principle and makes CI unreliable for separated subsystems.
+
+\section{Coupled Cluster (CC) Theory}
+
+The CC wavefunction is defined as:
+\[
+\Psi = e^T \Phi_0
+\]
+
+where
+\[
+T = T_1 + T_2 + T_3 + \cdots
+\]
+
+Each \(T_n\) represents all \(n\)-tuple excitations.
+This exponential ansatz ensures \textbf{size-consistency} and good scaling.
+
+\subsection{CC Equations}
+
+Define the similarity-transformed Hamiltonian:
+\[
+\bar{H} = e^{-T} H e^T
+\]
+
+Project onto the reference and excited determinants to obtain the amplitude equations.
+Note: \(\bar{H}\) is \textbf{non-Hermitian}.
+
+\subsection{Expansion of \(\bar{H}\)}
+
+\[
+\bar{H} = H + [H, T] + \tfrac{1}{2} [[H, T], T] + \cdots
+\]
+
+This nested commutator expansion \textit{terminates} because \(T\) only contains excitations.
+
+\section{Practical CC Levels}
+
+\begin{itemize}
+    \item \textbf{CCSD}: singles and doubles
+    \item \textbf{CCSDT}: singles, doubles, triples (very expensive)
+    \item \textbf{CCSD(T)}: CCSD with perturbative triples — the \textbf{gold standard} of quantum chemistry
+\end{itemize}
+
+CC methods work well for:
+\begin{itemize}
+    \item Geometries
+    \item Vibrational frequencies
+    \item Thermochemistry
+\end{itemize}
+
+\noindent
+But can fail for \textbf{multi-reference} cases (e.g., bond breaking).
+
+\section{Excited States}
+
+\begin{itemize}
+    \item \textbf{EOM-CC}: Equation-of-Motion CC for excited states, ionization potentials (IP-CC), electron affinities (EA-CC).
+    \item Spin-flip and multi-reference CC exist for strongly correlated systems.
+\end{itemize}
+
+\section{Accuracy}
+
+\begin{itemize}
+    \item CCSD(T) typically yields \(\sim 0.01\)--\(0.02\ \mathrm{eV}\) accuracy for valence states.
+    \item Not reliable for Rydberg states.
+    \item EOM-CC IP/EA works well for small molecules.
+\end{itemize}
+
+\section{Summary}
+
+\begin{itemize}
+    \item CI is conceptually simple but suffers from size-consistency and scaling issues.
+    \item Coupled Cluster (CC) uses an exponential ansatz ensuring size-consistency.
+    \item CCSD(T) is the practical ``gold standard'' for many systems.
+    \item EOM-CC extends CC to excited, ionized, and electron-attached states.
+    \item Multi-reference situations (e.g., bond breaking) require more advanced MR-CC methods.
+\end{itemize}
+
+\end{document}

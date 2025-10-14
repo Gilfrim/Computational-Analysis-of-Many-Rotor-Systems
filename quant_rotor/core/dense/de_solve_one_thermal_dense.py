@@ -143,7 +143,6 @@ def integration_scheme(
 ) -> tuple:
     """"""
 
-    # Load .npy matrices directly from the package
     K, V = build_V_prime_in_p(state, tau=0)
 
     if TF:

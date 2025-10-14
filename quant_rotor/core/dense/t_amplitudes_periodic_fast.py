@@ -12,7 +12,7 @@ from quant_rotor.models.dense.t_amplitudes_sub_class_fast import (
 )
 from quant_rotor.models.sparse.support_ham import build_V_in_p
 
-#printout settings for large matrices
+# printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
 
 def t_periodic(
@@ -34,9 +34,9 @@ def t_periodic(
     Create SimulationParams from raw input arguments.
     Performs logic for a, i, p and validates start_point.
     """
-    #state variables
-    #could just use p, i, a
-    #makes checking einsums and such a bit easier
+    # state variables
+    # could just use p, i, a
+    # makes checking einsums and such a bit easier
     p = state
     i = low_state
     a = p - i
@@ -56,7 +56,7 @@ def t_periodic(
         t_a_i_tensor = t_a_i_tensor_initial
         t_ab_ij_tensor = t_ab_ij_tensor_initial
 
-    #eigenvalues from h for update
+    # eigenvalues from h for update
     epsilon = np.diag(h_full)
 
     params = SimulationParams(
@@ -131,11 +131,11 @@ def t_periodic(
             # for site_2 in range(1, site):
             #     tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors.t_ab_ij_tensor[0, site_1]
 
-        #energy calculations
+        # energy calculations
         for site_x in range(site):
             energy += terms.h_ip @ terms.b_term
 
-            for site_y in range(site_x + 1, site):
+            for site_y in range(site_x + 1, site_x + site):
                 if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
                     V_iipp = terms.V_iipp
                     V_iiaa = terms.V_iiaa
@@ -149,7 +149,7 @@ def t_periodic(
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
 
-        #CHANGE BACK TO 10
+        # CHANGE BACK TO 10
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
 

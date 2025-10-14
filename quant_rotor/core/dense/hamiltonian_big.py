@@ -57,6 +57,7 @@ def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.n
     eig_val, eig_vec = np.linalg.eigh(H)
 
     # Find the index associated with the smallest eigenstate.
+
     index = np.argmin(eig_val)
     ground_state_vec = eig_vec[:, index]
 
@@ -137,6 +138,6 @@ def hamiltonian_general_dense(states: int, sites: int, g_val: float, tau: float=
     # Iterate through every new system by increasing the size of the system by 2 sites every eteration.
 
     # Make an approximation of the Hamiltonian, Kinetic and Potential energy matrices for the bigger system.
-    H_K_V = hamiltonian_big_dense(states, sites, g_val, H_K_V, tau, periodic)
+    H_K_V = hamiltonian_big_dense(states, sites, 1, H_K_V, tau, periodic)
 
     return H_K_V[0], H_K_V[1], H_K_V[2]

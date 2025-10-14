@@ -129,21 +129,18 @@ def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., 
     i = 1
     a = p - i
 
-    # Load .npy matrices directly from the package
-    K, V = write_matrix_elements((state-1)//2)
-
-    V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
-
     if import_K_V_TF:
         h_full = K_import
         v_full = V_import
-
-    elif import_K_V_NO:
-        h_full = K_import
-        v_full = V_import  # * g #Uncoment if actually using NO
     else:
+        # Load .npy matrices directly from the package
+        K, V = write_matrix_elements((state - 1) // 2)
+
+        V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
+
         h_full = basis_m_to_p_matrix_conversion(K, state)
         v_full = basis_m_to_p_matrix_conversion(V_tensor, state)
+
         v_full = v_full * g
 
     t_a_i_tensor = np.full((site, a, i), 0, dtype=complex)
@@ -173,8 +170,6 @@ def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., 
     )
 
     qs = QuantumSimulation(params, tensors)
-
-    del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
 
     # Initialize T_0 (reference amplitude) as complex zero
     t_0 = complex(0)

@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+
 import numpy as np
-import scipy.sparse as sp
 import opt_einsum as oe
+import scipy.sparse as sp
+
 
 @dataclass
 class SimulationParams:
@@ -58,7 +60,6 @@ class QuantumSimulation:
         a_h_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (h_upper, h_lower)]
         return self.tensors.h_full[a_h_shift[0]:h_upper + a_h_shift[0], a_h_shift[1]:h_lower + a_h_shift[1]]
 
-    
     def v_term(self, v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2):
         if self.params.periodic:
             if abs(v_site_1 - v_site_2) == 1 or abs(v_site_1 - v_site_2) == (self.params.site - 1):
@@ -145,19 +146,18 @@ class QuantumSimulation:
                     R_single += (A_ap @ (V_pC @ T_C))
                 else:
                     R_single += oe.contract("ap,pC,C->a", A_ap, V_pC, T_C)
-                
+
             # Term 3: A V B B
             if fast:
                 R_single += (A_ap @ (V_pQ @ BB_Q))
             else:
                 R_single += oe.contract("ap,pQ,Q->a", A_ap, V_pQ, BB_Q)
 
-        return R_single 
-
+        return R_single
 
     def residual_double_sym(self, y_d: int) -> np.ndarray:
         """
-        Computes symmetric double residual R^{ab}_{ij}(0, y_d) 
+        Computes symmetric double residual R^{ab}_{ij}(0, y_d)
         assuming site x_d = 0 is fixed and y_d varies.
         Uses optimized tensor contractions via opt_einsum.
         """
@@ -192,37 +192,42 @@ class QuantumSimulation:
 
                     # Term 2: A ⊗ A · V · T
                     if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
-                        
+
                         R += oe.contract("BQ,QC,C->B", AA_BQ, V_QC, T_C_flat).reshape(a, a)
 
-                    # Term 3: T · V · B ⊗ B
+                        # Term 3: T · V · B ⊗ B
                         R -= oe.contract("ab,pq,p,q->ab", T_C, V_pq, B, B)
 
-                if i_method == 3 and site >= 4:
+                if i_method == 3:
                     V_cd = self.terms.V_iiaa.reshape(a, a)
                     if fast:
                         if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
                             scalar = np.sum(V_cd * T_C)
                             R -= T_C * scalar
-                    else:        
+                    else:
                         # Term 4: T · V · T
                         if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
                             R -= oe.contract("ab,cd,cd->ab", T_C, V_cd, T_C)
-                            
-                    # Term 5: all connected permutations
-                    for z in range(site-1):
-                            if z not in {0, y_d} and z+1 not in {0, y_d} and z != z+1:
-                                    T_0z_1 = self.t_term(x_d, z)
-                                    T_yw_1 = self.t_term(y_d, z+1)
-                                    T_0z_2 = self.t_term(x_d, z+1)
-                                    T_yw_2 = self.t_term(y_d, z)
 
-                                    if fast:
-                                        R += T_0z_1 @ V_cd @ T_yw_1.T
-                                        R += T_0z_2 @ V_cd @ T_yw_2.T
-                                    else:
-                                        R += oe.contract("cd,ac,bd->ab", V_cd, T_0z_1, T_yw_1)
-                                        R += oe.contract("cd,ac,bd->ab", V_cd, T_0z_2, T_yw_2)
+                    if site >= 4:
+                        # Term 5: all connected permutations
+                        for z in range(site - 1):
+                            if z not in {0, y_d} and z+1 not in {0, y_d} and z != z+1:
+                                T_0z_1 = self.t_term(x_d, z)
+                                T_yw_1 = self.t_term(y_d, z + 1)
+                                T_0z_2 = self.t_term(x_d, z + 1)
+                                T_yw_2 = self.t_term(y_d, z)
+
+                                if fast:
+                                    R += T_0z_1 @ V_cd @ T_yw_1.T
+                                    R += T_0z_2 @ V_cd @ T_yw_2.T
+                                else:
+                                    R += oe.contract(
+                                        "cd,ac,bd->ab", V_cd, T_0z_1, T_yw_1
+                                    )
+                                    R += oe.contract(
+                                        "cd,ac,bd->ab", V_cd, T_0z_2, T_yw_2
+                                    )
         return R
 
     def residual_double_non_sym_1(self, y_d: int) -> np.ndarray:
@@ -243,7 +248,7 @@ class QuantumSimulation:
         if i_method >= 1:
             T_cb = self.t_term(x_d, y_d)
             if fast:
-                R += (A @ h_pc @ T_cb)        
+                R += A @ h_pc @ T_cb
                 # R -= T_cb * (h_p @ B)
             else:
                 # Term 1
@@ -276,7 +281,7 @@ class QuantumSimulation:
                                 # Term 3
                                 R += oe.contract("ac,rcs,br,s->ab", T_xz, V_ipap, A, B)
 
-                                # Term 4                                
+                                # Term 4
                                 R += oe.contract("bq,qds,ad,s->ab", A, V_pap, T_cb, B)
 
                             if abs(0 - z) == 1 or abs(0 - z) == (site - 1):
@@ -287,8 +292,7 @@ class QuantumSimulation:
         return R
 
     def residual_double_total(self, y_d: int) -> np.ndarray:
-        return (self.residual_double_sym(y_d) + self.residual_double_non_sym_1(y_d)*2)
-    
+        return self.residual_double_sym(y_d) + self.residual_double_non_sym_1(y_d) * 2
 
     def transformation_test(self):
         state = self.params.state
@@ -304,4 +308,9 @@ class QuantumSimulation:
         h_trans = U.T @ h_full @ U
         v_trans = np.einsum("ip, jr, prqs, qk, sl->ijkl", U.T, U.T, v_full, U, U)
 
+        return h_trans, v_trans
+        return h_trans, v_trans
+        return h_trans, v_trans
+        return h_trans, v_trans
+        return h_trans, v_trans
         return h_trans, v_trans

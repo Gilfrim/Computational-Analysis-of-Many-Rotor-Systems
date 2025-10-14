@@ -266,22 +266,27 @@ class QuantumSimulation:
                     R += (AA_BQ @ (V_QC @ T_C_flat)).reshape(a, a)
                     R -= (T_C * ((V_pq @ B).T @ B)[0 ,0])
 
-                if i_method == 3 and site >= 4:
+                if i_method == 3:
                     V_cd = self.terms.V_iiaa.reshape(a, a)
 
                     if abs(0 - y_d) == 1 or abs(0 - y_d) == (site - 1):
                         R -= (T_C * np.sum(V_cd.multiply(T_C)))
 
                     # Term 5: all connected permutations
-                    for z in range(site-1):
-                        if z not in {0, y_d} and z+1 not in {0, y_d} and z != z+1:
-                            T_0z_1 = self.t_term(x_d, z)
-                            T_yw_1 = self.t_term(y_d, z+1)
-                            T_0z_2 = self.t_term(x_d, z+1)
-                            T_yw_2 = self.t_term(y_d, z)
+                    if site >= 4:
+                        for z in range(site - 1):
+                            if (
+                                z not in {0, y_d}
+                                and z + 1 not in {0, y_d}
+                                and z != z + 1
+                            ):
+                                T_0z_1 = self.t_term(x_d, z)
+                                T_yw_1 = self.t_term(y_d, z + 1)
+                                T_0z_2 = self.t_term(x_d, z + 1)
+                                T_yw_2 = self.t_term(y_d, z)
 
-                            R += T_0z_1 @ V_cd @ T_yw_1.T
-                            R += T_0z_2 @ V_cd @ T_yw_2.T
+                                R += T_0z_1 @ V_cd @ T_yw_1.T
+                                R += T_0z_2 @ V_cd @ T_yw_2.T
         return R
 
     def residual_double_non_sym_1(self, y_d: int) -> np.ndarray:

@@ -85,7 +85,7 @@ def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodi
 
     # Construct a Kinetic and Potential hamiltonian.
     K_final = H_kinetic(state, site, K_in_p)
-    V_final = H_potential(state, site, V_in_p, g_val, periodic)
+    V_final = H_potential(state, site, V_in_p, 1, periodic)
 
     # Add to get the final hamiltonian.
     H_final = K_final + V_final

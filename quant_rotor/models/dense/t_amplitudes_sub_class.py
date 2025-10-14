@@ -115,7 +115,7 @@ class QuantumSimulation:
 
                 R -= np.einsum("abkl, klpq, pi, qj->abij", self.t_term(x_d, y_d), self.v_term(i, i, p, p, x_d, y_d), self.B_term(i, x_d), self.B_term(i, y_d))
 
-                if i_method == 3 and site >= 4:
+                if i_method == 3:
                     R -= np.einsum("abkl, klcd, cdij->abij", self.t_term(x_d, y_d), self.v_term(i, i, a, a, x_d, y_d), self.t_term(x_d, y_d))
 
                     if site >= 4:

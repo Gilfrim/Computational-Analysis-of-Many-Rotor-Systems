@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -227,9 +226,9 @@ def heat_capacity(eig_val: np.ndarray, beta_val: float) -> float:
        - Canonical ensemble:
          https://en.wikipedia.org/wiki/Canonical_ensemble
     """
-    p = P_n(eig_val, beta_val)
-    U = U_stat(eig_val, beta_val)
-    variance = float(np.sum(p * (eig_val - U) ** 2))
+    p = P(eig_val, beta_val)
+    U_r = U(eig_val, beta_val)
+    variance = float(np.sum(p * (eig_val - U_r) ** 2))
     return float(k_B * (beta_val ** 2) * variance)
 
 def generate_graphs(eig_val: np.ndarray, site: int):
@@ -238,12 +237,11 @@ def generate_graphs(eig_val: np.ndarray, site: int):
     eig_val = eig_val[index]
     beta_array = np.linspace(0, 5, 300)
 
-
     y_data_Z = np.array([np.log(Z(eig_val, x))/site for x in beta_array])
 
     plt.figure(figsize=(12, 6))
     plt.plot(beta_array, y_data_Z, label=f"{site} Sites")
-    plt.xticks(beta_array[::12], rotation=45) 
+    plt.xticks(beta_array[::12], rotation=45)
     plt.xlabel("Beta-values")
     plt.ylabel("ln(Z)")
     plt.title("ln(Z) Evolution With Beta.")
@@ -255,7 +253,7 @@ def generate_graphs(eig_val: np.ndarray, site: int):
 
     plt.figure(figsize=(12, 6))
     plt.plot(beta_array, y_data_U, label=f"{site} Sites")
-    plt.xticks(beta_array[::40], rotation=45) 
+    plt.xticks(beta_array[::40], rotation=45)
     plt.xlabel("beta-values")
     plt.ylabel("Internal Thermal Energy")
     plt.title("Internal Thermal Energy Evolution With B.")
@@ -266,7 +264,7 @@ def generate_graphs(eig_val: np.ndarray, site: int):
 
     plt.figure(figsize=(12, 6))
     plt.plot(beta_array, y_data_A, label=f"{site} Sites")
-    plt.xticks(beta_array[::40], rotation=45) 
+    plt.xticks(beta_array[::40], rotation=45)
     plt.xlabel("B-values")
     plt.ylabel("Internal Thermal Energy")
     plt.title("Internal Thermal Energy Evolution With B.")
@@ -277,7 +275,7 @@ def generate_graphs(eig_val: np.ndarray, site: int):
 
     plt.figure(figsize=(12, 6))
     plt.plot(beta_array, y_data_S, label=f"{site} Sites")
-    plt.xticks(beta_array[::40], rotation=45) 
+    plt.xticks(beta_array[::40], rotation=45)
     plt.xlabel("B-values")
     plt.ylabel("Internal Thermal Energy")
     plt.title("Internal Thermal Energy Evolution With B.")
@@ -290,7 +288,7 @@ def generate_graphs(eig_val: np.ndarray, site: int):
 
     plt.figure(figsize=(12, 6))
     plt.plot(beta_array, y_data_heat_capacity, label=f"{site} Sites")
-    plt.xticks(beta_array[::40], rotation=45) 
+    plt.xticks(beta_array[::40], rotation=45)
     plt.xlabel("B-values")
     plt.ylabel("Heat Capacity")
     plt.title("Heat Capacity Evolution With B.")
