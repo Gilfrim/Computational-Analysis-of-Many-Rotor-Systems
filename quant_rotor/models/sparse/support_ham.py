@@ -149,8 +149,8 @@ def build_V_in_p(state: int, tau: float=0) -> tuple[sp.csr_matrix, sp.csr_matrix
             i = index(p1, p2)
 
             for dm1, dm2, coef in [
-                (1, 1, 0.75 * np.exp(1j * 2 * tau)),
-                (-1, -1, 0.75 * np.exp(1j * 2 * tau)),
+                (1, 1, 0.75),
+                (-1, -1, 0.75),
                 (1, -1, -0.25),
                 (-1, 1, -0.25),
             ]:

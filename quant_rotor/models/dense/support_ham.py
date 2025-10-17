@@ -134,7 +134,10 @@ def basis_m_to_p_matrix_conversion(matrix: np.ndarray, state: int)->np.ndarray:
 
     return matrix
 
-def write_matrix_elements(numer_unique_states: int, tau: float=0) -> tuple[np.ndarray, np.ndarray]:
+
+def write_matrix_elements(
+    numer_unique_states: int, psi_twist: float = 0
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Construct kinetic and potential energy operator matrices for a truncated rotor basis.
 
@@ -169,49 +172,11 @@ def write_matrix_elements(numer_unique_states: int, tau: float=0) -> tuple[np.nd
             for k in range(d):
                 for l in range(d):
                     # if k * d + l >= i * d + j:
-                    V[i * d + j, k * d + l] = interaction_two_body_coplanar(
-                        i, j, k, l, tau
+                    V[i * d + j, k * d + l] = interaction_general_angle(
+                        i, j, k, l, psi_twist
                     )
 
     return K, V
-
-
-# def write_matrix_elements(d_unique: int, tau: float = 0.0, mode: str = "chem"):
-#     """
-#     mode:
-#       - "raw" : V = <ij|kl>      (unsymmetrized)
-#       - "chem": V = <ij||kl>     (antisym on ket only), still (d**2, d**2)
-#     Returns:
-#       K: (d, d)
-#       V: (d**2, d**2)
-#     """
-#     d = 2 * d_unique + 1
-
-#     # --- K (make Hermitian explicitly) ---
-#     K = np.zeros((d, d), dtype=complex)
-#     for i in range(d):
-#         for j in range(d):
-#             K[i, j] = free_one_body(i, j, d_unique)
-#     K = 0.5 * (K + K.conj().T)
-
-#     # --- V_raw[i,j,k,l] = <ij|V|kl> ---
-#     V_raw = np.zeros((d, d, d, d), dtype=complex)
-#     for i in range(d):
-#         for j in range(d):
-#             for k in range(d):
-#                 for l in range(d):
-#                     V_raw[i, j, k, l] = interaction_two_body_coplanar(i, j, k, l, tau)
-
-#     if mode == "raw":
-#         V_use = V_raw
-#     elif mode == "chem":
-#         # <ij||kl> = <ij|kl> - <ij|lk>  (antisymmetrize on the ket side)
-#         V_use = V_raw - V_raw[:, :, :, :].swapaxes(2, 3)
-#     else:
-#         raise ValueError("mode must be 'raw' or 'chem'")
-
-#     V_mat = V_use.reshape(d * d, d * d)  # <-- shape matches your downstream code
-#     return K, V_mat
 
 
 def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
@@ -461,7 +426,7 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int, tau: float
     if i1 == j1 + 1:
         if i2 == j2 + 1:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return 0.75  # ⟨m1+1, m2+1|
+            return 0.75 * np.exp(1j * 2 * tau)  # ⟨m1+1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> -0.25")
             return -0.25 # ⟨m1+1, m2−1|
@@ -471,7 +436,7 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int, tau: float
             return -0.25 # ⟨m1−1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return 0.75  # ⟨m1−1, m2−1|
+            return 0.75 * np.exp(1j * 2 * tau)  # ⟨m1−1, m2−1|
 
 
 def interaction_yiyj(i1, i2, j1, j2):
@@ -496,9 +461,9 @@ def interaction_xixj(i1, i2, j1, j2):
         return 0.25
 
 
-def interaction_general_angle(i1, i2, j1, j2, tau):
+def interaction_general_angle(i1, i2, j1, j2, psi_twist):
 
     v_xi_xj = interaction_xixj(i1, i2, j1, j2)
     v_yi_yj = interaction_yiyj(i1, i2, j1, j2)
 
-    return v_yi_yj + (1.0 - 3.0 * (np.cos(tau)) ** 2) * v_xi_xj
+    return v_yi_yj + (1.0 - 3.0 * (np.cos(psi_twist)) ** 2) * v_xi_xj

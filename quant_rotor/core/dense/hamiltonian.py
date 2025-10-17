@@ -8,7 +8,17 @@ from quant_rotor.models.dense.support_ham import (
 )
 
 
-def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodic: bool=True, l_val: float=0, K_import: np.ndarray=[], V_import: np.ndarray=[], Import: bool=False)->tuple[np.ndarray, np.ndarray, np.ndarray]:
+def hamiltonian_dense(
+    state: int,
+    site: int,
+    g_val: float,
+    psi_twist: float = 0,
+    periodic: bool = True,
+    l_val: float = 0,
+    K_import: np.ndarray = [],
+    V_import: np.ndarray = [],
+    Import: bool = False,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Constructs the Kinetic, Potential, and dense Hamiltonian operators for a specified system,
     described by the number of states, sites, and g-value modifier to the potential energy.
@@ -58,7 +68,7 @@ def hamiltonian_dense(state: int, site: int, g_val: float, tau: float=0, periodi
     if Import == False:
 
         # Create a Kinetic and Potential energy matricies.
-        K, V = write_matrix_elements((state-1) // 2, tau)
+        K, V = write_matrix_elements((state - 1) // 2, psi_twist)
 
         # Optional modifier for the one body (Kinetic energy) operator.
         # Creates and adds a tridiagonal matrix with 0 along the center diagonal and two shifted diagonals determened

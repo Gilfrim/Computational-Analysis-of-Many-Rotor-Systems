@@ -1,5 +1,10 @@
 import numpy as np
-from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
+
+from quant_rotor.models.dense.support_ham import (
+    basis_m_to_p_matrix_conversion,
+    write_matrix_elements,
+)
+
 
 def intermediate_normalisation(eig_val: np.ndarray, eig_vec: np.ndarray)->np.ndarray:
 
@@ -25,21 +30,39 @@ def t_2_amplitutde(site_a: int, state_a: int, site_b: int, state_b: int, states:
 
     return t_2_ab, C_ab
 
-def amplitute_energy(sites: int, states: int, g: float, d: np.ndarray):
 
-    K, V = write_matrix_elements((states-1) // 2)
+def amplitute_energy(
+    sites: int,
+    states: int,
+    g: float,
+    d: np.ndarray,
+    Import: bool,
+    K_import: np.ndarray,
+    V_import: np.ndarray,
+):
 
-    V = V + V.T - np.diag(np.diag(V))
-    V = V.reshape(states,states,states,states)
-    V *= g 
+    if Import:
 
-    K = basis_m_to_p_matrix_conversion(K)
-    V = basis_m_to_p_matrix_conversion(V)
+        K = K_import
+        V = V_import
+
+    else:
+        K, V = write_matrix_elements((states - 1) // 2)
+
+        V = V + V.T - np.diag(np.diag(V))
+        V = V.reshape(states, states, states, states)
+        V *= g
+
+        K = basis_m_to_p_matrix_conversion(K)
+        V = basis_m_to_p_matrix_conversion(V)
 
     E_0 = K[0,0]*sites + np.einsum("ijij->", V) * states**sites
 
     sum_t_1 = 0
     sum_t_2 = 0
+
+    t_1_max = 0
+    t_2_max = 0
 
     for site_a in range(sites):
         for state_a in range(1, states):
@@ -47,13 +70,30 @@ def amplitute_energy(sites: int, states: int, g: float, d: np.ndarray):
             t1 = t_1_amplitutde(site_a, state_a, states, d)
             sum_t_1 += K[state_a, 0] * t1
 
+            val_1 = np.max(np.abs(t1))
+
+            if val_1 > t_1_max:
+                t_1_max = val_1
+
             for site_b in range(site_a + 1, sites):
                 for state_b in range(1, states):
-                    
+
                     C2 = t_2_amplitutde(site_a, state_a, site_b, state_b, states, d)[1]
                     sum_t_2 += V[state_a, state_b, 0, 0] * C2
 
-    return E_0 + sum_t_1 + sum_t_2
+                    val_2 = np.max(
+                        np.abs(
+                            t_2_amplitutde(site_a, state_a, site_b, state_b, states, d)[
+                                0
+                            ]
+                        )
+                    )
+
+                    if val_2 > t_2_max:
+                        t_2_max = val_2
+
+    return E_0 + sum_t_1 + sum_t_2, t_1_max, t_2_max, E_0
+
 
 def t_1_amplitude_guess_ground_state(states: int, sites: int, g: float, eig_vec: np.ndarray, eig_val: np.ndarray, low_states: int=1):
 
