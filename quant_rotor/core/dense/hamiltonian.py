@@ -2,7 +2,8 @@ import numpy as np
 
 from quant_rotor.models.dense.support_ham import (
     H_kinetic,
-    H_potential,
+    H_potential_double,
+    V_double,
     basis_m_to_p_matrix_conversion,
     write_matrix_elements,
 )
@@ -14,7 +15,8 @@ def hamiltonian_dense(
     g_val: float,
     psi_twist: float = 0,
     periodic: bool = True,
-    l_val: float = 0,
+    Double: bool = False,
+    D: float = 0,
     K_import: np.ndarray = [],
     V_import: np.ndarray = [],
     Import: bool = False,
@@ -86,6 +88,7 @@ def hamiltonian_dense(
         V_in_p = basis_m_to_p_matrix_conversion(V_tensor, state)
 
         # Reshape a Potential energy matrix back from (state, state, state, state) -> (state^2, state^2).
+        K_in_p = K_in_p * D
         V_in_p = V_in_p.reshape(state**2, state**2) * g_val
 
     else:
@@ -95,10 +98,16 @@ def hamiltonian_dense(
 
     # Construct a Kinetic and Potential hamiltonian.
     K_final = H_kinetic(state, site, K_in_p)
-    V_final = H_potential(state, site, V_in_p, 1, periodic)
+
+    V_final = H_potential_double(state, site, V_in_p, 1, periodic, Double)
 
     # Add to get the final hamiltonian.
     H_final = K_final + V_final
 
-    # It is importatnt to keep the return in this format since hamiltonian_big.py functions are using this structure.
-    return H_final, K_in_p, V_in_p
+    if Double:
+        V_non_per = V_double(int(np.sqrt(state)), V_in_p, False)
+        V_per = V_double(int(np.sqrt(state)), V_in_p, False)
+        # It is importatnt to keep the return in this format since hamiltonian_big.py functions are using this structure.
+        return H_final, K_in_p, V_non_per, V_per
+    else:
+        return H_final, K_in_p, V_in_p

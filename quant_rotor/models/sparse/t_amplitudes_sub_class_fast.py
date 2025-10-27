@@ -142,8 +142,7 @@ class QuantumSimulation:
         with D = a + i and shifts = i if that index is in the 'a' block, else 0.
         The function returns a CSR sparse matrix of shape (v_u1*v_u2, v_l1*v_l2).
         """
-        a, i = self.params.a, self.params.i
-        D = a + i
+        a, i, state = self.params.a, self.params.i, self.params.state
 
         # shift(index_size) = i if that index is the 'a' block, else 0 (for 'i' block)
         def shift(sz: int) -> int:
@@ -155,14 +154,14 @@ class QuantumSimulation:
         # For each u1 in [0..v_u1-1], take the block of rows for u2 in [0..v_u2-1]
         row_idx = []
         for u1 in range(v_u1):
-            base = (u1s + u1) * D + u2s
+            base = (u1s + u1) * state + u2s
             row_idx.extend(range(base, base + v_u2))
         row_idx = np.asarray(row_idx, dtype=np.int64)
 
         # Build column indices similarly
         col_idx = []
         for l1 in range(v_l1):
-            base = (l1s + l1) * D + l2s
+            base = (l1s + l1) * state + l2s
             col_idx.extend(range(base, base + v_l2))
         col_idx = np.asarray(col_idx, dtype=np.int64)
 

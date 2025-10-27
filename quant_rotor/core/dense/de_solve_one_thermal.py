@@ -122,16 +122,35 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     t0_stored.append((t, dT_0dB, T_ai, two_max))
     return (comb_flat)
 
-def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., nof_points=10000, K_import: np.ndarray=[], V_import: np.ndarray=[], import_K_V_TF = False, import_K_V_NO = False) -> tuple:
+
+def integration_scheme(
+    site: int,
+    state: int,
+    g: float = 1,
+    t_init=0.0,
+    t_final=10.0,
+    nof_points=10000,
+    K_import: np.ndarray = [],
+    V_import: np.ndarray = [],
+    v_full_per: np.ndarray = [],
+    Import: bool = False,
+    double: bool = False,
+    periodic: bool = True,
+) -> tuple:
     """"""
 
     p = state
     i = 1
     a = p - i
 
-    if import_K_V_TF:
+    if Import:
         h_full = K_import
         v_full = V_import
+    elif double and periodic:
+        h_full = K_import
+        v_full = V_import
+        v_full_per = v_full_per
+
     else:
         # Load .npy matrices directly from the package
         K, V = write_matrix_elements((state - 1) // 2)
@@ -150,24 +169,33 @@ def integration_scheme(site: int, state: int, g: float, t_init=0., t_final=10., 
     epsilon = np.diag(h_full)
 
     params = SimulationParams(
-    a=a,
-    i=i,
-    p=p,  # These can be the same as `a + i` or chosen independently
-    site=site,
-    state=state,
-    i_method=3,
-    gap=False,
-    gap_site=3,
-    epsilon=epsilon,
-    periodic=True
+        a=a,
+        i=i,
+        p=p,  # These can be the same as `a + i` or chosen independently
+        site=site,
+        state=state,
+        i_method=3,
+        gap=False,
+        gap_site=3,
+        epsilon=epsilon,
+        periodic=periodic,
+        double=double,
     )
-
-    tensors = TensorData(
-    t_a_i_tensor=t_a_i_tensor,
-    t_ab_ij_tensor=t_ab_ij_tensor,
-    h_full=h_full,
-    v_full=v_full
-    )
+    if double and periodic:
+        tensors = TensorData(
+            t_a_i_tensor=t_a_i_tensor,
+            t_ab_ij_tensor=t_ab_ij_tensor,
+            h_full=h_full,
+            v_full=v_full,
+            v_full_per=v_full_per,
+        )
+    else:
+        tensors = TensorData(
+            t_a_i_tensor=t_a_i_tensor,
+            t_ab_ij_tensor=t_ab_ij_tensor,
+            h_full=h_full,
+            v_full=v_full,
+        )
 
     qs = QuantumSimulation(params, tensors)
 

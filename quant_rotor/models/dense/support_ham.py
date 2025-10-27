@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.sparse as sp
 
 
 def m_to_p(energy_state:int)->int:
@@ -178,7 +177,6 @@ def write_matrix_elements(
 
     return K, V
 
-
 def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
     """
     Constructs the dense kinetic energy Hamiltonian in a many-body tensor-product space,
@@ -231,82 +229,137 @@ def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
                         K_H[i, j] += val
     return K_H
 
+# def H_potential(states: int, sites: int, V: np.ndarray, g_val: float, periodic: bool) -> np.ndarray:
+#     """
+#     Constructs the dense Potential energy Hamiltonian using a two-site interaction operator V
+#     and coupling constant g_val. The interaction acts on nearest-neighbor pairs (periodic).
 
-def H_kinetic(states: int, sites: int, K: np.ndarray) -> np.ndarray:
-    """
-    Constructs the dense kinetic energy Hamiltonian in a many-body tensor-product space,
-    using a single-particle operator K applied independently to each site.
+#     Parameters
+#     ----------
+#     state : int
+#         Total number states in the system, counting the ground state. Ex: system of -1, 0, 1 would be a system of 3 states.
+#     site : int
+#         The number of rotors (sites) in the system.
+#     V : np.ndarray
+#         Dense potential energy matrix in the p-basis, shape (state² * state²).
+#     g_val : float
+#         The constant multiplier for the Potential energy. Typically in the range 0 <= g <= 1.
+#     periodic : bool
+#         Defines if the hamiltonian for the periodic system or the non-peirodic system.
 
-    Parameters
-    ----------
-    state : int
-        Total number states in the system, counting the ground state. Ex: system of -1, 0, 1 would be a system of 3 states.
-    site : int
-        The number of rotors (sites) in the system.
-    K : np.ndarray
-        Dense Kinetic energy matrix in the p-basis, shape (state, state).
+#     Returns
+#     -------
+#     np.ndarray
+#         Sparse many-body Potential energy Hamiltonian operator.
+#     """
 
-    Returns
-    -------
-    np.ndarray
-        Dense many-body kinetic Hamiltonian.
-    """
+#     # Create a matrix of the shape of Potential energy Hamiltonian filled with zeros.
+#     V_H = np.zeros((states**sites, states**sites), dtype=complex)
 
-    # Create a matrix of the shape of Kinetic energy Hamiltonian filled with zeros.
-    K_H = np.zeros((states**sites, states**sites), dtype=complex)
+#     if periodic:
+#         site_range = sites
+#     else:
+#         site_range = sites-1
 
-    for x in range(sites):
+#     for x in range(site_range):
+#         # With x defining the first site of two-body interaction, we define the second dynamically.
+#         y = (x+1) % sites
 
-        # Define the total number of elements in the matrix operator, which represent the left and right sites that are not interacting
-        # by n_lambda and n_mu respectively.
-        n_lambda = states**(x)
-        n_mu = states**(sites - x - 1)
+#         # Define the total number of elements in the matrix operator, which represent the left, right, and center sites that are not interacting
+#         # by n_lambda, n_mu, n_nu, respectively.
+#         n_lambda = states**(x % (sites-1))
+#         n_mu = states**((sites - y - 1) % (sites - 1))
+#         n_nu = states**(np.abs(y - x) - 1)
 
-        # Iterate through all elements of the Kinetic energy matrix operator.
-        for p in range(states):
-            for p_prime in range(states):
+#         # Iterate through all elements of the Potential energy matrix operator.
+#         for q in range(states):
+#             for q_prime in range(states):
+#                 for p in range(states):
+#                     for p_prime in range(states):
 
-                # Extract an associated element.
-                val = K[p, p_prime]
+#                         # Calculate the flattened indices of the associated element.
+#                         row = p * states + q
+#                         col = p_prime * states + q_prime
+#                         val = V[row, col]
 
-                # Check if element is non zero.
-                if val == 0:
-                    continue  # skip writing 0s
+#                         # Check if element is non zero.
+#                         if val == 0:
+#                             continue  # skip writing 0s
 
-                for Lambda in range(int(n_lambda)):
-                    for mu in range(int(n_mu)):
+#                         for Lambda in range(int(n_lambda)):
+#                             for mu in range(int(n_mu)):
+#                                 for nu in range(int(n_nu)):
 
-                        # Calculate the indices in the hamiltonian.
-                        i = mu + p * n_mu + Lambda * states * n_mu
-                        j = mu + p_prime * n_mu + Lambda * states * n_mu
+#                                     # Calculate the indices in the hamiltonian.
+#                                     i = mu + q*n_mu + nu*states*n_mu + p*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
+#                                     j = mu + q_prime*n_mu + nu*states*n_mu + p_prime*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
 
-                        # Assign a values to associated.
-                        K_H[i, j] += val
-    return K_H
+#                                     # Assign a values to associated.
+#                                     V_H[i, j] += val * g_val
+#     return V_H
 
-def H_potential(states: int, sites: int, V: np.ndarray, g_val: float, periodic: bool) -> np.ndarray:
-    """
-    Constructs the dense Potential energy Hamiltonian using a two-site interaction operator V
-    and coupling constant g_val. The interaction acts on nearest-neighbor pairs (periodic).
 
-    Parameters
-    ----------
-    state : int
-        Total number states in the system, counting the ground state. Ex: system of -1, 0, 1 would be a system of 3 states.
-    site : int
-        The number of rotors (sites) in the system.
-    V : np.ndarray
-        Dense potential energy matrix in the p-basis, shape (state² * state²).
-    g_val : float
-        The constant multiplier for the Potential energy. Typically in the range 0 <= g <= 1.
-    periodic : bool
-        Defines if the hamiltonian for the periodic system or the non-peirodic system.
+def V_double(states: int, V: np.ndarray, periodic: bool, sites: int = 4) -> np.ndarray:
 
-    Returns
-    -------
-    np.ndarray
-        Sparse many-body Potential energy Hamiltonian operator.
-    """
+    # Create a matrix of the shape of Potential energy Hamiltonian filled with zeros.
+    V_H = np.zeros((states**sites, states**sites), dtype=complex)
+
+    if periodic:
+        x = sites - 1
+    else:
+        x = 1
+    # With x defining the first site of two-body interaction, we define the second dynamically.
+    y = (x + 1) % sites
+
+    # Define the total number of elements in the matrix operator, which represent the left, right, and center sites that are not interacting
+    # by n_lambda, n_mu, n_nu, respectively.
+    n_lambda = states ** (x % (sites - 1))
+    n_mu = states ** ((sites - y - 1) % (sites - 1))
+    n_nu = states ** (np.abs(y - x) - 1)
+
+    # Iterate through all elements of the Potential energy matrix operator.
+    for q in range(states):
+        for q_prime in range(states):
+            for p in range(states):
+                for p_prime in range(states):
+
+                    # Calculate the flattened indices of the associated element.
+                    row = p * states + q
+                    col = p_prime * states + q_prime
+                    val = V[row, col]
+
+                    # Check if element is non zero.
+                    if val == 0:
+                        continue  # skip writing 0s
+
+                    for Lambda in range(int(n_lambda)):
+                        for mu in range(int(n_mu)):
+                            for nu in range(int(n_nu)):
+
+                                # Calculate the indices in the hamiltonian.
+                                i = (
+                                    mu
+                                    + q * n_mu
+                                    + nu * states * n_mu
+                                    + p * n_nu * n_mu * states
+                                    + Lambda * n_nu * n_mu * states**2
+                                )
+                                j = (
+                                    mu
+                                    + q_prime * n_mu
+                                    + nu * states * n_mu
+                                    + p_prime * n_nu * n_mu * states
+                                    + Lambda * n_nu * n_mu * states**2
+                                )
+
+                                # Assign a values to associated.
+                                V_H[i, j] += val
+    return V_H
+
+
+def H_potential_double(
+    states: int, sites: int, V: np.ndarray, g_val: float, periodic: bool, Double: bool
+) -> np.ndarray:
 
     # Create a matrix of the shape of Potential energy Hamiltonian filled with zeros.
     V_H = np.zeros((states**sites, states**sites), dtype=complex)
@@ -314,17 +367,27 @@ def H_potential(states: int, sites: int, V: np.ndarray, g_val: float, periodic: 
     if periodic:
         site_range = sites
     else:
-        site_range = sites-1
+        site_range = sites - 1
+
+    if Double:
+        V_2 = V_double(int(np.sqrt(states)), V, False)
+    else:
+        V_2 = V
 
     for x in range(site_range):
+
+        if Double:
+            if periodic:
+                if x == sites - 1:
+                    V_2 = V_double(int(np.sqrt(states)), V, True)
         # With x defining the first site of two-body interaction, we define the second dynamically.
-        y = (x+1) % sites
+        y = (x + 1) % sites
 
         # Define the total number of elements in the matrix operator, which represent the left, right, and center sites that are not interacting
         # by n_lambda, n_mu, n_nu, respectively.
-        n_lambda = states**(x % (sites-1))
-        n_mu = states**((sites - y - 1) % (sites - 1))
-        n_nu = states**(np.abs(y - x) - 1)
+        n_lambda = states ** (x % (sites - 1))
+        n_mu = states ** ((sites - y - 1) % (sites - 1))
+        n_nu = states ** (np.abs(y - x) - 1)
 
         # Iterate through all elements of the Potential energy matrix operator.
         for q in range(states):
@@ -335,10 +398,10 @@ def H_potential(states: int, sites: int, V: np.ndarray, g_val: float, periodic: 
                         # Calculate the flattened indices of the associated element.
                         row = p * states + q
                         col = p_prime * states + q_prime
-                        val = V[row, col]
+                        val = V_2[row, col]
 
                         # Check if element is non zero.
-                        if val == 0:
+                        if np.allclose(val, 0, atol=1e-25):
                             continue  # skip writing 0s
 
                         for Lambda in range(int(n_lambda)):
@@ -346,12 +409,25 @@ def H_potential(states: int, sites: int, V: np.ndarray, g_val: float, periodic: 
                                 for nu in range(int(n_nu)):
 
                                     # Calculate the indices in the hamiltonian.
-                                    i = mu + q*n_mu + nu*states*n_mu + p*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
-                                    j = mu + q_prime*n_mu + nu*states*n_mu + p_prime*n_nu*n_mu*states + Lambda*n_nu*n_mu*states**2
+                                    i = (
+                                        mu
+                                        + q * n_mu
+                                        + nu * states * n_mu
+                                        + p * n_nu * n_mu * states
+                                        + Lambda * n_nu * n_mu * states**2
+                                    )
+                                    j = (
+                                        mu
+                                        + q_prime * n_mu
+                                        + nu * states * n_mu
+                                        + p_prime * n_nu * n_mu * states
+                                        + Lambda * n_nu * n_mu * states**2
+                                    )
 
                                     # Assign a values to associated.
                                     V_H[i, j] += val * g_val
     return V_H
+
 
 def free_one_body(i: int, j: int, max_m: int) -> float:
     """
@@ -420,13 +496,13 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int, tau: float
         return 0.0
 
     # Coefficients based on the specific momentum exchange:
-    # (++ or --) →  +0.75
+    # (++ or --) →  -0.75
     # (+-, -+)   →  -0.25
 
     if i1 == j1 + 1:
         if i2 == j2 + 1:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return 0.75 * np.exp(1j * 2 * tau)  # ⟨m1+1, m2+1|
+            return -0.75 * np.exp(1j * 2 * tau)  # ⟨m1+1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> -0.25")
             return -0.25 # ⟨m1+1, m2−1|
@@ -436,7 +512,7 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int, tau: float
             return -0.25 # ⟨m1−1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return 0.75 * np.exp(1j * 2 * tau)  # ⟨m1−1, m2−1|
+            return -0.75 * np.exp(1j * 2 * tau)  # ⟨m1−1, m2−1|
 
 
 def interaction_yiyj(i1, i2, j1, j2):

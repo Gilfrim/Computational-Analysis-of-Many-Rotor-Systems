@@ -124,7 +124,7 @@ def U(eig_val: np.ndarray, beta_val: float) -> float:
        - Canonical ensemble:
          https://en.wikipedia.org/wiki/Canonical_ensemble
     """
-    p = P_n(eig_val, beta_val)
+    p = P(eig_val, beta_val)
     return float(np.einsum("n->", p * eig_val))
 
 

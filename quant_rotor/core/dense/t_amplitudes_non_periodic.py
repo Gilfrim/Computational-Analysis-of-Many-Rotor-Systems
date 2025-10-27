@@ -347,8 +347,9 @@ def t_non_periodic(
             tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single[site_u_1])
             for site_u_2 in range(site):
                 if site_u_1 < site_u_2:
-                    tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(double[site_u_1, site_u_2])
-                    # t_ab_ij_tensor[site_u_2, site_u_1] -= update_two(double[site_u_1, site_u_2])
+                    tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(
+                        double[site_u_1, site_u_2]
+                    )
 
         # energy calculations
         for site_x in range(site):

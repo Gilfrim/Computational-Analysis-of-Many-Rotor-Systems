@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -15,6 +15,7 @@ class SimulationParams:
     gap_site: int
     epsilon: np.ndarray
     periodic: bool=False
+    double: bool = False
 
 @dataclass
 class TensorData:
@@ -22,6 +23,7 @@ class TensorData:
     t_ab_ij_tensor: np.ndarray
     h_full: np.ndarray
     v_full: np.ndarray
+    v_full_per: np.ndarray = field(default=None)
 
 class QuantumSimulation:
     def __init__(self, params: SimulationParams, tensors: TensorData):
@@ -39,6 +41,32 @@ class QuantumSimulation:
         return self.tensors.h_full[a_h_shift[0]:h_upper + a_h_shift[0], a_h_shift[1]:h_lower + a_h_shift[1]]
 
     def v_term(self, v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2):
+        if self.params.periodic and self.params.double:
+            if abs(v_site_1 - v_site_2) == 1:
+                a_v_shift = [
+                    self.params.i if a_check == self.params.a else 0
+                    for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
+                ]
+                return self.tensors.v_full[
+                    a_v_shift[0] : v_upper_1 + a_v_shift[0],
+                    a_v_shift[1] : v_upper_2 + a_v_shift[1],
+                    a_v_shift[2] : v_lower_1 + a_v_shift[2],
+                    a_v_shift[3] : v_lower_2 + a_v_shift[3],
+                ]
+            elif abs(v_site_1 - v_site_2) == (self.params.site - 1):
+                a_v_shift = [
+                    self.params.i if a_check == self.params.a else 0
+                    for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
+                ]
+                return self.tensors.v_full_per[
+                    a_v_shift[0] : v_upper_1 + a_v_shift[0],
+                    a_v_shift[1] : v_upper_2 + a_v_shift[1],
+                    a_v_shift[2] : v_lower_1 + a_v_shift[2],
+                    a_v_shift[3] : v_lower_2 + a_v_shift[3],
+                ]
+
+            else:
+                return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
         if self.params.periodic:
             if abs(v_site_1 - v_site_2) == 1 or abs(v_site_1 - v_site_2) == (self.params.site - 1):
                 a_v_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]

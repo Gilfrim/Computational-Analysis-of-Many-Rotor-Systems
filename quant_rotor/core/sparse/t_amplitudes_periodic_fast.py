@@ -192,6 +192,7 @@ def t_periodic(
     low_state: int = 1,
     t_a_i_tensor_initial: np.ndarray = 0,
     t_ab_ij_tensor_initial: np.ndarray = 0,
+    periodic: bool = True,
 ):
     """
     Create SimulationParams from raw input arguments.
@@ -203,7 +204,6 @@ def t_periodic(
     p = state
     i = low_state
     a = p - i
-    periodic = True
 
     # Load .npy matrices directly from the package
     h_full, v_full = build_V_in_p(state)

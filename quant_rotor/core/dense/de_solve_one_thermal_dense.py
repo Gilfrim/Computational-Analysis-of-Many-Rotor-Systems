@@ -10,7 +10,7 @@ from quant_rotor.models.dense.t_amplitudes_sub_class_fast import (
     SimulationParams,
     TensorData,
 )
-from quant_rotor.models.sparse.support_ham import build_V_prime_in_p
+from quant_rotor.models.sparse.support_ham import build_V_in_p, build_V_prime_in_p
 
 
 def residual_double():
@@ -110,7 +110,6 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
                 # noinspection SpellCheckingInspection
                 energy += np.sum(V_iiaa * (T_xy)) * 0.5
 
-                print(T_xy)
                 # noinspection SpellCheckingInspection
                 energy += (V_iipp @ qs.terms.b_term @ qs.terms.b_term) * 0.5
 
@@ -140,36 +139,48 @@ def integration_scheme(
     t_final: float = 10.0,
     nof_points: int = 10000,
     TF: bool = False,
+    Import: bool = False,
+    double: bool = False,
+    K_import: np.ndarray = [],
+    V_import: np.ndarray = [],
+    V_per_double_import: np.ndarray = [],
 ) -> tuple:
     """"""
 
-    K, V = build_V_prime_in_p(state, tau=0)
-
-    if TF:
-        I = np.eye(state)
-
-        U, _ = bz.thermofield_change_of_basis(I)
-
-        U_sparse = sp.csr_matrix(U)
-
-        h_full = (U_sparse.T @ K @ U_sparse).toarray()
-
-        v_full = oe.contract(
-            "Mi,Wj,ijab,aN,bV->MWNV",
-            U,
-            U,
-            V.toarray().reshape(state**2, state**2, state**2, state**2),
-            U,
-            U,
-            optimize="optimal",
-        )
-        v_full = v_full * g
+    if Import:
+        h_full = K_import
+        v_full = V_import
+    elif double:
+        h_full = K_import
+        v_full = V_import
+        v_full_per = V_per_double_import
     else:
-        h_full = K.toarray()
-        v_full = V.toarray().reshape(state**2, state**2, state**2, state**2) * g
+        if TF:
+            K, V = build_V_prime_in_p(state, tau=0)
 
-    print(np.max(h_full))
-    print(np.max(v_full))
+            I = np.eye(state)
+
+            U, _ = bz.thermofield_change_of_basis(I)
+
+            U_sparse = sp.csr_matrix(U)
+
+            h_full = (U_sparse.T @ K @ U_sparse).toarray()
+
+            v_full = oe.contract(
+                "Mi,Wj,ijab,aN,bV->MWNV",
+                U,
+                U,
+                V.toarray().reshape(state**2, state**2, state**2, state**2),
+                U,
+                U,
+                optimize="optimal",
+            )
+            v_full = v_full * g
+        else:
+            K, V = build_V_in_p(state, tau=0)
+
+            h_full = K.toarray()
+            v_full = V.toarray().reshape(state, state, state, state) * g
 
     # state = state**2
     p = state
@@ -224,8 +235,6 @@ def integration_scheme(
     terms.V_pipp=qs.v_term(p, i, p, p, 0, 1).reshape(p, p**2)
     terms.V_ipap=qs.v_term(i, p, a, p, 0, 1).reshape(p, a, p)
     terms.V_piap=qs.v_term(p, i, a, p, 0, 1).reshape(p, a, p)
-
-    print(terms.V_iiaa)
 
     # Concatenate flattened T_ai and T_0 into a single array for the ODE solver
     init_amps = np.concatenate((double.flatten(), single.flatten(), np.array([t_0])))
