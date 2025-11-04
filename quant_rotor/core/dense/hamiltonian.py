@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.sparse import diags
 
 from quant_rotor.models.dense.support_ham import (
     H_kinetic,
@@ -14,12 +15,14 @@ def hamiltonian_dense(
     site: int,
     g_val: float,
     psi_twist: float = 0,
+    lambda_val: float = 1,
+    D: float = 1,
     periodic: bool = True,
     Double: bool = False,
-    D: float = 0,
     K_import: np.ndarray = [],
     V_import: np.ndarray = [],
-    Import: bool = False,
+    Import_K_V: bool = False,
+    field: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Constructs the Kinetic, Potential, and dense Hamiltonian operators for a specified system,
@@ -67,7 +70,7 @@ def hamiltonian_dense(
         - Potential energy matrix in p-basis, shape (state, state, state, state), symmetric
     """
     # Check if you are importing a Kinetic and Potential energy matrix or creating one from the scratch.
-    if Import == False:
+    if Import_K_V == False:
 
         # Create a Kinetic and Potential energy matricies.
         K, V = write_matrix_elements((state - 1) // 2, psi_twist)
@@ -75,10 +78,6 @@ def hamiltonian_dense(
         # Optional modifier for the one body (Kinetic energy) operator.
         # Creates and adds a tridiagonal matrix with 0 along the center diagonal and two shifted diagonals determened
         # by the value "l" to the Kinetic energy matrix.
-        # l = l_val * 1/np.sqrt(2)
-        # L_sparce = diags([l, 0, l], offsets=[-1, 0, 1], shape=(state, state))
-        # L_dense = L_sparce.toarray()
-        # K = K + L_dense
 
         # Reshape a potential energy matrix from (state^2, state^2) -> (state, state, state, state).
         V_tensor = V.reshape(state, state, state, state)
@@ -90,6 +89,13 @@ def hamiltonian_dense(
         # Reshape a Potential energy matrix back from (state, state, state, state) -> (state^2, state^2).
         K_in_p = K_in_p * D
         V_in_p = V_in_p.reshape(state**2, state**2) * g_val
+
+        if field:
+            l = (1 / np.sqrt(2)) * lambda_val
+            L_sparce = diags([l, 0, l], offsets=[-1, 0, 1], shape=(state, state))
+            L_dense = L_sparce.toarray()
+
+            K_in_p = K_in_p + L_dense
 
     else:
         # In case of importing skiping ass of the steps and assumes the Kinetic and Potential energy matricies are in the coreect shape and in p basis.

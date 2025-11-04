@@ -157,7 +157,7 @@ def S(eig_val: np.ndarray, beta_val: float) -> float:
          https://en.wikipedia.org/wiki/Entropy_(statistical_thermodynamics)
        - Shannon entropy: https://en.wikipedia.org/wiki/Entropy_(information_theory)
     """
-    p = P_n(eig_val, beta_val)
+    p = P(eig_val, beta_val)
     # Avoid 0*log(0) = NaN by masking zeros (limit is 0)
     with np.errstate(divide="ignore", invalid="ignore"):
         term = np.where(p > 0, p * np.log(p), 0.0)

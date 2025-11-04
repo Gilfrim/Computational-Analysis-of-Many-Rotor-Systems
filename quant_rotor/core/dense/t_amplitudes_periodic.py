@@ -200,9 +200,12 @@ def t_periodic(
     HF: bool = False,
     start_point: str = "sin",
     low_state: int = 1,
-    K_import: np.ndarray = 0,
-    V_import: np.ndarray = 0,
-    Import: bool = False,
+    K_import: np.ndarray = [],
+    V_import: np.ndarray = [],
+    t_1_import: np.ndarray = [],
+    t_2_import: np.ndarray = [],
+    Import_K_V: bool = False,
+    import_t: bool = False,
     NO: bool = False,
 ) -> tuple[float, float, float, np.ndarray, np.ndarray]:
     """_summary_
@@ -252,7 +255,7 @@ def t_periodic(
     a = p - i
     periodic = True
 
-    if Import:
+    if Import_K_V:
 
         h_full = K_import
         v_full = V_import
@@ -275,8 +278,12 @@ def t_periodic(
 
         v_full = v_full * g
 
-    t_a_i_tensor = np.full((site, a, i), 0.0, dtype=complex)
-    t_ab_ij_tensor = np.full((site, site, a, a, i, i), 0.0, dtype=complex)
+    if import_t:
+        t_a_i_tensor = t_1_import
+        t_ab_ij_tensor = t_2_import
+    else:
+        t_a_i_tensor = np.full((site, a, i), 0.0, dtype=complex)
+        t_ab_ij_tensor = np.full((site, site, a, a, i, i), 0.0, dtype=complex)
 
     # eigenvalues from h for update
     epsilon = np.diag(h_full)

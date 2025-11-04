@@ -89,10 +89,10 @@ def build_V_prime_in_p(state: int, tau: float) -> tuple[sp.csr_matrix, sp.csr_ma
             p2 = perm[m2]
             i = index(p1, p2)
             for dm1, dm2, coef in [
-                (1, 1, 0.75),
-                (-1, -1, 0.75),
-                (1, -1, -0.25),
-                (-1, 1, -0.25),
+                (1, 1, -0.25 + (1.0 - 3.0 * (np.cos(tau)) ** 2) * 0.25),
+                (-1, -1, -0.25 + (1.0 - 3.0 * (np.cos(tau)) ** 2) * 0.25),
+                (1, -1, 0.25 + (1.0 - 3.0 * (np.cos(tau)) ** 2) * 0.25),
+                (-1, 1, 0.25 + (1.0 - 3.0 * (np.cos(tau)) ** 2) * 0.25),
             ]:
 
                 m1p = m1 + dm1
@@ -117,7 +117,8 @@ def build_V_prime_in_p(state: int, tau: float) -> tuple[sp.csr_matrix, sp.csr_ma
 
     return K, V
 
-def build_V_in_p(state: int, tau: float=0) -> tuple[sp.csr_matrix, sp.csr_matrix]:
+
+def build_V_in_p(state: int, tau: float = 0) -> tuple[sp.csr_matrix, sp.csr_matrix]:
     """
     Constructs:
     - K: a diagonal kinetic energy operator in the 'p' basis
@@ -149,10 +150,10 @@ def build_V_in_p(state: int, tau: float=0) -> tuple[sp.csr_matrix, sp.csr_matrix
             i = index(p1, p2)
 
             for dm1, dm2, coef in [
-                (1, 1, 0.75),
-                (-1, -1, 0.75),
-                (1, -1, -0.25),
-                (-1, 1, -0.25),
+                (1, 1, (-0.25 + (1.0 - 3.0 * (np.cos(tau)) ** 2) * 0.25)),
+                (-1, -1, (-0.25 + (1.0 - 3.0 * (np.cos(tau)) ** 2) * 0.25)),
+                (1, -1, (0.25 + (1.0 - 3.0 * (np.cos(tau)) ** 2) * 0.25)),
+                (-1, 1, (0.25 + (1.0 - 3.0 * (np.cos(tau)) ** 2) * 0.25)),
             ]:
                 m1p = m1 + dm1
                 m2p = m2 + dm2
@@ -171,6 +172,7 @@ def build_V_in_p(state: int, tau: float=0) -> tuple[sp.csr_matrix, sp.csr_matrix
     K = sp.diags(p**2, offsets=0, format='csr')
 
     return K, V
+
 
 def H_kinetic_sparse(state: int, site: int, K: sp.spmatrix) -> sp.csr_matrix:
     """
@@ -230,7 +232,10 @@ def H_kinetic_sparse(state: int, site: int, K: sp.spmatrix) -> sp.csr_matrix:
 
     return sp.csr_matrix((data, (rows, cols)), shape=(dim, dim), dtype=complex)
 
-def H_potential_sparse(state: int, site: int, V: sp.spmatrix, g_val: float) -> sp.csr_matrix:
+
+def H_potential_sparse(
+    state: int, site: int, V: sp.spmatrix, g_val: float, periodic: bool = True
+) -> sp.csr_matrix:
     """
     Constructs the sparse Potential energy Hamiltonian using a two-site interaction operator V
     and coupling constant g_val. The interaction acts on nearest-neighbor pairs (periodic).
@@ -260,6 +265,10 @@ def H_potential_sparse(state: int, site: int, V: sp.spmatrix, g_val: float) -> s
     # Use COO for fast iteration
     V = V.tocoo()
 
+    if periodic:
+        site_range = site
+    else:
+        site_range = site - 1
     for x in range(site):
         # With x defining the first site of two-body interaction, we define the second dynamically.
         y = (x + 1) % site

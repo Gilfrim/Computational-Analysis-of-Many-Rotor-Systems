@@ -92,7 +92,8 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
         for site_2 in range(1, site):
             tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors.t_ab_ij_tensor[0, site_1]
 
-    two_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
+    t_1_max = tensors.t_a_i_tensor.flat[np.argmax(np.abs(tensors.t_a_i_tensor))]
+    t_2_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
 
     energy = 0
 
@@ -114,12 +115,14 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
 
     dTa_idB = (-1*(single))
     dTab_ijdB= (-1*(double))
-    dT_0dB = [-1*(energy)]
+    dT_0dB = [energy.real]
+
+    # print(T_ai, dT_0dB)
 
     dTa_idB = dTa_idB.flatten()
     dTab_ijdB = dTab_ijdB.flatten()
     comb_flat = np.concatenate([dTab_ijdB, dTa_idB, dT_0dB])
-    t0_stored.append((t, dT_0dB, T_ai, two_max))
+    t0_stored.append((t, dT_0dB, T_ai, t_2_max))
     return (comb_flat)
 
 
@@ -134,7 +137,10 @@ def integration_scheme(
     V_import: np.ndarray = [],
     v_full_per: np.ndarray = [],
     Import: bool = False,
-    double: bool = False,
+    t_0_import: complex = 0,
+    t_1_import: np.ndarray = [],
+    t_2_import: np.ndarray = [],
+    import_guess: bool = False,
     periodic: bool = True,
 ) -> tuple:
     """"""
@@ -146,11 +152,7 @@ def integration_scheme(
     if Import:
         h_full = K_import
         v_full = V_import
-    elif double and periodic:
-        h_full = K_import
-        v_full = V_import
-        v_full_per = v_full_per
-
+        print(np.max(K_import))
     else:
         # Load .npy matrices directly from the package
         K, V = write_matrix_elements((state - 1) // 2)
@@ -179,31 +181,26 @@ def integration_scheme(
         gap_site=3,
         epsilon=epsilon,
         periodic=periodic,
-        double=double,
     )
-    if double and periodic:
-        tensors = TensorData(
-            t_a_i_tensor=t_a_i_tensor,
-            t_ab_ij_tensor=t_ab_ij_tensor,
-            h_full=h_full,
-            v_full=v_full,
-            v_full_per=v_full_per,
-        )
-    else:
-        tensors = TensorData(
-            t_a_i_tensor=t_a_i_tensor,
-            t_ab_ij_tensor=t_ab_ij_tensor,
-            h_full=h_full,
-            v_full=v_full,
-        )
+
+    tensors = TensorData(
+        t_a_i_tensor=t_a_i_tensor,
+        t_ab_ij_tensor=t_ab_ij_tensor,
+        h_full=h_full,
+        v_full=v_full,
+    )
 
     qs = QuantumSimulation(params, tensors)
 
-    # Initialize T_0 (reference amplitude) as complex zero
-    t_0 = complex(0)
     # Initialize T_ai amplitudes as zeros
-    single = np.zeros((a,i), dtype = complex)
-    double = np.zeros((site, a, a, i, i), dtype = complex)
+    if import_guess:
+        t_0 = t_0_import
+        single = t_1_import
+        double = t_2_import
+    else:
+        t_0 = complex(0)
+        single = np.zeros((a, i), dtype=complex)
+        double = np.zeros((site, a, a, i, i), dtype=complex)
 
     # Concatenate flattened T_ai and T_0 into a single array for the ODE solver
     init_amps = np.concatenate((double.flatten(), single.flatten(), np.array([t_0])),)
@@ -217,8 +214,8 @@ def integration_scheme(
     arguments = (t0_stored, params, tensors, qs)
 
     # specify the precision of the integrator so that the output for the test models is numerically identical
-    relative_tolerance = 1e-9
-    absolute_tolerance = 1e-10
+    relative_tolerance = 1e-10
+    absolute_tolerance = 1e-12
 
     # ------------------------------------------------------------------------
     # call the integrator

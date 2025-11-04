@@ -1,0 +1,149 @@
+% ------------------------------------------------------------------------------------------------------------
+\usepackage{xparse}			% to create NewDocumentCommands
+% ------------------------------------------------------------------------------------------------------------
+% just for edits
+\NewDocumentCommand{\HL}{G{}}{\colorbox{yellow}{\parbox{\dimexpr\linewidth-2\fboxsep}{#1}}}
+\NewDocumentCommand{\hl}{G{}}{\colorbox{yellow}{#1}}
+\NewDocumentCommand{\blue}{G{}}{{\color{blue}#1}}
+\NewDocumentCommand{\red}{G{}}{{\color{red}#1}}
+%\NewDocumentCommand{\red}{G{}}{#1}
+\NewDocumentCommand{\bl}{G{}}{\textbf{#1}}
+% ------------------------------------------------------------------------------------------------------------
+% commands for referencing easily
+\NewDocumentCommand{\Sref}{m}{Section~\ref{#1}}
+\NewDocumentCommand{\Eref}{m}{Eq.~(\ref{#1})}
+\NewDocumentCommand{\Fref}{m}{Fig.~\ref{#1}}
+\NewDocumentCommand{\Tref}{m}{Table~\ref{#1}}
+\NewDocumentCommand{\Rref}{m}{Ref.~\onlinecite{#1}}
+% commands for referencing two
+\NewDocumentCommand{\Srefpl}{m m}{Sections~\ref{#1} and~\ref{#2}}
+\NewDocumentCommand{\Erefpl}{m m}{Eqs.~(\ref{#1}) and~(\ref{#2})}
+\NewDocumentCommand{\Frefpl}{m m}{Figs.~\ref{#1} and~\ref{#2}}
+% ------------------------------------------------------------------------------------------------------------
+% commands for position and momenutm operators
+\NewDocumentCommand{\p} {G{} G{}}{p_{#1}^{#2}}
+\NewDocumentCommand{\q} {G{} G{}}{q_{#1}^{#2}}
+\NewDocumentCommand{\hp}{G{} G{}}{\hat{p}_{#1}^{#2}}
+\NewDocumentCommand{\hq}{G{} G{}}{\hat{q}_{#1}^{#2}}
+\NewDocumentCommand{\bp}{G{} G{}}{\vect{p}_{#1}^{#2}}
+\NewDocumentCommand{\bq}{G{} G{}}{\vect{q}_{#1}^{#2}}
+\NewDocumentCommand{\R} {G{} G{}}{\mathbf{R}_{#1}^{#2}}
+\NewDocumentCommand{\Rp}{G{} G{}}{\mathbf{R}'}
+\NewDocumentCommand{\MR}{G{} G{}}{\mathds{R}_{#1}^{#2}}
+\NewDocumentCommand{\tR}{G{} G{}}{\text{R}_{#1}^{#2}}
+% ------------------------------------------------------------------------------------------------------------
+% commands for statistical symbols
+\NewDocumentCommand{\vro} {G{} G{}}{\varrho_{#1}^{#2}}
+\NewDocumentCommand{\vroq}{G{} G{}}{\varrho_{#1}^{#2}\left(\bq\right)}
+\NewDocumentCommand{\vroR}{G{} G{}}{\varrho_{#1}^{#2}\left(\R\right)}
+%\NewDocumentCommand{\vroR}{G{} G{}}{\varrho_{#1}^{#2}\left(\left\{\R\right\}\right)}
+\NewDocumentCommand{\g} {G{} G{}}{g_{#1}^{#2}}
+\NewDocumentCommand{\gq}{G{} G{}}{g_{#1}^{#2}\left(\bq\right)}
+\NewDocumentCommand{\gR}{G{} G{}}{g_{#1}^{#2}\left(\R\right)}
+%\NewDocumentCommand{\gR}{G{} G{}}{g_{#1}^{#2}\left(\left\{\R\right\}\right)}
+%\RenewDocumentCommand{\P}{O{}}{\mathbf{P}_{#1}}
+% ------------------------------------------------------------------------------------------------------------
+% mathematical shorthands
+\NewDocumentCommand{\kB}{}{k_\text{B}}
+\NewDocumentCommand{\kBT}{}{k_\text{B}T}
+\NewDocumentCommand{\identity}{}{\mathds{1}}
+\NewDocumentCommand{\intdR}{}{\int\dd\R{}{P}\,}
+\NewDocumentCommand{\limP}{}{\lim_{P \to \infty}}
+\NewDocumentCommand{\sumA}{}{\sum\limits_{\mathbf{a}}^{A}}
+\NewDocumentCommand{\lsum} {m G{}}{\sum \limits_{#1}^{#2}}
+\NewDocumentCommand{\lprod}{m G{}}{\prod\limits_{#1}^{#2}}
+\NewDocumentCommand{\onehalf}{}{\frac{1}{2}}
+\NewDocumentCommand{\ePH}{}{e^{-\beta_{P}\hat{H}}}
+\NewDocumentCommand{\TrA}{m}{
+	\Tr_{\hspace{-1pt}\raisebox{-3pt}{$\text{\footnotesize A}$}}
+	\hspace{-3pt}
+	\left[#1\right]
+}
+\NewDocumentCommand{\sora}{G{} G{}}{\tilde{a}_{#1}^{#2}}
+%\NewDocumentCommand{\sora}{G{} G{}}{\blue{s_{#1}^{#2}}}
+% ------------------------------------------------------------------------------------------------------------
+% commands for Hamiltonian, kinetic and potential operators
+\NewDocumentCommand{\Ham}{ O{} }{\hat{H}_{#1}} % we don't want to clobber \H
+\NewDocumentCommand{\h}  { O{} }{\hat{h}_{#1}}
+\NewDocumentCommand{\T}  { O{} }{\hat{T}_{#1}}
+\NewDocumentCommand{\V}  { O{} }{\hat{V}_{#1}}
+\NewDocumentCommand{\U}  { O{} }{\hat{U}_{#1}}
+\NewDocumentCommand{\K}  { O{} }{\hat{K}_{#1}}
+% ------------------------------------------------------------------------------------------------------------
+%%% commands for specific Z's U's and Cv's
+\NewDocumentCommand{\ZH}{}{Z} % helpful if we want to change this symbol later
+\NewDocumentCommand{\ZSOS}{}{Z_{\text{SOS}}}
+\NewDocumentCommand{\ZTrot}{}{Z_\text{Trotter}}
+\NewDocumentCommand{\Zrho}{}{Z_{\vro}}
+\NewDocumentCommand{\ZMC}{}{Z_\text{MC}}
+\NewDocumentCommand{\UH}{}{U_{H}}
+\NewDocumentCommand{\Urho}{}{U_{\vro}}
+\NewDocumentCommand{\Uf}{}{U_{f}}
+\NewDocumentCommand{\CH}{}{C_{v}^{H}}
+\NewDocumentCommand{\Crho}{}{C_{v}^{\vro}}
+\NewDocumentCommand{\Cf}{}{C_{v}^{f}}
+\NewDocumentCommand{\fRB}{}{\Big\langle f\left(\R,\beta\right)\Big\rangle_{\vro}}
+%\newcommand{\ho}{\mathbf{ho}}
+% ------------------------------------------------------------------------------------------------------------
+%%%% vector representation
+% BOLD  vectors
+\NewDocumentCommand{\vect}{m}{\bm{#1}}
+% ARROW vectors
+% \NewDocumentCommand{\vect}{m}{\vec{#1}}
+% ------------------------------------------------------------------------------------------------------------
+%%%% matrix representation
+%% undergraduate algebra version
+% \NewDocumentCommand{\matr}{m}{\mathbf{#1}}
+%% pure math version
+% \NewDocumentCommand{\matr}{m}{#1}
+%$ ISO complying version
+% \NewDocumentCommand{\matr}{m}{\bm{#1}}
+%$ underline
+\NewDocumentCommand{\matr}{m}{\bm{\underline{#1}}}
+% ------------------------------------------------------------------------------------------------------------
+% allows for multiple divisors
+\NewDocumentCommand{\eBH}{ O{} }{
+	\ifstrempty{#1}{%
+		e^{-\beta\hat{H}}					}{
+		e^{-\nicefrac{\beta\hat{H}}{#1}}	}
+}
+% ------------------------------------------------------------------------------------------------------------
+% helps for bra-kets and when there are a lot of exponentials
+\NewDocumentCommand{\eB}{m}{e^{-\beta#1}}
+\NewDocumentCommand{\eT}{m}{e^{-\tau#1}}
+\NewDocumentCommand{\eTh}{ }{\eT{\h}}
+\NewDocumentCommand{\eTH}{ }{\eT{\Ham}}
+\NewDocumentCommand{\eTV}{ }{\eT{\V}}
+\NewDocumentCommand{\etf}{m}{e^{-\frac{\tau}{2}#1}}
+\NewDocumentCommand{\etfh}{ }{\etf{\h}}
+\NewDocumentCommand{\braRa}{G{} G{}}{\bra{\R{#1}, a_{#2}}}
+\NewDocumentCommand{\ketRa}{G{} G{}}{\ket{\R{#1}, a_{#2}}}
+% ------------------------------------------------------------------------------------------------------------
+% define common matricies (in the implementation section)
+\NewDocumentCommand{\bMat} {G{} G{}}{\matr{B}_{#1}^{#2}}
+\NewDocumentCommand{\mMat} {G{} G{}}{\mathds{M}_{#1}^{#2}}
+\NewDocumentCommand{\oMat} {G{} G{}}{\mathds{O}_{#1}^{#2}}
+\NewDocumentCommand{\otMat}{G{} G{}}{\tilde{\mathds{O}}_{#1}^{#2}}
+% ------------------------------------------------------------------------------------------------------------
+% define common 'wrapper' functions (in the implementation section)
+\NewDocumentCommand{\Cm}{G{} G{}}{\mathcal{C}_{#1}^{#2}}
+\NewDocumentCommand{\Sm}{G{} G{}}{\mathcal{S}_{#1}^{#2}}
+\NewDocumentCommand{\Fm}{G{} G{}}{\mathcal{F}_{#1}^{#2}}
+% -------------------------------------------------------------------
+% define common symbol combintaions
+%\NewDocumentCommand{\x}{G{} G{}}{x_{#1}^{#2}}
+%\NewDocumentCommand{\xVec} {G{} G{}}{\vect{x}_{#1}^{#2}}
+% ------------------------------------------------------------------------------------------------------------
+% these are used in the nondimensionalization appendix
+\NewDocumentCommand{\tldx}{}{\tilde{x}}
+\NewDocumentCommand{\tldpsi}{}{\tilde{\psi}\left(\tldx\right)}
+% ------------------------------------------------------------------------------------------------------------
+% this is redefined at each section
+% allows for ease of modifcation using regex
+\providecommand{\paramname}{templateParameter}
+\providecommand{\paramdisplayname}{templateDisplayParameter}
+\providecommand{\modelname}{templateModel}
+\providecommand{\modeldisplayname}{templateDisplayModel}
+% unfortunately \ProvideDocumentCommand does not work inside \includegraphics for reasons explained in this link
+% https://tex.stackexchange.com/questions/275580/how-can-i-use-a-latex3-variable-as-a-path-in-includegraphics-solving-the-expans?noredirect=1&lq=1
+% ------------------------------------------------------------------------------------------------------------

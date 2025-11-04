@@ -35,6 +35,43 @@ def density_matrix_1(states: int, sites: int, eigvector: np.ndarray, choose_site
 
     return D_1
 
+
+def density_matrix_trans(
+    states: int,
+    sites: int,
+    eigvector_1: np.ndarray,
+    eigvector_2: np.ndarray,
+    choose_site: int,
+) -> np.ndarray:
+
+    # Reduced density matrix for chosen site (states x states)
+    D_1 = np.zeros((states, states), dtype=complex)
+
+    n_lambda = states ** (choose_site)
+    n_mu = states ** (sites - choose_site - 1)
+
+    # Loop over the local states at the chosen site
+    for p in range(states):
+        for p_prime in range(states):
+            val = 0.0
+
+            # Sum over all other sites (Lambda and mu represent other sites)
+            for Lambda in range(int(n_lambda)):
+                for mu in range(int(n_mu)):
+
+                    # Full indices in the Hilbert space
+                    i = mu + p * n_mu + Lambda * states * n_mu
+                    j = mu + p_prime * n_mu + Lambda * states * n_mu
+
+                    # Accumulate contribution from the eigenvector
+                    val += eigvector_1.conj()[i] * eigvector_2[j]
+
+            # Set the computed value into the reduced density matrix
+            D_1[p, p_prime] = val
+
+    return D_1
+
+
 def density_matrix_2(states: int, sites: int, eigvector: np.ndarray, x: int, y: int) -> np.ndarray:
 
     if y < x:

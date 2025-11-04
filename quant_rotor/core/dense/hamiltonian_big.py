@@ -6,7 +6,12 @@ from quant_rotor.core.dense.hamiltonian import hamiltonian_dense
 from quant_rotor.models.dense.density_matrix import density_matrix_1
 
 
-def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.ndarray, np.ndarray, np.ndarray], tau:float, periodic: bool, l_val: float=0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def hamiltonian_big_dense(
+    state: int,
+    site: int,
+    H_K_V: tuple[np.ndarray, np.ndarray, np.ndarray],
+    periodic: bool = True,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Takes in a system of rotors and scales it to a specified larger system. The approximation is taken from assuming the ground state of the
@@ -100,12 +105,24 @@ def hamiltonian_big_dense(state: int, site: int, g_val: float, H_K_V: tuple[np.n
     # print(np.allclose(V_mu, V_mu_check))
 
     # Import the changed Kinetic and Potential energy matrices to create the associated hamiltonial.
-    H_mu = hamiltonian_dense(state, site, g_val, K_import=K_mu, V_import=V_mu, Import=True)
+    H_mu = hamiltonian_dense(
+        state, site, 1, K_import=K_mu, V_import=V_mu, Import_K_V=True, periodic=periodic
+    )
 
     # It is importatnt to keep the return in this format since hamiltonian_general uses this structure.
     return H_mu[0], K_mu, V_mu, matrix_p_to_NO
 
-def hamiltonian_general_dense(states: int, sites: int, g_val: float, tau: float=0, periodic: bool=True) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+def hamiltonian_general_dense(
+    states: int,
+    NO_state: int,
+    sites: int,
+    g_val: float,
+    D_val: float = 1,
+    lambda_val: float = 0,
+    tau: float = 0,
+    periodic: bool = True,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Interates through systems progressively increasing the nubmer of cites.
@@ -133,11 +150,13 @@ def hamiltonian_general_dense(states: int, sites: int, g_val: float, tau: float=
         Dence Hamiltonian of shape (state^site, state^site) constructed from above Kinetic and Potential.
     """
     # Create the original full hamiltonian
-    H_K_V = hamiltonian_dense(11, 3, g_val, tau, periodic)
+    H_K_V = hamiltonian_dense(
+        states, 2, g_val, tau, periodic, D=D_val, lambda_val=lambda_val
+    )
 
     # Iterate through every new system by increasing the size of the system by 2 sites every eteration.
 
     # Make an approximation of the Hamiltonian, Kinetic and Potential energy matrices for the bigger system.
-    H_K_V = hamiltonian_big_dense(states, sites, 1, H_K_V, tau, periodic)
+    H_K_V = hamiltonian_big_dense(NO_state, sites, H_K_V, periodic)
 
     return H_K_V[0], H_K_V[1], H_K_V[2]

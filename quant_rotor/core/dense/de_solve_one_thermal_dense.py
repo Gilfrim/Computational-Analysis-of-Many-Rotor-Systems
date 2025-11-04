@@ -4,13 +4,16 @@ import scipy.sparse as sp
 
 import quant_rotor.models.dense.thermofield_boltz_funcs as bz
 from quant_rotor.models.dense.de_solver_func import new_solve_ivp
+from quant_rotor.models.dense.support_ham import (
+    basis_m_to_p_matrix_conversion,
+    write_matrix_elements,
+)
 from quant_rotor.models.dense.t_amplitudes_sub_class_fast import (
     PrecalcalculatedTerms,
     QuantumSimulation,
     SimulationParams,
     TensorData,
 )
-from quant_rotor.models.sparse.support_ham import build_V_in_p, build_V_prime_in_p
 
 
 def residual_double():
@@ -89,7 +92,8 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     for site_1 in range(1, site):
         qs.tensors.t_ab_ij_tensor[site_1] = dTab_ijdB[site_1]
 
-    two_max = qs.tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(qs.tensors.t_ab_ij_tensor))]
+    t_1_max = tensors.t_a_i_tensor.flat[np.argmax(np.abs(tensors.t_a_i_tensor))]
+    t_2_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
 
     qs.terms.a_term=qs.A_term(a)
     qs.terms.b_term=qs.B_term(i)
@@ -122,70 +126,50 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
 
     dTab_ijdB = (-1*(double))
     dTa_idB = (-1*(single))
-    dT_0dB = [-1*(energy)]
+    dT_0dB = [energy]
 
     dTa_idB = dTa_idB.flatten()
     dTab_ijdB = dTab_ijdB.flatten()
     comb_flat = np.concatenate([dTab_ijdB, dTa_idB, dT_0dB])
-    t0_stored.append((t, dT_0dB, T_ai, two_max))
+    t0_stored.append((t, dT_0dB, t_1_max, t_2_max))
     return (comb_flat)
 
 
 def integration_scheme(
     site: int,
     state: int,
-    g: float,
-    t_init: float = 0.0,
-    t_final: float = 10.0,
-    nof_points: int = 10000,
-    TF: bool = False,
-    Import: bool = False,
-    double: bool = False,
+    g: float = 1,
+    t_init=0.0,
+    t_final=10.0,
+    nof_points=10000,
     K_import: np.ndarray = [],
     V_import: np.ndarray = [],
-    V_per_double_import: np.ndarray = [],
+    v_full_per: np.ndarray = [],
+    Import: bool = False,
+    t_0_import: complex = 0,
+    t_1_import: np.ndarray = [],
+    t_2_import: np.ndarray = [],
+    import_guess: bool = False,
+    periodic: bool = True,
 ) -> tuple:
     """"""
+    p = state
+    i = 1
+    a = p - i
 
     if Import:
         h_full = K_import
         v_full = V_import
-    elif double:
-        h_full = K_import
-        v_full = V_import
-        v_full_per = V_per_double_import
     else:
-        if TF:
-            K, V = build_V_prime_in_p(state, tau=0)
+        # Load .npy matrices directly from the package
+        K, V = write_matrix_elements((state - 1) // 2)
 
-            I = np.eye(state)
+        V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
 
-            U, _ = bz.thermofield_change_of_basis(I)
+        h_full = basis_m_to_p_matrix_conversion(K, state)
+        v_full = basis_m_to_p_matrix_conversion(V_tensor, state)
 
-            U_sparse = sp.csr_matrix(U)
-
-            h_full = (U_sparse.T @ K @ U_sparse).toarray()
-
-            v_full = oe.contract(
-                "Mi,Wj,ijab,aN,bV->MWNV",
-                U,
-                U,
-                V.toarray().reshape(state**2, state**2, state**2, state**2),
-                U,
-                U,
-                optimize="optimal",
-            )
-            v_full = v_full * g
-        else:
-            K, V = build_V_in_p(state, tau=0)
-
-            h_full = K.toarray()
-            v_full = V.toarray().reshape(state, state, state, state) * g
-
-    # state = state**2
-    p = state
-    i = 1
-    a = p - i
+        v_full = v_full * g
 
     t_a_i_tensor = np.full((a), 0, dtype=complex)
     t_ab_ij_tensor = np.full((site, a, a), 0, dtype=complex)
@@ -194,16 +178,16 @@ def integration_scheme(
     epsilon = np.diag(h_full)
 
     params = SimulationParams(
-    a=a,
-    i=i,
-    p=p,  # These can be the same as `a + i` or chosen independently
-    site=site,
-    state=state,
-    i_method=3,
-    gap=False,
-    gap_site=3,
-    epsilon=epsilon,
-    periodic=True
+        a=a,
+        i=i,
+        p=p,  # These can be the same as `a + i` or chosen independently
+        site=site,
+        state=state,
+        i_method=3,
+        gap=False,
+        gap_site=3,
+        epsilon=epsilon,
+        periodic=periodic,
     )
 
     tensors = TensorData(
@@ -216,13 +200,15 @@ def integration_scheme(
     terms = PrecalcalculatedTerms()
     qs = QuantumSimulation(params, tensors, terms)
 
-    del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor
-
     # Initialize T_0 (reference amplitude) as complex zero
-    t_0 = complex(0)
-    # Initialize T_ai amplitudes as zeros
-    single = np.zeros((a), dtype = complex)
-    double = np.zeros((site, a, a), dtype = complex)
+    if import_guess:
+        t_0 = t_0_import
+        single = t_1_import
+        double = t_2_import
+    else:
+        t_0 = complex(0)
+        single = np.zeros((a, i), dtype=complex)
+        double = np.zeros((site, a, a, i, i), dtype=complex)
 
     terms.h_pp=qs.h_term(p, p)
     terms.h_pa=qs.h_term(p, a)
@@ -248,10 +234,8 @@ def integration_scheme(
     arguments = (t0_stored, params, tensors, qs)
 
     # specify the precision of the integrator so that the output for the test models is numerically identical
-    relative_tolerance = 1e-9
-    absolute_tolerance = 1e-10
-
-    print("Done.")
+    relative_tolerance = 1e-10
+    absolute_tolerance = 1e-12
 
     # ------------------------------------------------------------------------
     # call the integrator
