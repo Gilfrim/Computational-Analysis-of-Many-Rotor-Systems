@@ -27,7 +27,10 @@
 \usepackage{tikz}
 \usepackage{newtxtext,newtxmath} % nice math font; optional
 
-
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
 \usepackage[scale=1.24]{beamerposter} % Use the beamerposter package for laying out the poster
 \usepackage{amsmath}
 \usepackage{braket}
@@ -73,7 +76,7 @@
 
 \title{Configurational Coupled Cluster for Planar Rotors} % Poster title
 
-\author{Illia Voropai, Azharuddin Mohammed, Marcel Nooijen} % Author(s)
+\author{Illia Voropai, Bryan McNeil, Azharuddin Mohammed, Marcel Nooijen} % Author(s)
 
 \institute{Department of Chemistry, University of Waterloo} % Institution(s)
 
@@ -105,14 +108,11 @@
 %----------------------------------------------------------------------------------------
 \begin{block}{Premise}
 
-We would like to use the time idependent Schrodinger Equation to extract eigenvalues and eigenvectors.
-
-
+We use the time-independent Schrödinger Equation to extract eigenvalues and eigenvectors, with hamiltonian:
 \begin{equation}
-\hat{H} = B \hat{K} + g\hat{V}
+\hat{H} = B \hat{K} + g\hat{V}, \  B,g: \text{adjustable parameters}
 \end{equation}
-
-Where hamiltonian describes a coplanar rotor system.
+Where the hamiltonian describes a coplanar rotor system.
 
 \begin{tikzpicture}[line cap=round,line join=round]
   % ----- styles & colors -----
@@ -161,35 +161,41 @@ Where hamiltonian describes a coplanar rotor system.
 
 \end{tikzpicture}
 
-We solve Shrodinger equation by diagnilizing hamiltonian:
-
+We solve Schrödinger equation by diagonalizing the hamiltonian over the product basis of single site plane waves:
 \begin{align}
     \hat{H}\ket{\psi} &= E\ket{\psi}
 \end{align}
 
-However thise hamiltonians becove extreamly large really fast which makes exact diagnilization computationally heavy.
+However, this hamiltonian become extremely large really fast which makes exact diagonalization computationally heavy.
 
-\textit{(Even though we are curently working with systems of rotors the method is equaly aplicable to magnetic systems.)}
+\textit{(Even though we are currently working with systems of rotors the method is equal applicable to magnetic systems.)}
 
 \begin{alertblock}{Problem Statement}
 Generalize Coupled Cluster methods (CC) to rotor systems, to explore larger systems. Compare with other approaches and also consider Thermal Properties.
 \end{alertblock}
 
 \end{block}
-
-\begin{block}{Improving Exact Diagonilization}
-In order to to explore larger systems with Exact Diagnilization and Configurational Coupled Cluster (CCC) we use Natural Orbitals:
+\vspace{-2em}
+\begin{block}{Improving Exact Diagonalization}
+In order to explore larger systems with Exact Diagonalization and Configuration Coupled Cluster (CCC) we use Natural Orbitals:
 \begin{itemize}
-  \item Truncate the basis using Natural Orbital (NO) density matrix for small system(2-3 sites), and use selected eivencectors.
-  \item Use sparse matrix techniquesto COnstruct Hamiltonian and use direct diagnilization.
-  \item Systems up to about 9 sites with 3-5 NO's can be studied.
+  \item Truncate the basis using one particle reduced density matrix for small system (2-3 sites), and use selected eigenvectors (Natural Orbital, NO).
+  \item Use sparse matrix techniques to construct Hamiltonian and use direct diagonalization.
+  \item Systems up to about 9 sites with 5 NO's can be studied.
 \end{itemize}
 
 \begin{figure}
     \centering
     \includegraphics[width=.9\linewidth]{ED_vs_NO.png}
-    \caption{Qualitative demonstration works through the NO truncation method but acuracy decreases with the increase of the coupling strengs.}
+    \caption{Accuracy of the NO with 5 and 7 NO basis truncation.}
     \label{fig:ED_vs_NO}
+\end{figure}
+\vspace{-1.5em}
+\begin{figure}
+    \centering
+    \includegraphics[width=.9\linewidth]{ED_vs_NO.png}
+    \caption{Qualitative demonstration works through the NO truncation method, but accuracy decreases with the increase of the coupling strings.}
+    \label{fig:sites_CCC}
 \end{figure}
 
 \end{block}
@@ -214,11 +220,9 @@ In order to to explore larger systems with Exact Diagnilization and Configuratio
 
 \begin{block}{Periodic vs. Non-Periodic System Setup}
 
-CCC calcualations can be sued for both periodic and finite systems. One could go beyond nearest neighbor interactions.
+CCC calculations can be used for both periodic and finite systems. One could go beyond nearest neighbor interactions.
 
-The example of the periodic system that we would consider:
-
-
+CCC calculations for periodic systems are more efficient and converge faster with the number of sites.
 
 \begin{figure}
 
@@ -263,25 +267,25 @@ The example of the periodic system that we would consider:
 
   % labels above each solid node
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (0.5,0.5) {$x=1$\\$y=2$};
+     at (0.5,0.5) {$V(1, 2)$};
 
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (1.5,0.5) {$x=2$\\$y=3$};
+     at (1.5,0.5) {$V(2, 3)$};
 
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (2.5,0.5) {$x=3$\\$y=4$};
+     at (2.5,0.5) {$V(3, 4)$};
 
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (3.5,0.5) {$x=4$\\$y=5$};
+     at (3.5,0.5) {$V(4, 5)$};
 
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (4.5,0.5) {$x=5$\\$y=6$};
+     at (4.5,0.5) {$V(5, 6)$};
 
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (5.5,0.5) {$x=6$\\$y=7$};
+     at (5.5,0.5) {$V(6, 7)$};
 
   % label under the long dashed arc
-  \node[above=-22pt, align=center, font=\fontsize{15}{15}\selectfont] at (2.5,-0.6) {$x=6$\\$y=0$};
+  \node[above=-22pt, align=center, font=\fontsize{15}{15}\selectfont] at (2.5,-0.6) {$V(6, 1)$};
 \end{tikzpicture}
 
 
@@ -318,35 +322,112 @@ The example of the periodic system that we would consider:
 
   % labels above each solid node
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (0.5,0.5) {$x=1$\\$y=2$};
+     at (0.5,0.5) {$V(1, 2)$};
 
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (1.5,0.5) {$x=2$\\$y=3$};
+     at (1.5,0.5) {$V(2, 3)$};
 
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (2.5,0.5) {$x=3$\\$y=4$};
+     at (2.5,0.5) {$V(3, 4)$};
 
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (3.5,0.5) {$x=4$\\$y=5$};
+     at (3.5,0.5) {$V(4, 5)$};
 
 \node[below=-15pt, align=center, font=\fontsize{15}{15}\selectfont]
-     at (4.5,0.5) {$x=5$\\$y=6$};
+     at (4.5,0.5) {$V(5, 6)$};
 
 \end{tikzpicture}
-\caption{Circles representing rotor sites, x and y respresenting site interactions between sites 1 and 2; 2 and 3: etc.  The doted lines and sites are two ways how we can consider our periodic systems}
+\caption{Circles represent rotor sites, arrows represent site interactions between sites 1 and 2; 2 and 3; etc.}
 \label{fig:non_periodic_system_drawing}
 \end{figure}
 
 
 \end{block}
-
+\vspace{-2em}
 \begin{block}{Configurational Coupled Cluster}
+    We define our $\hat{T}_{1}$ and $\hat{T}_{2}$ operators in terms of single-site excitation operators $\hat{e}^{a}_{i}$ where $i$ indicates a single low-lying state:
+    \begin{align}
+        \hat{T}_1&= \sum_{x} \sum_{a,i} t^{a}_{i}(x) \hat{e}^{a}_{i}(x)\\
+        \hat{T}_2&= \sum_{x,y} \sum_{a,b,i,j} t^{ab}_{ij}(x, y) \hat{e}^{a}_{i}(x) \hat{e}^{b}_{j}(y)
+    \end{align}
+    The $\hat{T}_{1}$ and $\hat{T}_{2}$ operators form the overall $\hat{T}$ in the CC ansatz:
+    \begin{align}
+        \ket{\psi} = e^{\hat{T}}\ket{0}
+    \end{align}
+    Substituting this form into the Schrödinger Equation and projecting against the basis set $\ket{\tau}$, the equations for the cluster amplitudes can be expressed as:
+    \begin{align}
+        \bra{\tau} e^{-\hat{T}} \hat{H} e^{\hat{T}} \ket{0} = E \delta_{\tau 0}
+    \end{align}
 
-    - CI CCC comparison emfesising the separated exictation operators and ability of CCC to axes higher excitations.
+    By expanding one can arrive at a full set of algebraic equations which are solved numerically through iterative and/or imaginary time propagation procedures.\newline
 
-
+    \textbf{Features of CCC:}
+    \begin{itemize}
+        \item method is size extensive
+        \item the number of parameters scales like $nstate^2 * nsite$ for periodic systems
+        \item method is only accurate up to $g \approx 0.4$
+    \end{itemize}
 
 \end{block}
+
+\begin{block}{Computational Efficiency Results}
+
+To optimize the algorithm of the CCC solution, all tensor operators are defined as matrix operators to make use of BLAS procedure:
+
+\begin{table}[h!]
+\centering
+\caption{Computation time comparison for periodic system. ($g = 0.1$).}
+\label{tab:system_times_periodic}
+\vspace{-2em}
+
+    \begin{subtable}[t]{0.45\textwidth}
+    \centering
+    \caption{Sparse matrices}
+        \begin{tabular}{@{}ll@{}}
+        \toprule
+        \multicolumn{2}{c}{\textbf{System states – 11 }} \\
+        \midrule
+        \# Sites & Time to produce (s) \\
+        \midrule
+        100  & 2 min 2.1 sec \\
+        1000 & $>$ 20 min \\
+        \midrule
+        \multicolumn{2}{c}{\textbf{System sites – 3 }} \\
+        \midrule
+        \# States & Time to produce (s) \\
+        \midrule
+        150 & 3 min 2.1 sec \\
+        500 & -- \\
+        \bottomrule
+        \end{tabular}
+    \end{subtable}
+\hfill
+    \begin{subtable}[t]{0.45\textwidth}
+    \centering
+    \caption{Dense matrices, BLAS}
+        \begin{tabular}{@{}ll@{}}
+        \toprule
+        \multicolumn{2}{c}{\textbf{System states – 11 }} \\
+        \midrule
+        \# Sites & Time to produce (s) \\
+        \midrule
+        100  & 4.5 sec \\
+        1000 & 6 min 57.1 sec \\
+        \midrule
+        \multicolumn{2}{c}{\textbf{System sites – 3 }} \\
+        \midrule
+        \# States & Time to produce (s) \\
+        \midrule
+        150 & 23 min 58 sec \\
+        500 & crashes \\
+        \bottomrule
+        \end{tabular}
+    \end{subtable}
+\end{table}
+
+\end{block}
+
+
 
 %----------------------------------------------------------------------------------------
 
@@ -358,9 +439,73 @@ The example of the periodic system that we would consider:
 %   METHODS
 %----------------------------------------------------------------------------------------
 
-\begin{block}{Large $g >= 100$ Limit}
+\begin{table}[h!]
+\centering
+\caption{Computation time comparison for non-periodic system. ($g = 0.1$).}
+\label{tab:system_times_non_periodic}
+\vspace{-2em}
 
-One of the properties which we utilise to explore the large g limit ($g>=100$) is that as g aproaches infininty the system becomes a superposition of two states (alignments) 0 and $\pi$.
+    \begin{subtable}[t]{0.45\textwidth}
+    \centering
+    \caption{Sparse matrices}
+        \begin{tabular}{@{}ll@{}}
+        \toprule
+        \multicolumn{2}{c}{\textbf{System states – 11 }} \\
+        \midrule
+        \# Sites & Time to produce (s) \\
+        \midrule
+        100  & 2 min 2.1 sec \\
+        1000 & $>$ 20 min \\
+        \midrule
+        \multicolumn{2}{c}{\textbf{System sites – 3 }} \\
+        \midrule
+        \# States & Time to produce (s) \\
+        \midrule
+        150 & 3 min 2.1 sec \\
+        500 & -- \\
+        \bottomrule
+        \end{tabular}
+    \end{subtable}
+\hfill
+    \begin{subtable}[t]{0.45\textwidth}
+    \centering
+    \caption{Dense matrices, BLAS}
+        \begin{tabular}{@{}ll@{}}
+        \toprule
+        \multicolumn{2}{c}{\textbf{System states – 11 }} \\
+        \midrule
+        \# Sites & Time to produce (s) \\
+        \midrule
+        100  & 4.5 sec \\
+        1000 & 6 min 57.1 sec \\
+        \midrule
+        \multicolumn{2}{c}{\textbf{System sites – 3 }} \\
+        \midrule
+        \# States & Time to produce (s) \\
+        \midrule
+        150 & 23 min 58 sec \\
+        500 & crashes \\
+        \bottomrule
+        \end{tabular}
+    \end{subtable}
+\end{table}
+
+\begin{block}{Small $g < 0.4$ Limit}
+
+To explore the small g we use a reference state of $\ket{0}$ and get accurate results.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=.9\linewidth]{ED_vs_NO.png}
+    \caption{As g increases the CCC results love accuracy.}
+    \label{fig:small_g_CCC}
+\end{figure}\vspace{-2em}
+
+\end{block}
+
+\begin{block}{Very Large $g >= 100$ Limit}
+
+To explore the very large g we can use $B < 0.01$ instead. The system becomes a superposition of two states.
 
 \begin{figure}
 \begin{tikzpicture}[line cap=round,line join=round]
@@ -412,29 +557,18 @@ One of the properties which we utilise to explore the large g limit ($g>=100$) i
   }
 
 \end{tikzpicture}
-\caption{The shcematic for superposition of the two state alignments.}
+\caption{The schematic for superposition of the two state alignments.}
 \label{fig:superposition}
-\end{figure}
+\end{figure}\vspace{-.6in}
 
-With g large we can the wavefunctions assiciated with 0 and $\pi$ alignment are separate.
-This property allows us to isolate for one of them in the following maner by taking a linear combination of the 0 and $\pi$ wavefunctions and constructing a Natural orbital basis based on them.
+There are two degenerate states that are both delocalized. They can alternatively be localized and one of these states (after obtaining the Natural Orbitals) is then used as a reference state in a broken symmetry CCC calculation.
 
 \begin{figure}
     \centering
     \includegraphics[width=.8\linewidth]{superposition_graph.png}
-    \caption{The example of probability dencityes separated onto localised states instead of superposition.}
+    % \caption{The example of probability densities separated onto localized states instead of superposition.}
     \label{fig:superposition_graph}
-\end{figure}
-
-By solving the CCC equations for the system of Natural Orbital describing combined (isolated to the left or the right) state we can see a inverce prodoctional relationship between the value of B and the acuracy of CCC ground state energy.
-
-
-\begin{figure}
-    \centering
-    \includegraphics[width=.8\linewidth]{superposition_graph.png}
-    \caption{As B aproaches 0 (g aproaches infinity) acuracy increases.}
-    \label{fig:D_vs_CCC_Energy}
-\end{figure}
+\end{figure}\vspace{-.6in}
 
 \end{block}
 %----------------------------------------------------------------------------------------
@@ -486,23 +620,61 @@ By solving the CCC equations for the system of Natural Orbital describing combin
 
 %--------------------------------------------------------------------------------
 
-\begin{block}{Computational Efficency Results}
-
-\end{block}
-
-\begin{block}{Small $g < 100$ Limit}
-
-\end{block}
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{b_energy.png}
+    \caption{As B approaches 0 (g approaches infinity) accuracy increases.}
+    \label{fig:D_vs_CCC_Energy}
+\end{figure}
 
 \begin{block}{Future Work}
 
+\begin{itemize}
+  \item Exploration of additional rotor systems:
+    \begin{itemize}
+      \item Twisted planar rotors
+      \item Water molecule clusters
+    \end{itemize}
+
+  \item Extension to Magnetic Systems (1-dimensional)
+  \item Investigation of thermal properties
+
+  \item Study of systems with up to approximately 9 sites
+        and 3–5 natural orbitals (NOs)
+
+  \item Extension to two/three-dimensional lattices
+\end{itemize}
+
 \end{block}
 
 
-\begin{alertblock}{References}
-    \small{\bibliographystyle{unsrt}
-    \bibliography{sample}\vspace{0.75in}}
-\end{alertblock}
+\begin{block}{References}
+    \small
+    \bibliographystyle{unsrt}
+    \begin{thebibliography}{99}
+
+    \bibitem[1]{moeed2025qubit}
+    Moeed, M. Shaeer; Brown, James; Ibrahim, Alexander; Vilas Boas De Oliveira, Estevao; Roy, Pierre-Nicholas. (2025).
+    \emph{Qubit encodings for lattices of dipolar planar rotors}.
+    arXiv preprint arXiv:2507.17952 [quant-ph].
+
+    \bibitem[2]{wu2018configcc}
+    Wu, Siyuan; Nooijen, Marcel. (2018).
+    “Configurational coupled cluster approach with applications to magnetic model systems.”
+    Chemical Physics Letters, 700, 64-73. DOI: 10.1016/j.cplett.2018.03.015 (or similar — check exact DOI).
+
+    \bibitem[3]{wu2018mreomcc}
+    Wu, Siyuan; Steffen, Jonathan; Hu, Piaoyu; Nooijen, Marcel. (2018).
+    “Multireference equation-of-motion coupled cluster benchmark study of magnetic model systems.”
+    Computational \& Theoretical Chemistry, (in press 2018) — PII: S2210-271X(18)30091-4. DOI: 10.1016/j.comptc.2018.03.009.
+
+    \bibitem[4]{serwatka2024rotors}
+    Serwatka, Tobias; Roy, Pierre-Nicholas. (2024).
+    “Quantum criticality in chains of planar rotors with dipolar interactions.”
+    The Journal of Chemical Physics, 160(10), 104302. DOI: 10.1063/5.0195453.
+
+    \end{thebibliography}
+\end{block}
 
 %----------------------------------------------------------------------------------------
 %   CONTACT INFORMATION
@@ -512,17 +684,27 @@ By solving the CCC equations for the system of Natural Orbital describing combin
 \setbeamercolor{block alerted body}{fg=black,bg=white} % Change the alert block body colors
 
 \begin{alertblock}{Contact Information}
-
-\begin{itemize}
-\item Email: \href{mailto:aas2999m@uwaterloo.ca}{aas2999m@uwaterloo.ca}
-\end{itemize}
-
+    \begin{itemize}
+    \item Email: \href{mailto:aas2999m@uwaterloo.ca}{aas2999m@uwaterloo.ca}
+    \item Email: \href{mailto:nooijen@uwaterloo.ca}{nooijen@uwaterloo.ca}
+    \item Email: \href{mailto:ivoropai@uwaterloo.ca}{ivoropai@uwaterloo.ca}
+    \end{itemize}
 \end{alertblock}
 
 \begin{center}
-\begin{tabular}{ccc}
-% \includegraphics[width=0.4\linewidth]{logo.png} & \hfill & \includegraphics[width=0.4\linewidth]{logo.png}
-\end{tabular}
+    \vspace{-4em}
+
+    \begin{tabular}{ccc}
+        \includegraphics[width=1\linewidth]{nserc_1.png}
+    \end{tabular}
+\end{center}
+
+\begin{center}
+    \vspace{-2em}
+
+    \begin{tabular}{ccc}
+        \includegraphics[width=0.3\linewidth]{nserc_2.png}
+    \end{tabular}
 \end{center}
 
 %----------------------------------------------------------------------------------------

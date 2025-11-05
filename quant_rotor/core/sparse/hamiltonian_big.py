@@ -36,19 +36,23 @@ def hamiltonian_big_sparse(state: int, site: int, g_val: float, H_K_V: list[np.n
         Dence Hamiltonian of shape (state^site, state^site) constructed from above Kinetic and Potential.
     """
 
-    H = H_K_V[0]
+    H = H_K_V[0].toarray()
     K = H_K_V[1]
     V = H_K_V[2]
 
     state_old = int(K.shape[0])
     site_old = int(np.log(H.shape[0]) / np.log(state_old))
 
-    _, psi_vec = sp.linalg.eigsh(H, k=1, which='SA', tol=1e-19, maxiter=2000)
+    eig_val, eig_vec = np.linalg.eigh(H)
+
+    psi_vec = eig_vec[:, np.argmin(eig_val)]
 
     rho_site_0 = density_matrix_1(state_old, site_old, psi_vec, 0)
 
     eig_val_D, matrix_p_to_NO_full = np.linalg.eigh(rho_site_0)
     index_d = np.argsort(-eig_val_D)
+
+    print(eig_val_D[index_d])
 
     matrix_p_to_natural_orbital_sparse = sp.csr_matrix(matrix_p_to_NO_full[:, index_d[:state]])
 
@@ -63,7 +67,10 @@ def hamiltonian_big_sparse(state: int, site: int, g_val: float, H_K_V: list[np.n
 
     return H_mu, K_mu, V_mu
 
-def hamiltonian_general_sparse(states: int, sites: int, g_val: float, tau: float=0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+def hamiltonian_general_sparse(
+    states: int, states_NO: int, sites: int, g_val: float, tau: float = 0
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Iterages through hamiltonian systems using the hamiltonian_big_sparse to optimise the process of producing the hamiltonian.
@@ -88,8 +95,8 @@ def hamiltonian_general_sparse(states: int, sites: int, g_val: float, tau: float
         Dence Hamiltonian of shape (state^site, state^site) constructed from above Kinetic and Potential.
     """
 
-    H_K_V = hamiltonian_sparse(11, 3, g_val, tau, spar=False)
+    H_K_V = hamiltonian_sparse(states, 3, g_val, tau)
 
-    H_K_V = hamiltonian_big_sparse(states, sites, g_val, H_K_V, tau)
+    H_K_V = hamiltonian_big_sparse(states_NO, sites, g_val, H_K_V, tau)
 
     return H_K_V

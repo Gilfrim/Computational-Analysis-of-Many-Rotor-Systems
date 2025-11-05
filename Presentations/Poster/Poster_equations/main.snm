@@ -1,5 +1,9 @@
 \beamer@slide {fig:ED_vs_NO}{1}
+\beamer@slide {fig:sites_CCC}{1}
 \beamer@slide {fig:non_periodic_system_drawing}{1}
+\beamer@slide {tab:system_times_periodic}{1}
+\beamer@slide {tab:system_times_non_periodic}{1}
+\beamer@slide {fig:small_g_CCC}{1}
 \beamer@slide {fig:superposition}{1}
 \beamer@slide {fig:superposition_graph}{1}
 \beamer@slide {fig:D_vs_CCC_Energy}{1}

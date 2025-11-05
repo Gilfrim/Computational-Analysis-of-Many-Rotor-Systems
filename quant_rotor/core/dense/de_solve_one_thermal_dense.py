@@ -132,8 +132,10 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     dTab_ijdB = dTab_ijdB.flatten()
     comb_flat = np.concatenate([dTab_ijdB, dTa_idB, dT_0dB])
     t0_stored.append((t, dT_0dB, t_1_max, t_2_max))
+    tdcc_differential_equation.call_count += 1
     return (comb_flat)
 
+tdcc_differential_equation.call_count = 0
 
 def integration_scheme(
     site: int,
@@ -271,4 +273,4 @@ def integration_scheme(
 
     time, T_0, t_0_sol, two_max = postprocess_rk45_integration_results(sol,t0_stored, state, site)
 
-    return(time, T_0, t_0_sol, two_max)
+    return (time, T_0, t_0_sol, two_max, tdcc_differential_equation.call_count)

@@ -257,10 +257,10 @@ def H_potential_sparse(
         Sparse many-body Potential energy Hamiltonian operator.
     """
 
-    dim = state ** site
-    data = []
+    dim = state**site
     rows = []
     cols = []
+    data = []
 
     # Use COO for fast iteration
     V = V.tocoo()
@@ -269,7 +269,8 @@ def H_potential_sparse(
         site_range = site
     else:
         site_range = site - 1
-    for x in range(site):
+
+    for x in range(site_range):
         # With x defining the first site of two-body interaction, we define the second dynamically.
         y = (x + 1) % site
 
@@ -303,7 +304,13 @@ def H_potential_sparse(
                         # Uppend them to a new rows, collumns and data arrays.
                         rows.append(i)
                         cols.append(j)
-                        data.append(val * g_val)
+                        data.append(val)
+
+        print(f"Finished site {x}")
+
+    rows = np.asarray(rows, dtype=np.float64)
+    cols = np.asarray(cols, dtype=np.float64)
+    data = np.asarray(data, dtype=np.float64)
 
     # Return a new sparse array of the potential energy part of the mamiltonian.
-    return sp.csr_matrix((data, (rows, cols)), shape=(dim, dim), dtype=complex)
+    return sp.csr_matrix((data, (rows, cols)), shape=(dim, dim), dtype=np.float64)

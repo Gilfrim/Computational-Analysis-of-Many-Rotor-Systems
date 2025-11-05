@@ -18,7 +18,7 @@ def hamiltonian_sparse(
     periodic: bool = True,
     K_import: np.ndarray = [],
     V_import: np.ndarray = [],
-    Import_K_V: bool = False,
+    Import: bool = False,
     curve_L: bool = False,
     curve_R: bool = False,
 ) -> tuple[sp.csr_matrix, sp.csr_matrix, sp.csr_matrix]:
@@ -64,7 +64,7 @@ def hamiltonian_sparse(
         - Potential energy matrix in p-basis, shape (state, state, state, state), symmetric
     """
     # Check if you are importing a Kinetic and Potential energy matrix or creating one from the scratch.
-    if Import_K_V == False:
+    if Import == False:
         # Create a Kinetic and Potential energy matricies.
         K_in_p, V_in_p = build_V_in_p(state, psi_twist)
 

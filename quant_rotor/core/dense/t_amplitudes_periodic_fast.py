@@ -15,20 +15,24 @@ from quant_rotor.models.sparse.support_ham import build_V_in_p
 # printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
 
+
 def t_periodic(
     site: int,
     state: int,
     g: float,
     fast: bool,
     i_method: int = 3,
-    threshold: float=1e-8,
+    threshold: float = 1e-8,
     gap: bool = False,
-    gap_site: int=3,
-    HF: bool=False,
-    start_point: str="sin",
-    low_state: int=1,
-    t_a_i_tensor_initial: np.ndarray=0,
-    t_ab_ij_tensor_initial: np.ndarray=0
+    gap_site: int = 3,
+    HF: bool = False,
+    start_point: str = "sin",
+    low_state: int = 1,
+    t_a_i_tensor_initial: np.ndarray = 0,
+    t_ab_ij_tensor_initial: np.ndarray = 0,
+    Import: bool = True,
+    K_import: np.ndarray = [],
+    V_import: np.ndarray = [],
 ):
     """
     Create SimulationParams from raw input arguments.
@@ -42,12 +46,18 @@ def t_periodic(
     a = p - i
     periodic = True
 
-    # Load .npy matrices directly from the package
-    h_full, v_full = build_V_in_p(state)
+    if Import:
+        h_full, v_full = K_import, V_import
+    else:
 
-    v_full = v_full*g
+        # Load .npy matrices directly from the package
+        h_full, v_full = build_V_in_p(state)
 
-    h_full, v_full = h_full.toarray(), v_full.toarray().reshape(state, state, state, state)
+        v_full = v_full * g
+
+        h_full, v_full = h_full.toarray(), v_full.toarray().reshape(
+            state, state, state, state
+        )
 
     if np.isscalar(t_a_i_tensor_initial) and np.isscalar(t_ab_ij_tensor_initial):
         t_a_i_tensor = np.full((a), t_a_i_tensor_initial, dtype=complex)
@@ -156,6 +166,7 @@ def t_periodic(
         iteration += 1
 
     return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
+
 
 # if __name__ == "__main__":
 
