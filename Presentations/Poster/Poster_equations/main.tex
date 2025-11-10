@@ -187,14 +187,14 @@ In order to explore larger systems with Exact Diagonalization and Configuration 
 \begin{figure}
     \centering
     \includegraphics[width=.9\linewidth]{ED_vs_NO.png}
-    \caption{Accuracy of the NO with 5 and 7 NO basis truncation.}
+    \caption{Accuracy of the NO with 5 and 7 NO basis truncation for g = 0.2.}
     \label{fig:ED_vs_NO}
 \end{figure}
 \vspace{-1.5em}
 \begin{figure}
     \centering
-    \includegraphics[width=.9\linewidth]{ED_vs_NO.png}
-    \caption{Qualitative demonstration works through the NO truncation method, but accuracy decreases with the increase of the coupling strings.}
+    \includegraphics[width=.9\linewidth]{per_site.png}
+    \caption{Accuracy CCC as n-site increases g = 0.2.}
     \label{fig:sites_CCC}
 \end{figure}
 
@@ -376,28 +376,28 @@ To optimize the algorithm of the CCC solution, all tensor operators are defined 
 
 \begin{table}[h!]
 \centering
-\caption{Computation time comparison for periodic system. ($g = 0.1$).}
+\caption{Computation time comparison for periodic vs non-periodic systems. ($g = 0.2$).}
 \label{tab:system_times_periodic}
 \vspace{-2em}
 
     \begin{subtable}[t]{0.45\textwidth}
     \centering
-    \caption{Sparse matrices}
+    \caption{Non-Periodic}
         \begin{tabular}{@{}ll@{}}
         \toprule
-        \multicolumn{2}{c}{\textbf{System states – 11 }} \\
+        \multicolumn{2}{c}{\textbf{System states – 5 }} \\
         \midrule
-        \# Sites & Time to produce (s) \\
+        \# Sites & Time per iter./site (s) \\
         \midrule
-        100  & 2 min 2.1 sec \\
-        1000 & $>$ 20 min \\
+        11  & 2.12 sec $10^{-1}$ \\
+        21 & 1.19 sec \\
         \midrule
-        \multicolumn{2}{c}{\textbf{System sites – 3 }} \\
+        \multicolumn{2}{c}{\textbf{System sites – 5 }} \\
         \midrule
-        \# States & Time to produce (s) \\
+        \# States & Time per iter./site (s) \\
         \midrule
-        150 & 3 min 2.1 sec \\
-        500 & -- \\
+        11 & 8.19 sec $10^{-2}$ \\
+        15 & 2.43 sec $10^{-1}$ \\
         \bottomrule
         \end{tabular}
     \end{subtable}
@@ -407,19 +407,19 @@ To optimize the algorithm of the CCC solution, all tensor operators are defined 
     \caption{Dense matrices, BLAS}
         \begin{tabular}{@{}ll@{}}
         \toprule
-        \multicolumn{2}{c}{\textbf{System states – 11 }} \\
+        \multicolumn{2}{c}{\textbf{System states – 5 }} \\
         \midrule
-        \# Sites & Time to produce (s) \\
+        \# Sites & Time per iter./site (s) \\
         \midrule
-        100  & 4.5 sec \\
-        1000 & 6 min 57.1 sec \\
+        11  & 8.06 sec $10^{-2}$ \\
+        21 & 4.85 sec $10^{-1}$ \\
         \midrule
-        \multicolumn{2}{c}{\textbf{System sites – 3 }} \\
+        \multicolumn{2}{c}{\textbf{System sites – 5 }} \\
         \midrule
-        \# States & Time to produce (s) \\
+        \# States & Time per iter./site (s) \\
         \midrule
-        150 & 23 min 58 sec \\
-        500 & crashes \\
+        11 & 1.56 sec $10^{-2}$ \\
+        15 & 3.15 sec $10^{-2}$ \\
         \bottomrule
         \end{tabular}
     \end{subtable}
@@ -441,7 +441,7 @@ To optimize the algorithm of the CCC solution, all tensor operators are defined 
 
 \begin{table}[h!]
 \centering
-\caption{Computation time comparison for non-periodic system. ($g = 0.1$).}
+\caption{CCC Computation time comparison for periodic system. ($g = 0.2$).}
 \label{tab:system_times_non_periodic}
 \vspace{-2em}
 
@@ -452,17 +452,17 @@ To optimize the algorithm of the CCC solution, all tensor operators are defined 
         \toprule
         \multicolumn{2}{c}{\textbf{System states – 11 }} \\
         \midrule
-        \# Sites & Time to produce (s) \\
+        \# Sites & Time per iter./site \\
         \midrule
-        100  & 2 min 2.1 sec \\
-        1000 & $>$ 20 min \\
+        10  & 7.22 sec $10^{-2}$ \\
+        100 & 2.61 sec \\
         \midrule
         \multicolumn{2}{c}{\textbf{System sites – 3 }} \\
         \midrule
-        \# States & Time to produce (s) \\
+        \# States & Time per iter./site \\
         \midrule
-        150 & 3 min 2.1 sec \\
-        500 & -- \\
+        11  & 1.74 sec $10^{-2}$ \\
+        151 & 5.85 sec \\
         \bottomrule
         \end{tabular}
     \end{subtable}
@@ -474,36 +474,36 @@ To optimize the algorithm of the CCC solution, all tensor operators are defined 
         \toprule
         \multicolumn{2}{c}{\textbf{System states – 11 }} \\
         \midrule
-        \# Sites & Time to produce (s) \\
+        \# Sites & Time per iter./site (s) \\
         \midrule
-        100  & 4.5 sec \\
-        1000 & 6 min 57.1 sec \\
+        10  & 2.32 (sec $10^{-3}$) \\
+        100 & 9.21 (sec $10^{-4}$) \\
         \midrule
         \multicolumn{2}{c}{\textbf{System sites – 3 }} \\
         \midrule
-        \# States & Time to produce (s) \\
+        \# States & Time per iter./site (s) \\
         \midrule
-        150 & 23 min 58 sec \\
-        500 & crashes \\
+        11  & 8.95 (sec $10^{-4}$) \\
+        151 & 11.4 (sec) \\
         \bottomrule
         \end{tabular}
     \end{subtable}
 \end{table}
 
-\begin{block}{Small $g < 0.4$ Limit}
+\begin{block}{Variation of $0 < g < 1$}
 
-To explore the small g we use a reference state of $\ket{0}$ and get accurate results.
+Range $0 < g < 1$ we use a delocalized reference state of $\ket{0}$ and get accurate results for $g < 0.4$.
 
 \begin{figure}
     \centering
-    \includegraphics[width=.9\linewidth]{ED_vs_NO.png}
-    \caption{As g increases the CCC results love accuracy.}
+    \includegraphics[width=.9\linewidth]{small_g.png}
+    \caption{As g increases the CCC results loose accuracy.}
     \label{fig:small_g_CCC}
 \end{figure}\vspace{-2em}
 
 \end{block}
 
-\begin{block}{Very Large $g >= 100$ Limit}
+\begin{block}{Very Large $g >= 100$ (or Small B) Limit}
 
 To explore the very large g we can use $B < 0.01$ instead. The system becomes a superposition of two states.
 

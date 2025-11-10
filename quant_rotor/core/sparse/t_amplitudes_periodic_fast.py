@@ -314,14 +314,14 @@ def t_periodic(
         # if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
         #     break
 
+        iteration += 1
+
         if np.all(abs(single.toarray()) <= threshold) and np.all(abs(np.array([mat.toarray() for mat in double])) <= threshold):
             break
 
         # CHANGE BACK TO 10
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
-
-        iteration += 1
 
     energy = 0
 
@@ -340,4 +340,11 @@ def t_periodic(
                 # noinspection SpellCheckingInspection
                 energy += (((V_iipp @ qs.terms.b_term).T @ qs.terms.b_term) * 0.5)[0,0]
 
-    return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
+    return (
+        one_max,
+        two_max,
+        energy,
+        tensors.t_a_i_tensor,
+        tensors.t_ab_ij_tensor,
+        iteration,
+    )

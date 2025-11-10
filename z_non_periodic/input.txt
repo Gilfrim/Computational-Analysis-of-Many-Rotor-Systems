@@ -1,7 +1,7 @@
 #number of sites (int)
-sites = 5
+sites = 3
 #number of possible states, p (int) odd
-states = 3
+states = 5
 
 #number of possible low states, i (int) odd
 low states = 1
@@ -10,7 +10,7 @@ low states = 1
 initial = 0
 
 #residual cutoff value (float)
-threshold = 1e-8
+threshold = 1e-10
 
 #interaction strength (float)
 g = 0.1

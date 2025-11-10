@@ -171,7 +171,7 @@ def write_matrix_elements(
             for k in range(d):
                 for l in range(d):
                     # if k * d + l >= i * d + j:
-                    V[i * d + j, k * d + l] = interaction_general_angle(
+                    V[i * d + j, k * d + l] = interaction_two_body_coplanar(
                         i, j, k, l, psi_twist
                     )
 
@@ -502,7 +502,7 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int, tau: float
     if i1 == j1 + 1:
         if i2 == j2 + 1:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return -0.75 * np.exp(1j * 2 * tau)  # ⟨m1+1, m2+1|
+            return 0.75  # * np.exp(1j * 2 * tau)  # ⟨m1+1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> -0.25")
             return -0.25 # ⟨m1+1, m2−1|
@@ -512,7 +512,7 @@ def interaction_two_body_coplanar(i1: int, i2: int, j1: int, j2: int, tau: float
             return -0.25 # ⟨m1−1, m2+1|
         else:
             # print(f"{i1}, {j1}, {i2}, {j2} --> 0.75")
-            return -0.75 * np.exp(1j * 2 * tau)  # ⟨m1−1, m2−1|
+            return 0.75  # * np.exp(1j * 2 * tau)  # ⟨m1−1, m2−1|
 
 
 def interaction_yiyj(i1, i2, j1, j2):

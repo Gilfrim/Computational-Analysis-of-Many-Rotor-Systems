@@ -30,7 +30,7 @@ def t_periodic(
     low_state: int = 1,
     t_a_i_tensor_initial: np.ndarray = 0,
     t_ab_ij_tensor_initial: np.ndarray = 0,
-    Import: bool = True,
+    Import: bool = False,
     K_import: np.ndarray = [],
     V_import: np.ndarray = [],
 ):
@@ -141,20 +141,7 @@ def t_periodic(
             # for site_2 in range(1, site):
             #     tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors.t_ab_ij_tensor[0, site_1]
 
-        # energy calculations
-        for site_x in range(site):
-            energy += terms.h_ip @ terms.b_term
-
-            for site_y in range(site_x + 1, site_x + site):
-                if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
-                    V_iipp = terms.V_iipp
-                    V_iiaa = terms.V_iiaa
-                    T_xy = qs.t_term(site_x, site_y)
-
-                    # noinspection SpellCheckingInspection
-                    energy +=  np.sum(V_iiaa* (T_xy)) * 0.5
-                    # noinspection SpellCheckingInspection
-                    energy += (V_iipp @ terms.b_term @ terms.b_term) * 0.5
+        iteration += 1
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
@@ -163,9 +150,28 @@ def t_periodic(
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
 
-        iteration += 1
+            # energy calculations
+    for site_x in range(site):
+        energy += terms.h_ip @ terms.b_term
 
-    return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
+        for site_y in range(site_x + 1, site_x + site):
+            if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
+                V_iipp = terms.V_iipp
+                V_iiaa = terms.V_iiaa
+                T_xy = qs.t_term(site_x, site_y)
+
+                # noinspection SpellCheckingInspection
+                energy += np.sum(V_iiaa * (T_xy)) * 0.5
+                # noinspection SpellCheckingInspection
+                energy += (V_iipp @ terms.b_term @ terms.b_term) * 0.5
+
+    return (
+        one_max,
+        two_max,
+        energy,
+        tensors.t_a_i_tensor,
+        tensors.t_ab_ij_tensor,
+    )
 
 
 # if __name__ == "__main__":
