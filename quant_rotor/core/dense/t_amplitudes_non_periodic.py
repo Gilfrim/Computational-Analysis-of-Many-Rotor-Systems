@@ -351,15 +351,7 @@ def t_non_periodic(
                         double[site_u_1, site_u_2]
                     )
 
-        # energy calculations
-        for site_x in range(site):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) #* 0.5
-            for site_y in range(site):
-                if site_x < site_y:
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum("ijab, abij->", qs.v_term(i, i, a, a, site_x, site_y), qs.t_term(site_x, site_y))
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum("ijpq, pi, qj->", qs.v_term(i, i, p, p, site_x, site_y), qs.B_term(i, site_x), qs.B_term(i, site_y))
+        iteration += 1
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
@@ -368,9 +360,30 @@ def t_non_periodic(
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
 
-        delta_energy = energy - previous_energy
-        previous_energy = energy
+    # energy calculations
+    for site_x in range(site):
+        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))  # * 0.5
+        for site_y in range(site):
+            if site_x < site_y:
+                # noinspection SpellCheckingInspection
+                energy += np.einsum(
+                    "ijab, abij->",
+                    qs.v_term(i, i, a, a, site_x, site_y),
+                    qs.t_term(site_x, site_y),
+                )
+                # noinspection SpellCheckingInspection
+                energy += np.einsum(
+                    "ijpq, pi, qj->",
+                    qs.v_term(i, i, p, p, site_x, site_y),
+                    qs.B_term(i, site_x),
+                    qs.B_term(i, site_y),
+                )
 
-        iteration += 1
-
-    return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
+    return (
+        one_max,
+        two_max,
+        energy,
+        tensors.t_a_i_tensor,
+        tensors.t_ab_ij_tensor,
+        iteration,
+    )

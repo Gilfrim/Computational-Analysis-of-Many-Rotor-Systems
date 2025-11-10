@@ -373,32 +373,7 @@ def t_periodic(
                     tensors.t_ab_ij_tensor[0, site_1]
                 )
 
-        # energy calculations
-        for site_x in range(site):
-            energy += np.einsum(
-                "ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)
-            )  # * 0.5
-
-            for site_y in range(site_x + 1, site_x + site):
-                # noinspection SpellCheckingInspection
-                energy += (
-                    np.einsum(
-                        "ijab, abij->",
-                        qs.v_term(i, i, a, a, site_x, site_y % site),
-                        qs.t_term(site_x, site_y % site),
-                    )
-                    * 0.5
-                )
-                # noinspection SpellCheckingInspection
-                energy += (
-                    np.einsum(
-                        "ijpq, pi, qj->",
-                        qs.v_term(i, i, p, p, site_x, site_y % site),
-                        qs.B_term(i, site_x),
-                        qs.B_term(i, site_y % site),
-                    )
-                    * 0.5
-                )
+        iteration += 1
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
@@ -407,9 +382,36 @@ def t_periodic(
         if abs(one_max) >= 10000 or abs(two_max) >= 10000:
             raise ValueError("Diverges.")
 
-        delta_energy = energy - previous_energy
-        previous_energy = energy
+    # energy calculations
+    for site_x in range(site):
+        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))  # * 0.5
 
-        iteration += 1
+        for site_y in range(site_x + 1, site_x + site):
+            # noinspection SpellCheckingInspection
+            energy += (
+                np.einsum(
+                    "ijab, abij->",
+                    qs.v_term(i, i, a, a, site_x, site_y % site),
+                    qs.t_term(site_x, site_y % site),
+                )
+                * 0.5
+            )
+            # noinspection SpellCheckingInspection
+            energy += (
+                np.einsum(
+                    "ijpq, pi, qj->",
+                    qs.v_term(i, i, p, p, site_x, site_y % site),
+                    qs.B_term(i, site_x),
+                    qs.B_term(i, site_y % site),
+                )
+                * 0.5
+            )
 
-    return one_max, two_max, energy, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor
+    return (
+        one_max,
+        two_max,
+        energy,
+        tensors.t_a_i_tensor,
+        tensors.t_ab_ij_tensor,
+        iteration,
+    )
