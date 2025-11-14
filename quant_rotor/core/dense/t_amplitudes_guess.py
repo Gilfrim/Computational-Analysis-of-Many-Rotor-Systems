@@ -36,9 +36,9 @@ def amplitute_energy(
     states: int,
     g: float,
     d: np.ndarray,
-    Import: bool,
-    K_import: np.ndarray,
-    V_import: np.ndarray,
+    Import: bool = False,
+    K_import: np.ndarray = [],
+    V_import: np.ndarray = [],
 ):
 
     if Import:
@@ -53,8 +53,8 @@ def amplitute_energy(
         V = V.reshape(states, states, states, states)
         V *= g
 
-        K = basis_m_to_p_matrix_conversion(K)
-        V = basis_m_to_p_matrix_conversion(V)
+        K = basis_m_to_p_matrix_conversion(K, states)
+        V = basis_m_to_p_matrix_conversion(V, states)
 
     E_0 = K[0,0]*sites + np.einsum("ijij->", V) * states**sites
 

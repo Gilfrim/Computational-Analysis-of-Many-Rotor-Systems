@@ -346,5 +346,4 @@ def t_periodic(
         energy,
         tensors.t_a_i_tensor,
         tensors.t_ab_ij_tensor,
-        iteration,
     )

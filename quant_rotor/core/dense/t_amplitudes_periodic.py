@@ -136,41 +136,24 @@ def t_periodic(
 
     while True:
 
-        # single[0] = qs.residual_single(0)
-        # for y_site in range(1, site):
-        #     single[y_site] = single[0]
-        #     double[0, y_site] = qs.residual_double_total(0, y_site)
-        #     for x_site in range(1, site):
-        #         double[x_site, (x_site + y_site) % site] = double[0, y_site]
+        single[0] = qs.residual_single(0)
+        for y_site in range(1, site):
+            single[y_site] = single[0]
+            double[0, y_site] = qs.residual_double_total(0, y_site)
+            for x_site in range(1, site):
+                double[x_site, (x_site + y_site) % site] = double[0, y_site]
 
-        for x_site in range(site):
-            single[x_site] = qs.residual_single(x_site)
-            for y_site in range(site):
-                if x_site < y_site:
-                    double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
+        # for x_site in range(site):
+        #     single[x_site] = qs.residual_single(x_site)
+        #     for y_site in range(site):
+        #         if x_site < y_site:
+        #             double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
 
         one_max = single.flat[np.argmax(np.abs(single))]
         two_max = double.flat[np.argmax(np.abs(double))]
 
-        # tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
+        tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
 
-        # for site_1 in range(1, site):
-        #     tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
-        #     tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
-        #     for site_2 in range(1, site):
-        #         tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = (
-        #             tensors.t_ab_ij_tensor[0, site_1]
-        #         )
-
-<<<<<<< HEAD
-        for site_u_1 in range(site):
-            tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single[site_u_1])
-            for site_u_2 in range(site):
-                if site_u_1 < site_u_2:
-                    tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(
-                        double[site_u_1, site_u_2]
-                    )
-=======
         for site_1 in range(1, site):
             tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
             tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
@@ -179,8 +162,13 @@ def t_periodic(
                     tensors.t_ab_ij_tensor[0, site_1]
                 )
 
-        iteration += 1
->>>>>>> 4f27a00ff7368c928a0a039b56136c3ec9bc98cd
+        # for site_u_1 in range(site):
+        #     tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single[site_u_1])
+        #     for site_u_2 in range(site):
+        #         if site_u_1 < site_u_2:
+        #             tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(
+        #                 double[site_u_1, site_u_2]
+        #             )
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
@@ -189,7 +177,6 @@ def t_periodic(
         if abs(one_max) >= 10000 or abs(two_max) >= 10000:
             raise ValueError("Diverges.")
 
-<<<<<<< HEAD
     energy = 0
 
     if periodic:
@@ -197,8 +184,8 @@ def t_periodic(
         for site_x in range(site):
             energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
 
-            for site_y in range(site):
-                if site_x < site_y:
+            for site_y in range(site_x + 1, site_x + site):
+                if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
                     # noinspection SpellCheckingInspection
                     energy += (
                         np.einsum(
@@ -239,41 +226,10 @@ def t_periodic(
                         qs.B_term(i, site_y % site),
                     )
 
-=======
-    # energy calculations
-    for site_x in range(site):
-        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))  # * 0.5
-
-        for site_y in range(site_x + 1, site_x + site):
-            # noinspection SpellCheckingInspection
-            energy += (
-                np.einsum(
-                    "ijab, abij->",
-                    qs.v_term(i, i, a, a, site_x, site_y % site),
-                    qs.t_term(site_x, site_y % site),
-                )
-                * 0.5
-            )
-            # noinspection SpellCheckingInspection
-            energy += (
-                np.einsum(
-                    "ijpq, pi, qj->",
-                    qs.v_term(i, i, p, p, site_x, site_y % site),
-                    qs.B_term(i, site_x),
-                    qs.B_term(i, site_y % site),
-                )
-                * 0.5
-            )
-
->>>>>>> 4f27a00ff7368c928a0a039b56136c3ec9bc98cd
     return (
         one_max,
         two_max,
         energy,
         tensors.t_a_i_tensor,
         tensors.t_ab_ij_tensor,
-<<<<<<< HEAD
-=======
-        iteration,
->>>>>>> 4f27a00ff7368c928a0a039b56136c3ec9bc98cd
     )

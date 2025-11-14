@@ -25,8 +25,6 @@ def t_periodic(
     threshold: float = 1e-8,
     gap: bool = False,
     gap_site: int = 3,
-    HF: bool = False,
-    start_point: str = "sin",
     low_state: int = 1,
     t_a_i_tensor_initial: np.ndarray = 0,
     t_ab_ij_tensor_initial: np.ndarray = 0,
@@ -171,10 +169,6 @@ def t_periodic(
         energy,
         tensors.t_a_i_tensor,
         tensors.t_ab_ij_tensor,
-<<<<<<< HEAD
-=======
-        iteration,
->>>>>>> 4f27a00ff7368c928a0a039b56136c3ec9bc98cd
     )
 
 
