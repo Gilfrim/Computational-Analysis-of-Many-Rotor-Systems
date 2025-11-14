@@ -385,4 +385,8 @@ def t_non_periodic(
         energy,
         tensors.t_a_i_tensor,
         tensors.t_ab_ij_tensor,
+<<<<<<< HEAD
+=======
+        iteration,
+>>>>>>> 4f27a00ff7368c928a0a039b56136c3ec9bc98cd
     )
