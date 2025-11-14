@@ -1,4 +1,0 @@
-hamiltonian
-diagonalize
-diagonalizing
-coplanar
