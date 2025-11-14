@@ -174,7 +174,7 @@ def t_periodic(
             break
 
         # CHANGE BACK TO 10
-        if abs(one_max) >= 10000 or abs(two_max) >= 10000:
+        if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
 
     energy = 0

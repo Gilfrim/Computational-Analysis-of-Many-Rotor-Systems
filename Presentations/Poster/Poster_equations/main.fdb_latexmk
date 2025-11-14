@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1762528179.30622 "/Users/gilfrim/Desktop/Projects/Computational_Analysis_of_Many_Rotor_Systems/Presentations/Poster/Poster_equations/main.tex" "main.pdf" "main" 1762528181.05011 0
-  "/Users/gilfrim/Desktop/Projects/Computational_Analysis_of_Many_Rotor_Systems/Presentations/Poster/Poster_equations/main.tex" 1762528179.18942 25622 96c63546ba1d47e862e3fc6a819064ed ""
+["pdflatex"] 1763135772.17599 "/Users/gilfrim/Desktop/Projects/Computational_Analysis_of_Many_Rotor_Systems/Presentations/Poster/Poster_equations/main.tex" "main.pdf" "main" 1763135773.93238 0
+  "/Users/gilfrim/Desktop/Projects/Computational_Analysis_of_Many_Rotor_Systems/Presentations/Poster/Poster_equations/main.tex" 1763135772.05909 25602 d17038cfa012866a75b46e363bcd9d5f ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf.enc" 1422827479 2083 60e36f8eac802fcaf19eabe2633b406e ""
   "/usr/local/texlive/2024/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam10.tfm" 1246382020 916 f87d7c45f9c908e672703b83b72241a3 ""
@@ -276,10 +276,10 @@
   "ED_vs_NO.png" 1762496646.60921 51020 fbcbc46071c808817b1797796f1e0a53 ""
   "b_energy.png" 1762499496.32036 27900 427db88af9539ddf230cd175b379d036 ""
   "beamerthemeconfposter.sty" 1762145886.69145 6716 5735f8f29ad461ccdf221ef3f58a9d97 ""
-  "main.aux" 1762528180.91523 2825 0d89181e318c7ee7847be294b8ff2731 "pdflatex"
-  "main.nav" 1762528180.91613 307 9e520c26371a1250ff9fc1fe87f9c655 "pdflatex"
-  "main.out" 1762528180.15426 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "main.tex" 1762528179.18942 25622 96c63546ba1d47e862e3fc6a819064ed ""
+  "main.aux" 1763135773.79842 2825 0d89181e318c7ee7847be294b8ff2731 "pdflatex"
+  "main.nav" 1763135773.79937 307 9e520c26371a1250ff9fc1fe87f9c655 "pdflatex"
+  "main.out" 1763135773.03088 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "main.tex" 1763135772.05909 25602 d17038cfa012866a75b46e363bcd9d5f ""
   "nserc_1.png" 1762345123.85505 11142 80b6118b406220e29c7c31056396767c ""
   "nserc_2.png" 1762345149.62853 3353 df651f453124bd26c9b95dc2c2b0bf43 ""
   "per_site.png" 1762498025.49335 32514 11c8be96fff1f8af22699dc7b26b4bd4 ""

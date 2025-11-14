@@ -122,7 +122,7 @@ def tdcc_differential_equation(t: float, comb_flat: np.ndarray, t0_stored, param
     dTa_idB = dTa_idB.flatten()
     dTab_ijdB = dTab_ijdB.flatten()
     comb_flat = np.concatenate([dTab_ijdB, dTa_idB, dT_0dB])
-    t0_stored.append((t, dT_0dB, T_ai, t_2_max))
+    t0_stored.append((t, dT_0dB, t_1_max, t_2_max))
     return (comb_flat)
 
 

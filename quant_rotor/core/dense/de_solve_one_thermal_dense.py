@@ -273,4 +273,4 @@ def integration_scheme(
 
     time, T_0, t_0_sol, two_max = postprocess_rk45_integration_results(sol,t0_stored, state, site)
 
-    return (time, T_0, t_0_sol, two_max, tdcc_differential_equation.call_count)
+    return (time, T_0, t_0_sol, two_max)
