@@ -92,17 +92,18 @@ def hamiltonian_big_dense(
 
     # A way to check the coreectness of np.kron with einsum
 
-    # V_mu_check = oe.contract(
-    #     "iM,jW,ijab,aN,bV->MWNV",
-    #     matrix_p_to_NO.conj(),
-    #     matrix_p_to_NO.conj(),
-    #     V.reshape(state_old, state_old, state_old, state_old),
-    #     matrix_p_to_NO,
-    #     matrix_p_to_NO,
-    #     optimize="optimal",
-    # ).reshape(state**2, state**2)
+    V_mu_check = oe.contract(
+        "iM,jW,ijab,aN,bV->MWNV",
+        matrix_p_to_NO.conj(),
+        matrix_p_to_NO.conj(),
+        V.reshape(state_old, state_old, state_old, state_old),
+        matrix_p_to_NO,
+        matrix_p_to_NO,
+        optimize="optimal",
+    ).reshape(state**2, state**2)
 
     # print(np.allclose(V_mu, V_mu_check))
+    print(np.max(V_mu - V_mu_check))
 
     # Import the changed Kinetic and Potential energy matrices to create the associated hamiltonial.
     H_mu = hamiltonian_dense(
@@ -119,7 +120,7 @@ def hamiltonian_general_dense(
     sites: int,
     g_val: float,
     D_val: float = 1,
-    lambda_val: float = 0,
+    lambdaval: float = 0,
     tau: float = 0,
     periodic: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -151,7 +152,7 @@ def hamiltonian_general_dense(
     """
     # Create the original full hamiltonian
     H_K_V = hamiltonian_dense(
-        states, 2, g_val, tau, periodic, D=D_val, lambda_val=lambda_val
+        states, 3, g_val, tau, periodic=periodic, D=D_val, lambda_val=lambdaval
     )
 
     # Iterate through every new system by increasing the size of the system by 2 sites every eteration.

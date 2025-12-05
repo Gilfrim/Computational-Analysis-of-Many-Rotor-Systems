@@ -306,8 +306,6 @@ def H_potential_sparse(
                         cols.append(j)
                         data.append(val)
 
-        print(f"Finished site {x}")
-
     rows = np.asarray(rows, dtype=np.float64)
     cols = np.asarray(cols, dtype=np.float64)
     data = np.asarray(data, dtype=np.float64)

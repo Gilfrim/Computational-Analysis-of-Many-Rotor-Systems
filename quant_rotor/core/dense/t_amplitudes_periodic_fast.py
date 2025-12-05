@@ -2,7 +2,6 @@ from importlib.resources import files
 
 import numpy as np
 import opt_einsum as oe
-import scipy.sparse as sp
 
 from quant_rotor.models.dense.t_amplitudes_sub_class_fast import (
     PrecalcalculatedTerms,

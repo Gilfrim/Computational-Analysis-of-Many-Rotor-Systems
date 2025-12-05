@@ -1,5 +1,5 @@
+import Create_new_operators.hamiltonianGenerator as hg
 import numpy as np
-import hamiltonianGenerator as hg
 
 m_max = 1
 d = 2*m_max + 1
@@ -49,5 +49,3 @@ for i in range(l):
             print("Elements are not equal")
 
 print("Elements are equal")
-        
-

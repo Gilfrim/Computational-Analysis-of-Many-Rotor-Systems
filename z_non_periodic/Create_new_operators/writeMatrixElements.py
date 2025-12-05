@@ -1,6 +1,6 @@
 import os
 
-import hamiltonianGenerator as hg
+import Create_new_operators.hamiltonianGenerator as hg
 import numpy as np
 
 

@@ -1,10 +1,10 @@
+import Create_new_operators.hamiltonianGenerator as hg
 import numpy as np
-import hamiltonianGenerator as hg
 
 np.set_printoptions(suppress = True, linewidth = 10000, threshold = 1000000, precision = 6)
 
-# Script for diagonalizing the Hamiltonian for 2 dipolar rotors oriented along the x direction. 
-# m_max = 5 is sufficient for convergence when studying ground state properties. 
+# Script for diagonalizing the Hamiltonian for 2 dipolar rotors oriented along the x direction.
+# m_max = 5 is sufficient for convergence when studying ground state properties.
 m_max = 5
 d = 2*m_max + 1
 K_1 = np.zeros((d,d))
@@ -13,9 +13,9 @@ for i in range(d):
 
 K_2 = np.kron(K_1, np.eye(d)) + np.kron(np.eye(d), K_1)
 
-# Interaction for a coplanar chain is proportional to (yiyj + 2xixj)/r^3. If sites are not coplanar, 
-# the interaction will be some other linear combination of xixj, yiyj, (xiyj + xjyi). The coefficients 
-# will, in general, depend on the angle as well as the length of the vector connecting the sites. 
+# Interaction for a coplanar chain is proportional to (yiyj + 2xixj)/r^3. If sites are not coplanar,
+# the interaction will be some other linear combination of xixj, yiyj, (xiyj + xjyi). The coefficients
+# will, in general, depend on the angle as well as the length of the vector connecting the sites.
 V_2 = np.zeros((d**2, d**2))
 for i in range(d):
     for j in range(d):

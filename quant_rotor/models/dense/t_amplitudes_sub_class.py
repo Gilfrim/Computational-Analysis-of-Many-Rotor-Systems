@@ -192,6 +192,7 @@ class QuantumSimulation:
         return R
 
     def residual_double_total(self, x_d: int, y_d: int) -> np.ndarray:
+
         return (self.residual_double_sym(x_d, y_d) + self.residual_double_non_sym_1(x_d, y_d) + self.residual_double_non_sym_2(x_d, y_d))
 
     def transformation_test(self):
