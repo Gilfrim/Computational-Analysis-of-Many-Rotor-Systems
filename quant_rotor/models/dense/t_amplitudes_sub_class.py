@@ -131,6 +131,44 @@ class QuantumSimulation:
 
         return R_single
 
+    def residual_single_new(self, x_s: int) -> np.ndarray:
+        """Calculates R^{a}_{i}(x) singles equation"""
+        site, a, i, p = (
+            self.params.site,
+            self.params.a,
+            self.params.i,
+            self.params.p,
+        )
+
+        R_single = np.zeros((a, i), dtype=complex)
+        for y_s in range(site):
+            for z_s in range(site):
+                if y_s != x_s and z_s != x_s and abs(z_s - y_s) == 1:
+                    # print(z_s)
+
+                    # print(self.v_term(i, i, a, p, y_s, z_s).reshape(a, p).real)
+
+                    # print(
+                    #     self.v_term(i, i, a, p, y_s, z_s).reshape(a, p)
+                    #     @ self.B_term(i, z_s).reshape(p)
+                    # )
+
+                    # print(
+                    #     (
+                    #         self.t_term(x_s, y_s).reshape(a, a)
+                    #         @ self.v_term(i, i, a, p, y_s, z_s).reshape(a, p)
+                    #     ).real
+                    # )
+
+                    R_single += np.einsum(
+                        "abij,jkbp,pk->ai",
+                        self.t_term(x_s, y_s),
+                        self.v_term(i, i, a, p, y_s, z_s),
+                        self.B_term(i, z_s),
+                    )
+
+        return R_single
+
     def residual_double_sym(self, x_d: int, y_d: int) -> np.ndarray:
         site, i_method, p, i, a = self.params.site, self.params.i_method, self.params.p, self.params.i, self.params.a
         R = np.zeros((a, a, i, i), dtype = complex)

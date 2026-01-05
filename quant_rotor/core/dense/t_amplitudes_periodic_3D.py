@@ -16,8 +16,6 @@ def t_periodic(
     dim: int,
     state: int,
     g: float,
-    shift_x: int,
-    shift_y: int,
     i_method: int = 3,
     threshold: float = 1e-8,
     gap: bool = False,
@@ -74,7 +72,7 @@ def t_periodic(
     # state variables
     # could just use p, i, a
     # makes checking einsums and such a bit easier
-    site = dim * dim
+    site = dim**3
     p = state
     i = low_state
     a = p - i
@@ -148,18 +146,19 @@ def t_periodic(
 
         for x in range(dim - 1):
             for y in range(dim):
-                tail = x + dim * y
-                head = dim * ((y + shift_y) % (dim)) + ((x + shift_x) % (dim))
+                for z in range(dim):
+                    tail = x + dim * y
+                    head = dim * (y) + ((x + 1) % (dim))
 
-                double[tail, head] = double[0, 1]
-                double[head, tail] = double[0, 1]
-        x = dim - 1
+                    double[tail, head] = double[0, 1]
+                    double[head, tail] = double[0, 1]
+        x = 2
         for y in range(dim):
             tail = x + dim * y
-            head = dim * ((y + shift_y) % (dim)) + ((x + shift_x) % (dim))
+            head = dim * (y) + ((x + 1) % (dim))
 
-            double[tail, head] = double[0, x]
-            double[head, tail] = double[0, x]
+            double[tail, head] = double[0, 2]
+            double[head, tail] = double[0, 2]
 
         one_max = single.flat[np.argmax(np.abs(single))]
         two_max = double.flat[np.argmax(np.abs(double))]
@@ -174,18 +173,50 @@ def t_periodic(
         for x in range(dim - 1):
             for y in range(dim):
                 tail = x + dim * y
-                head = dim * ((y + shift_y) % (dim)) + ((x + shift_x) % (dim))
+                head = dim * (y) + ((x + 1) % (dim))
+
+                # print("one", tail, head)
 
                 tensors.t_ab_ij_tensor[tail, head] = tensors.t_ab_ij_tensor[0, 1]
                 tensors.t_ab_ij_tensor[head, tail] = tensors.t_ab_ij_tensor[0, 1]
-
-        x = dim - 1
+        x = 2
         for y in range(dim):
             tail = x + dim * y
-            head = dim * ((y + shift_y) % (dim)) + ((x + shift_x) % (dim))
+            head = dim * (y) + ((x + 1) % (dim))
 
-            tensors.t_ab_ij_tensor[tail, head] = tensors.t_ab_ij_tensor[0, x]
-            tensors.t_ab_ij_tensor[head, tail] = tensors.t_ab_ij_tensor[0, x]
+            # print("two", tail, head)
+
+            tensors.t_ab_ij_tensor[tail, head] = tensors.t_ab_ij_tensor[0, 2]
+            tensors.t_ab_ij_tensor[head, tail] = tensors.t_ab_ij_tensor[0, 2]
+
+        # print("\n")
+
+        # single[0] = qs.residual_single(0)
+        # for y_site in range(1, dim):
+        #     single[y_site] = single[0]
+        #     double[0, y_site] = qs.residual_double_total(0, y_site)
+        #     # print("\n", 0, y_site)
+        #     for y in range(dim):
+        #         for x_site in range(dim):
+        #             # print(x_site + 3 * y, ((x_site + y_site) % dim) + 3 * y)
+        #             double[x_site + 3 * y, ((x_site + y_site) % dim) + 3 * y] = (
+        #                 double[0, y_site]
+        #             )
+
+        # one_max = single.flat[np.argmax(np.abs(single))]
+        # two_max = double.flat[np.argmax(np.abs(double))]
+
+        # tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
+
+        # for site_1 in range(1, dim):
+        #     tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
+        #     tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
+
+        #     for y in range(dim):
+        #         for site_2 in range(dim):
+        #             tensors.t_ab_ij_tensor[
+        #                 site_2 + 3 * y, ((site_2 + site_1) % dim) + 3 * y
+        #             ] = tensors.t_ab_ij_tensor[0, site_1]
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break

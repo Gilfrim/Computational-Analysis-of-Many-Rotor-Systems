@@ -16,6 +16,7 @@ def t_periodic(
     site: int,
     state: int,
     g: float,
+    new: bool,
     i_method: int = 3,
     threshold: float = 1e-8,
     gap: bool = False,
@@ -137,14 +138,19 @@ def t_periodic(
     while True:
 
         single[0] = qs.residual_single(0)
+
+        if new:
+            print(np.max((qs.residual_single_new(0))))
+            # print("\n")
+            single[0] += qs.residual_single_new(0)
         for y_site in range(1, site):
             single[y_site] = single[0]
             double[0, y_site] = qs.residual_double_total(0, y_site)
             for x_site in range(1, site):
-                print(x_site, (x_site + y_site) % site)
+                # print(x_site, (x_site + y_site) % site)
                 double[x_site, (x_site + y_site) % site] = double[0, y_site]
 
-        print("\n")
+        # print("\n")
 
         # for x_site in range(site):
         #     single[x_site] = qs.residual_single(x_site)
@@ -160,11 +166,13 @@ def t_periodic(
         for site_1 in range(1, site):
             tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
             tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
+            # print(0, site_1)
             for site_2 in range(1, site):
+                # print(site_2, (site_1 + site_2) % site)
                 tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = (
                     tensors.t_ab_ij_tensor[0, site_1]
                 )
-
+        # print("\n")
         # for site_u_1 in range(site):
         #     tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single[site_u_1])
         #     for site_u_2 in range(site):
