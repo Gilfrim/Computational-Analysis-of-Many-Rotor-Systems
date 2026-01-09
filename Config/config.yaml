@@ -1,0 +1,11 @@
+input_file: data/graphs.txt
+output_dir: results/
+max_time_per_graph: 300
+eps: 1e-12
+use_cache: true
+
+model:
+  Jx: 1.0
+  Jy: 1.0
+  Jz: 0.5
+  h: 0.2

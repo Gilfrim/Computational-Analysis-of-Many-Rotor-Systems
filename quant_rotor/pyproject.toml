@@ -1,7 +1,7 @@
 [project]
 name = "quant_rotor"
 version = "0.1.0"
-description = "A library for computational analysis of many rotor systems"
+description = "A library for computational analysis of rotor and magnetic systems"
 authors = [
   { name = "Illia Voropai", email = "ivoropay8@gmail.com" }
 ]

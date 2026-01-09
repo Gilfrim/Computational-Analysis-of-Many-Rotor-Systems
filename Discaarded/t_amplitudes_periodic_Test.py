@@ -1,36 +1,42 @@
-import numpy as np
 import sys
-import scipy.sparse as sp
-import opt_einsum as oe
-from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-import quant_rotor.models.dense.t_amplitudes_sub_class_fast as new
-import quant_rotor.models.dense.t_amplitudes_sub_class as old
 
-#printout settings for large matrices
+import numpy as np
+import opt_einsum as oe
+import scipy.sparse as sp
+
+import quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class as old
+import quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class_fast as new
+from quant_rotor.Hamiltonian_models.Dense.support_ham import (
+    basis_m_to_p_matrix_conversion,
+    write_matrix_elements,
+)
+
+# printout settings for large matrices
 np.set_printoptions(suppress = True, linewidth = 1500, threshold = 10000, precision = 12)
+
 
 def t_periodic(
     site: int,
     state: int,
     g: float,
-    fast: bool, 
+    fast: bool,
     i_method: int = 3,
-    threshold: float=1e-8,
+    threshold: float = 1e-8,
     gap: bool = False,
-    gap_site: int=3,
-    HF: bool=False,
-    start_point: str="sin",
-    low_state: int=1,
-    t_a_i_tensor_initial: np.ndarray=0,
-    t_ab_ij_tensor_initial: np.ndarray=0
+    gap_site: int = 3,
+    HF: bool = False,
+    start_point: str = "sin",
+    low_state: int = 1,
+    t_a_i_tensor_initial: np.ndarray = 0,
+    t_ab_ij_tensor_initial: np.ndarray = 0,
 ):
     """
     Create SimulationParams from raw input arguments.
     Performs logic for a, i, p and validates start_point.
     """
-    #state variables
-    #could just use p, i, a
-    #makes checking einsums and such a bit easier
+    # state variables
+    # could just use p, i, a
+    # makes checking einsums and such a bit easier
     p = state
     i = low_state
     a = p - i
@@ -57,7 +63,7 @@ def t_periodic(
         t_a_i_tensor = t_a_i_tensor_initial
         t_ab_ij_tensor = t_ab_ij_tensor_initial
 
-    #eigenvalues from h for update
+    # eigenvalues from h for update
     epsilon = np.diag(h_full)
 
     print(epsilon)
@@ -160,8 +166,6 @@ def t_periodic(
         one_max_old = single_old.flat[np.argmax(np.abs(single_old))]
         two_max_old = double_old.flat[np.argmax(np.abs(double_old))]
 
-
-
         if np.array_equal(one_max_old, one_max_old):
             print(f"One Max: {np.array_equal(one_max_old, one_max_old)}")
         else:
@@ -202,8 +206,6 @@ def t_periodic(
             for site_2 in range(1, site):
                 tensors_old.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = tensors_old.t_ab_ij_tensor[0, site_1]
 
-
-
         if np.allclose(tensors_old.t_a_i_tensor[0].reshape(state-1), tensors_new.t_a_i_tensor, 1e-20):
             print(f"t_1: {np.allclose(tensors_old.t_a_i_tensor[0].reshape(state-1), tensors_new.t_a_i_tensor, 1e-20)}")
         else:
@@ -218,12 +220,10 @@ def t_periodic(
             max_diff = np.max(diff)
             print("t_2 max absolute difference:", max_diff, "\n\n")
 
-
-
         if np.all(abs(single_old) <= threshold) and np.all(abs(double_old) <= threshold):
             break
 
-        #CHANGE BACK TO 10
+        # CHANGE BACK TO 10
         if abs(one_max_old) >= 100 or abs(two_max_old) >= 100:
             raise ValueError("Diverges.")
 
@@ -231,6 +231,7 @@ def t_periodic(
         # sys.stdout.write("\033[F" * 4)  # ANSI escape: move cursor up
         # sys.stdout.flush()
     return one_max_old, two_max_old, energy, tensors_old.t_a_i_tensor[0], tensors_old.t_ab_ij_tensor[0]
+
 
 if __name__ == "__main__":
 

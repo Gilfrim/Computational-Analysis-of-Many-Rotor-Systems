@@ -3,14 +3,14 @@ import csv
 import numpy as np
 
 import z_non_periodic.functions as func
-from quant_rotor.models.dense.support_ham import (
-    basis_m_to_p_matrix_conversion,
-    write_matrix_elements,
-)
-from quant_rotor.models.dense.t_amplitudes_sub_class import (
+from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class import (
     QuantumSimulation,
     SimulationParams,
     TensorData,
+)
+from quant_rotor.Hamiltonian_models.Dense.support_ham import (
+    basis_m_to_p_matrix_conversion,
+    write_matrix_elements,
 )
 
 # printout settings for large matrices

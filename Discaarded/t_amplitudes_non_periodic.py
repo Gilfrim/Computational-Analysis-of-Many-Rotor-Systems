@@ -1,6 +1,15 @@
 import numpy as np
-from quant_rotor.models.dense.support_ham import write_matrix_elements, basis_m_to_p_matrix_conversion
-from quant_rotor.models.dense.t_amplitudes_sub_class import QuantumSimulation, TensorData, SimulationParams
+
+from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class import (
+    QuantumSimulation,
+    SimulationParams,
+    TensorData,
+)
+from quant_rotor.Hamiltonian_models.Dense.support_ham import (
+    basis_m_to_p_matrix_conversion,
+    write_matrix_elements,
+)
+
 
 def save_t_1_amplitudes(iteration, t_a_i_tensor: np.ndarray):
     np.save(f"t1_amplitudes_iter_{iteration}.npy", t_a_i_tensor)
@@ -41,19 +50,19 @@ def t_non_periodic(site: int,
 
     gap_site = gap_site - 1  # adjust index if needed
 
-    #state variables
-    #could just use p, i, a
-    #makes checking einsums and such a bit easier
+    # state variables
+    # could just use p, i, a
+    # makes checking einsums and such a bit easier
     p = state
     i = low_states
     a = p - i
 
-    #checks for i and a sharing same state level
+    # checks for i and a sharing same state level
     if i %2 == 0 or a %2 != 0:
         raise ValueError("Overlap between low and high stats, will cause divide by zero in denominator update")
 
-    #for state > 11 would need to have shaeers code generate csv files with m_max > 5
-    #gets h values from csv files made with Shaeer's code and puts them into a dictionary
+    # for state > 11 would need to have shaeers code generate csv files with m_max > 5
+    # gets h values from csv files made with Shaeer's code and puts them into a dictionary
 
     K, V = write_matrix_elements((state-1)//2)
 
@@ -65,14 +74,14 @@ def t_non_periodic(site: int,
 
     v_full = v_full * g
 
-    #t1 and t2 amplitude tensors
+    # t1 and t2 amplitude tensors
     # t_a_i_tensor = np.full((site, a, i), t_a_i_tensor_initial, dtype=np.float64)
     # t_ab_ij_tensor = np.full((site, site, a, a, i, i), t_ab_ij_tensor_initial, dtype=np.float64)
 
     t_a_i_tensor = t_a_i_tensor_initial
     t_ab_ij_tensor = t_ab_ij_tensor_initial
 
-    #eigenvalues from h for update
+    # eigenvalues from h for update
     epsilon = np.diag(h_full)
 
     params = SimulationParams(
@@ -97,7 +106,7 @@ def t_non_periodic(site: int,
     qs = QuantumSimulation(params, tensors)
 
     del K, V, h_full, v_full, t_a_i_tensor, t_ab_ij_tensor, V_tensor
-    
+
     if transform:
         tensors.h_full, tensors.v_full = qs.transformation_test()
 
