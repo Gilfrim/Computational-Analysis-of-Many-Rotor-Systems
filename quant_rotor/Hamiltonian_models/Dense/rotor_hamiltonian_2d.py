@@ -3,7 +3,7 @@ from scipy.sparse import diags
 
 from quant_rotor.Hamiltonian_models.Dense.support_ham import (
     H_kinetic,
-    H_potential_double,
+    H_potential,
     V_double,
     basis_m_to_p_matrix_conversion,
     write_matrix_elements,
@@ -18,11 +18,10 @@ def hamiltonian_dense(
     lambda_val: float = 1,
     D: float = 1,
     periodic: bool = True,
-    Double: bool = False,
+    field: bool = False,
+    Import_K_V: bool = False,
     K_import: np.ndarray = [],
     V_import: np.ndarray = [],
-    Import_K_V: bool = False,
-    field: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Constructs the Kinetic, Potential, and dense Hamiltonian operators for a specified system,
@@ -105,15 +104,9 @@ def hamiltonian_dense(
     # Construct a Kinetic and Potential hamiltonian.
     K_final = H_kinetic(state, site, K_in_p)
 
-    V_final = H_potential_double(state, site, V_in_p, 1, periodic, Double)
+    V_final = H_potential(state, site, V_in_p, periodic)
 
     # Add to get the final hamiltonian.
     H_final = K_final + V_final
 
-    if Double:
-        V_non_per = V_double(int(np.sqrt(state)), V_in_p, False)
-        V_per = V_double(int(np.sqrt(state)), V_in_p, False)
-        # It is importatnt to keep the return in this format since hamiltonian_big.py functions are using this structure.
-        return H_final, K_in_p, V_non_per, V_per
-    else:
-        return H_final, K_in_p, V_in_p
+    return H_final, K_in_p, V_in_p

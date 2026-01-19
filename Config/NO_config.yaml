@@ -1,0 +1,18 @@
+type: op
+hamiltonian:
+  type: rotor
+  params:
+    state: 11
+    site: 3
+    g_val: 1.0
+    psi_twist: 0.0
+    lambda_val: 1.0
+    D: 1.0
+    periodic: true
+    Double: false
+    field: false
+
+op:
+  type: shift
+  params:
+    mu: 0.25

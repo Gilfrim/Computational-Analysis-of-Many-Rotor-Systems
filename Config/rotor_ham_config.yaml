@@ -1,0 +1,11 @@
+type: heisenberg_1d
+params:
+  state: 11
+  site: 3
+  g_val: 1.0
+  psi_twist: 0.0
+  lambda_val: 1.0
+  D: 1.0
+  periodic: True
+  Double: False
+  field: False

@@ -7,7 +7,7 @@ import quant_rotor.CCC_integration_methods.Dense.thermofield_boltz_funcs as bz
 from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_guess import amplitute_energy
 from quant_rotor.core.dense.de_solve_one_thermal import integration_scheme
 from quant_rotor.Hamiltonian_models.Dense.density_matrix import density_matrix_1
-from quant_rotor.Hamiltonian_models.Dense.hamiltonian import hamiltonian_dense
+from quant_rotor.Hamiltonian_models.Dense.rotor_hamiltonian import hamiltonian_dense
 
 
 def f_max(C, ground_NO, state_2, site):
