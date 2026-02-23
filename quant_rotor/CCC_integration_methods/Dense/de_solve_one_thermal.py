@@ -83,67 +83,108 @@ def tdcc_differential_equation(
         the flattened array containing the derivative of the T_ai and T_0 for a given time step, the 2 derivatives are concatenated
         to make a 1d array
     """
-    site, a, p, i = params.site, params.a, params.p, params.i
+    site, a, p, i, periodic = params.site, params.a, params.p, params.i, params.periodic
 
     dTab_ijdB_sol, dTa_idB_sol, T_ai = (
-        comb_flat[: -a - 1],
-        comb_flat[-a - 1 : -1],
+        comb_flat[: -a * site * i - 1],
+        comb_flat[-a * site * i - 1 : -1],
         comb_flat[-1],
     )
-    dTab_ijdB = dTab_ijdB_sol.reshape(site, a, a, i, i)
-    dTa_idB = dTa_idB_sol.reshape(a, i)
 
-    tensors.t_a_i_tensor[0] = dTa_idB
+    dTab_ijdB = dTab_ijdB_sol.reshape(site, site, a, a, i, i)
+    dTa_idB = dTa_idB_sol.reshape(site, a, i)
 
-    for site_1 in range(1, site):
-        tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
-        tensors.t_ab_ij_tensor[0, site_1] = dTab_ijdB[site_1]
-        for site_2 in range(1, site):
-            tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = (
-                tensors.t_ab_ij_tensor[0, site_1]
-            )
+    # dTab_ijdB_sol, dTa_idB_sol, T_ai = (
+    #     comb_flat[: -a * site - 1],
+    #     comb_flat[-a * site - 1 : -1],
+    #     comb_flat[-1],
+    # )
+    # dTab_ijdB = dTab_ijdB_sol.reshape(site, site, a, a, i, i)
+    # dTa_idB = dTa_idB_sol.reshape(site, a, i)
+
+    for site_u_1 in range(site):
+        tensors.t_a_i_tensor[site_u_1] = dTa_idB[site_u_1]
+        for site_u_2 in range(site):
+            if site_u_1 < site_u_2:
+                tensors.t_ab_ij_tensor[site_u_1, site_u_2] = dTab_ijdB[
+                    site_u_1, site_u_2
+                ]
+                tensors.t_ab_ij_tensor[site_u_2, site_u_1] = dTab_ijdB[
+                    site_u_2, site_u_1
+                ]
 
     t_1_max = tensors.t_a_i_tensor.flat[np.argmax(np.abs(tensors.t_a_i_tensor))]
     t_2_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
 
     energy = 0
 
-    for site_x in range(site):
-        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))  # * 0.5
+    if periodic:
+        # energy calculations
+        for site_x in range(site):
+            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
 
-        for site_y in range(site_x + 1, site_x + site):
-            # noinspection SpellCheckingInspection
-            energy += (
-                np.einsum(
-                    "ijab, abij->",
-                    qs.v_term(i, i, a, a, site_x, site_y % site),
-                    qs.t_term(site_x, site_y % site),
-                )
-                * 0.5
-            )
-            # noinspection SpellCheckingInspection
-            energy += (
-                np.einsum(
-                    "ijpq, pi, qj->",
-                    qs.v_term(i, i, p, p, site_x, site_y % site),
-                    qs.B_term(i, site_x),
-                    qs.B_term(i, site_y % site),
-                )
-                * 0.5
-            )
+            for site_y in range(site_x + 1, site_x + site):
+                if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
+                    # noinspection SpellCheckingInspection
+                    energy += (
+                        np.einsum(
+                            "ijab, abij->",
+                            qs.v_term(i, i, a, a, site_x, site_y % site),
+                            qs.t_term(site_x, site_y % site),
+                        )
+                        * 0.5
+                    )
+                    # noinspection SpellCheckingInspection
+                    energy += (
+                        np.einsum(
+                            "ijpq, pi, qj->",
+                            qs.v_term(i, i, p, p, site_x, site_y % site),
+                            qs.B_term(i, site_x),
+                            qs.B_term(i, site_y % site),
+                        )
+                        * 0.5
+                    )
+    else:
+        # energy calculations
+        for site_x in range(site):
+            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
 
-    single = np.zeros((a, i), dtype=complex)
-    double = np.zeros((site, a, a, i, i), dtype=complex)
+            for site_y in range(site):
+                if site_x < site_y:
+                    # noinspection SpellCheckingInspection
+                    energy += np.einsum(
+                        "ijab, abij->",
+                        qs.v_term(i, i, a, a, site_x, site_y),
+                        qs.t_term(site_x, site_y),
+                    )
+                    # noinspection SpellCheckingInspection
+                    energy += np.einsum(
+                        "ijpq, pi, qj->",
+                        qs.v_term(i, i, p, p, site_x, site_y),
+                        qs.B_term(i, site_x),
+                        qs.B_term(i, site_y),
+                    )
 
-    single = qs.residual_single(0)
-    for y_site in range(1, site):
-        double[y_site] = qs.residual_double_total(0, y_site)
+    single = np.zeros((site, a, i), dtype=complex)
+    double = np.zeros((site, site, a, a, i, i), dtype=complex)
+
+    for x_site in range(site):
+        single[x_site] = qs.residual_single(x_site)
+        for y_site in range(site):
+            if x_site < y_site:
+                double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
+
+    for site_a in range(site):
+        for state_a in range(a):
+            for site_b in range(site_a + 1, site):
+                for state_b in range(a):
+
+                    double_element = double[site_a, site_b, state_a, state_b, 0, 0]
+                    double[site_b, site_a, state_b, state_a, 0, 0] = double_element
 
     dTa_idB = -1 * (single)
     dTab_ijdB = -1 * (double)
     dT_0dB = [energy.real]
-
-    # print(T_ai, dT_0dB)
 
     dTa_idB = dTa_idB.flatten()
     dTab_ijdB = dTab_ijdB.flatten()
@@ -155,14 +196,12 @@ def tdcc_differential_equation(
 def integration_scheme(
     site: int,
     state: int,
-    g: float = 1,
+    h_full: np.ndarray,
+    v_full_xy: np.ndarray,
+    v_full_yx: np.ndarray,
     t_init=0.0,
     t_final=10.0,
     nof_points=10000,
-    K_import: np.ndarray = [],
-    V_import: np.ndarray = [],
-    v_full_per: np.ndarray = [],
-    Import: bool = False,
     t_0_import: complex = 0,
     t_1_import: np.ndarray = [],
     t_2_import: np.ndarray = [],
@@ -174,21 +213,6 @@ def integration_scheme(
     p = state
     i = 1
     a = p - i
-
-    if Import:
-        h_full = K_import
-        v_full = V_import
-        print(np.max(K_import))
-    else:
-        # Load .npy matrices directly from the package
-        K, V = write_matrix_elements((state - 1) // 2)
-
-        V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
-
-        h_full = basis_m_to_p_matrix_conversion(K, state)
-        v_full = basis_m_to_p_matrix_conversion(V_tensor, state)
-
-        v_full = v_full * g
 
     t_a_i_tensor = np.full((site, a, i), 0, dtype=complex)
     t_ab_ij_tensor = np.full((site, site, a, a, i, i), 0, dtype=complex)
@@ -213,7 +237,8 @@ def integration_scheme(
         t_a_i_tensor=t_a_i_tensor,
         t_ab_ij_tensor=t_ab_ij_tensor,
         h_full=h_full,
-        v_full=v_full,
+        v_full_xy=v_full_xy,
+        v_full_yx=v_full_yx,
     )
 
     qs = QuantumSimulation(params, tensors)
@@ -225,8 +250,8 @@ def integration_scheme(
         double = t_2_import
     else:
         t_0 = complex(0)
-        single = np.zeros((a, i), dtype=complex)
-        double = np.zeros((site, a, a, i, i), dtype=complex)
+        single = np.zeros((site, a, i), dtype=complex)
+        double = np.zeros((site, site, a, a, i, i), dtype=complex)
 
     # Concatenate flattened T_ai and T_0 into a single array for the ODE solver
     init_amps = np.concatenate(

@@ -5,33 +5,30 @@ from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class import (
     SimulationParams,
     TensorData,
 )
-from quant_rotor.Hamiltonian_models.Dense.hamiltonian_big import (
-    hamiltonian_general_dense,
-)
-from quant_rotor.Hamiltonian_models.Dense.support_ham import (
-    basis_m_to_p_matrix_conversion,
-    write_matrix_elements,
+from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class_linked import (
+    QuantumSimulation_linked,
+    SimulationParams_linked,
+    TensorData_linked,
 )
 
 
 def t_periodic(
     site: int,
     state: int,
-    g: float,
-    new: bool,
+    h_full: np.ndarray,
+    v_full_xy: np.ndarray,
+    v_full_yx: np.ndarray,
+    presidure_type: str,
     i_method: int = 3,
-    threshold: float = 1e-8,
+    threshold: float = 1e-10,
     gap: bool = False,
     gap_site: int = 3,
     low_state: int = 1,
-    K_import: np.ndarray = [],
-    V_import: np.ndarray = [],
     t_1_import: np.ndarray = [],
     t_2_import: np.ndarray = [],
-    Import_K_V: bool = False,
     Import_t: bool = False,
-    NO: bool = False,
     periodic: bool = True,
+    one_cicle: bool = False,
 ) -> tuple[float, float, float, np.ndarray, np.ndarray]:
     """_summary_
 
@@ -79,29 +76,6 @@ def t_periodic(
     i = low_state
     a = p - i
 
-    if Import_K_V:
-
-        h_full = K_import
-        v_full = V_import
-
-    elif NO:
-
-        _, K, V = hamiltonian_general_dense(state, site, g)
-
-        h_full = K
-        v_full = V.reshape(p, p, p, p)
-
-    else:
-
-        K, V = write_matrix_elements((state - 1) // 2)
-
-        V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
-
-        h_full = basis_m_to_p_matrix_conversion(K, state)
-        v_full = basis_m_to_p_matrix_conversion(V_tensor, state)
-
-        v_full = v_full * g
-
     if Import_t:
         t_a_i_tensor = t_1_import
         t_ab_ij_tensor = t_2_import
@@ -112,83 +86,106 @@ def t_periodic(
     # eigenvalues from h for update
     epsilon = np.diag(h_full)
 
-    params = SimulationParams(
-        a=a,
-        i=i,
-        p=p,  # These can be the same as `a + i` or chosen independently
-        site=site,
-        state=state,
-        i_method=i_method,
-        gap=gap,
-        gap_site=gap_site,
-        epsilon=epsilon,
-        periodic=periodic,
-    )
+    if presidure_type == "original":
+        print("original")
 
-    tensors = TensorData(
-        t_a_i_tensor=t_a_i_tensor,
-        t_ab_ij_tensor=t_ab_ij_tensor,
-        h_full=h_full,
-        v_full=v_full,
-    )
+        params = SimulationParams(
+            a=a,
+            i=i,
+            p=p,  # These can be the same as `a + i` or chosen independently
+            site=site,
+            state=state,
+            i_method=i_method,
+            gap=gap,
+            gap_site=gap_site,
+            epsilon=epsilon,
+            periodic=periodic,
+        )
 
-    qs = QuantumSimulation(params, tensors)
+        tensors = TensorData(
+            t_a_i_tensor=t_a_i_tensor,
+            t_ab_ij_tensor=t_ab_ij_tensor,
+            h_full=h_full,
+            v_full_xy=v_full_xy,
+            v_full_yx=v_full_yx,
+        )
+
+        qs = QuantumSimulation(params, tensors)
+
+    elif presidure_type == "linked":
+
+        params = SimulationParams_linked(
+            a=a,
+            i=i,
+            p=p,  # These can be the same as `a + i` or chosen independently
+            site=site,
+            state=state,
+            i_method=i_method,
+            gap=gap,
+            gap_site=gap_site,
+            epsilon=epsilon,
+            periodic=periodic,
+        )
+
+        tensors = TensorData_linked(
+            t_a_i_tensor=t_a_i_tensor,
+            t_ab_ij_tensor=t_ab_ij_tensor,
+            h_full=h_full,
+            v_full_xy=v_full_xy,
+            v_full_yx=v_full_yx,
+        )
+
+        qs = QuantumSimulation_linked(params, tensors)
 
     single = np.zeros((site, a, i), dtype=complex)
     double = np.zeros((site, site, a, a, i, i), dtype=complex)
 
+    counter = 0
+
     while True:
 
-        single[0] = qs.residual_single(0)
+        for x_site in range(site):
+            single[x_site] = qs.residual_single(x_site)
+            for y_site in range(site):
+                if x_site < y_site:
+                    # print(qs.c2(x_site, y_site))
+                    double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
 
-        if new:
-            print(np.max((qs.residual_single_new(0))))
-            # print("\n")
-            single[0] += qs.residual_single_new(0)
-        for y_site in range(1, site):
-            single[y_site] = single[0]
-            double[0, y_site] = qs.residual_double_total(0, y_site)
-            for x_site in range(1, site):
-                # print(x_site, (x_site + y_site) % site)
-                double[x_site, (x_site + y_site) % site] = double[0, y_site]
+        for x_site in range(site):
+            for y_site in range(site):
+                if x_site < y_site:
 
-        # print("\n")
+                    double[y_site, x_site] = (
+                        double[x_site, y_site].reshape(a, a).T.reshape(a, a, i, i)
+                    )
 
-        # for x_site in range(site):
-        #     single[x_site] = qs.residual_single(x_site)
-        #     for y_site in range(site):
-        #         if x_site < y_site:
-        #             double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
+        if one_cicle:
+            return t_a_i_tensor, t_ab_ij_tensor, single, double
 
         one_max = single.flat[np.argmax(np.abs(single))]
         two_max = double.flat[np.argmax(np.abs(double))]
 
-        tensors.t_a_i_tensor[0] -= qs.update_one(single[0])
+        # print("Before", one_max, two_max)
 
-        for site_1 in range(1, site):
-            tensors.t_a_i_tensor[site_1] = tensors.t_a_i_tensor[0]
-            tensors.t_ab_ij_tensor[0, site_1] -= qs.update_two(double[0, site_1])
-            # print(0, site_1)
-            for site_2 in range(1, site):
-                # print(site_2, (site_1 + site_2) % site)
-                tensors.t_ab_ij_tensor[site_2, (site_1 + site_2) % site] = (
-                    tensors.t_ab_ij_tensor[0, site_1]
-                )
-        # print("\n")
-        # for site_u_1 in range(site):
-        #     tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single[site_u_1])
-        #     for site_u_2 in range(site):
-        #         if site_u_1 < site_u_2:
-        #             tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(
-        #                 double[site_u_1, site_u_2]
-        #             )
-
+        for site_u_1 in range(site):
+            tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single[site_u_1])
+            for site_u_2 in range(site):
+                if site_u_1 < site_u_2:
+                    tensors.t_ab_ij_tensor[site_u_1, site_u_2] -= qs.update_two(
+                        double[site_u_1, site_u_2]
+                    )
+                    tensors.t_ab_ij_tensor[site_u_2, site_u_1] -= qs.update_two(
+                        double[site_u_2, site_u_1]
+                    )
+        counter += 1
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
 
         # CHANGE BACK TO 10
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
+
+    print(counter)
 
     energy = 0
 
@@ -204,7 +201,7 @@ def t_periodic(
                         np.einsum(
                             "ijab, abij->",
                             qs.v_term(i, i, a, a, site_x, site_y % site),
-                            qs.t_term(site_x, site_y % site),
+                            qs.t_term_2(site_x, site_y % site),
                         )
                         * 0.5
                     )
@@ -221,34 +218,28 @@ def t_periodic(
     else:
         # energy calculations
         for site_x in range(site):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x)) * 0.5
+            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
 
             for site_y in range(site):
                 if site_x < site_y:
                     # noinspection SpellCheckingInspection
-                    energy += (
-                        np.einsum(
-                            "ijab, abij->",
-                            qs.v_term(i, i, a, a, site_x, site_y % site),
-                            qs.t_term(site_x, site_y % site),
-                        )
-                        * 0.5
+                    energy += np.einsum(
+                        "ijab, abij->",
+                        qs.v_term(i, i, a, a, site_x, site_y % site),
+                        qs.t_term_2(site_x, site_y % site),
                     )
                     # noinspection SpellCheckingInspection
-                    energy += (
-                        np.einsum(
-                            "ijpq, pi, qj->",
-                            qs.v_term(i, i, p, p, site_x, site_y % site),
-                            qs.B_term(i, site_x),
-                            qs.B_term(i, site_y % site),
-                        )
-                        * 0.5
+                    energy += np.einsum(
+                        "ijpq, pi, qj->",
+                        qs.v_term(i, i, p, p, site_x, site_y % site),
+                        qs.B_term(i, site_x),
+                        qs.B_term(i, site_y % site),
                     )
 
     return (
-        one_max,
-        two_max,
         energy,
         tensors.t_a_i_tensor,
         tensors.t_ab_ij_tensor,
+        single,
+        double,
     )

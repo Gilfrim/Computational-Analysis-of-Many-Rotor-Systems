@@ -249,7 +249,7 @@ class QuantumSimulation:
             T_cb = self.t_term(x_d, y_d)
             if fast:
                 R += A @ h_pc @ T_cb
-                # R -= T_cb * (h_p @ B)
+                R -= T_cb * (h_p @ B)
             else:
                 # Term 1
                 R += oe.contract("ap,pc,cb->ab", A, h_pc, T_cb)

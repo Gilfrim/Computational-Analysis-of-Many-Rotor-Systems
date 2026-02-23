@@ -9,7 +9,8 @@ from quant_rotor.Hamiltonian_models.Dense.support_ham import (
 def hamiltonian_dense(
     site: int,
     K: np.ndarray,
-    V: np.ndarray,
+    V_xy: np.ndarray,
+    V_yx: np.ndarray,
     periodic: bool,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
@@ -18,7 +19,7 @@ def hamiltonian_dense(
     # Construct a Kinetic and Potential hamiltonian.
     K_final = H_kinetic(state, site, K)
 
-    V_final = H_potential_combined(state, site, V, periodic)
+    V_final = H_potential_combined(state, site, V_xy, periodic, V_yx)
 
     # Add to get the final hamiltonian.
     H_final = K_final + V_final

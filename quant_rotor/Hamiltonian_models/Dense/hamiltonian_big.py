@@ -3,7 +3,7 @@ import opt_einsum as oe
 import scipy.sparse as sp
 
 from quant_rotor.Hamiltonian_models.Dense.density_matrix import density_matrix_1
-from quant_rotor.Hamiltonian_models.Dense.rotor_hamiltonian import hamiltonian_dense
+from quant_rotor.Hamiltonian_models.Dense.hamiltonian import hamiltonian_dense
 
 
 def hamiltonian_big_dense(

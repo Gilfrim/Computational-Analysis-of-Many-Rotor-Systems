@@ -1,5 +1,5 @@
 #number of sites (int)
-sites = 3
+sites = 4
 #number of possible states, p (int) odd
 states = 5
 
@@ -13,4 +13,4 @@ initial = 0
 threshold = 1e-10
 
 #interaction strength (float)
-g = 0.1
+g = 0.5
