@@ -63,7 +63,7 @@ class QuantumSimulation:
 
     def v_term(self, v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2):
         if self.params.periodic:
-            if (v_site_2 - v_site_1) == 1 or (v_site_2 - v_site_1) == (
+            if (v_site_2 - v_site_1) == 1 or (v_site_1 - v_site_2) == (
                 self.params.site - 1
             ):
                 a_v_shift = [
@@ -76,7 +76,7 @@ class QuantumSimulation:
                     a_v_shift[2] : v_lower_1 + a_v_shift[2],
                     a_v_shift[3] : v_lower_2 + a_v_shift[3],
                 ]
-            elif v_site_1 - v_site_2 == 1 or (v_site_1 - v_site_2) == (
+            elif v_site_1 - v_site_2 == 1 or (v_site_2 - v_site_1) == (
                 self.params.site - 1
             ):
                 a_v_shift = [

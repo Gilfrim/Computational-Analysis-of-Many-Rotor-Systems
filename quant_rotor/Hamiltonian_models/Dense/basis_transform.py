@@ -159,6 +159,8 @@ def NO_transform(
     # Extract eigenstates and eigenvalues.
     eig_val_D, matrix_p_to_NO_full = np.linalg.eigh(ground_state_dencity_matrix)
 
+    print(eig_val_D)
+
     # Create a list of indecies associated to eigenstates in decreasing order.
     index_d = np.argsort(-eig_val_D)
 

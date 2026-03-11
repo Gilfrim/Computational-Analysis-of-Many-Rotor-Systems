@@ -122,7 +122,24 @@ def t_periodic(
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
 
-            # energy calculations
+    if periodic:
+        energy += terms.h_ip @ terms.b_term
+
+        V_iipp_01 = qs.v_term(i, i, p, p, 0, 1).reshape(p, p)
+        V_iiaa_01 = qs.v_term(i, i, a, a, 0, 1).reshape(a, a)
+        T_xy = qs.t_term(0, 1)
+        V_iipp_10 = qs.v_term(i, i, p, p, 1, 0).reshape(p, p)
+        V_iiaa_10 = qs.v_term(i, i, a, a, 1, 0).reshape(a, a)
+        T_yx = qs.t_term(1, 0)
+
+        energy += np.sum(V_iiaa_01 * (T_xy))
+        energy += V_iipp_01 @ terms.b_term @ terms.b_term
+        energy += np.sum(V_iiaa_10 * (T_yx))
+        energy += V_iipp_10 @ terms.b_term @ terms.b_term
+
+        energy = energy * site
+
+    # energy calculations
     for x in range(site):
         energy += terms.h_ip @ terms.b_term
 

@@ -121,6 +121,24 @@ def tdcc_differential_equation(
 
     energy = 0
 
+    if qs.params.periodic:
+        energy += qs.terms.h_ip @ qs.terms.b_term
+
+        V_iipp_01 = qs.v_term(i, i, p, p, 0, 1).reshape(p, p)
+        V_iiaa_01 = qs.v_term(i, i, a, a, 0, 1).reshape(a, a)
+        T_xy = qs.t_term(0, 1)
+        V_iipp_10 = qs.v_term(i, i, p, p, 1, 0).reshape(p, p)
+        V_iiaa_10 = qs.v_term(i, i, a, a, 1, 0).reshape(a, a)
+        T_yx = qs.t_term(1, 0)
+
+        energy += np.sum(V_iiaa_01 * (T_xy))
+        energy += V_iipp_01 @ qs.terms.b_term @ qs.terms.b_term
+        energy += np.sum(V_iiaa_10 * (T_yx))
+        energy += V_iipp_10 @ qs.terms.b_term @ qs.terms.b_term
+
+        energy = energy * site
+
+    # energy calculations
     for x in range(site):
         energy += qs.terms.h_ip @ qs.terms.b_term
 

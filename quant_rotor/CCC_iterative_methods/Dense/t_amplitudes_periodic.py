@@ -240,25 +240,54 @@ def t_periodic(
     energy = 0
 
     if presidure_type != "transformed":
-        for site_x in range(site):
+        if periodic:
             energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
+            energy += np.einsum(
+                "ijab, abij->",
+                qs.v_term(i, i, a, a, 0, 1),
+                qs.t_term_2(0, 1),
+            )
+            # noinspection SpellCheckingInspection
+            energy += np.einsum(
+                "ijpq, pi, qj->",
+                qs.v_term(i, i, p, p, 0, 1),
+                qs.B_term(i, 0),
+                qs.B_term(i, 1),
+            )
+            energy += np.einsum(
+                "ijab, abij->",
+                qs.v_term(i, i, a, a, 1, 0),
+                qs.t_term_2(1, 0),
+            )
+            # noinspection SpellCheckingInspection
+            energy += np.einsum(
+                "ijpq, pi, qj->",
+                qs.v_term(i, i, p, p, 1, 0),
+                qs.B_term(i, 1),
+                qs.B_term(i, 0),
+            )
 
-            for site_y in range(site):
-                if site_x < site_y:
-                    # if abs(site_x - site_y) == 1:
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum(
-                        "ijab, abij->",
-                        qs.v_term(i, i, a, a, site_x, site_y),
-                        qs.t_term_2(site_x, site_y),
-                    )
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum(
-                        "ijpq, pi, qj->",
-                        qs.v_term(i, i, p, p, site_x, site_y),
-                        qs.B_term(i, site_x),
-                        qs.B_term(i, site_y),
-                    )
+            energy = energy * site
+        else:
+            for site_x in range(site):
+                energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
+
+                for site_y in range(site):
+                    if site_x < site_y:
+                        # if abs(site_x - site_y) == 1:
+                        # noinspection SpellCheckingInspection
+                        energy += np.einsum(
+                            "ijab, abij->",
+                            qs.v_term(i, i, a, a, site_x, site_y),
+                            qs.t_term_2(site_x, site_y),
+                        )
+                        # noinspection SpellCheckingInspection
+                        energy += np.einsum(
+                            "ijpq, pi, qj->",
+                            qs.v_term(i, i, p, p, site_x, site_y),
+                            qs.B_term(i, site_x),
+                            qs.B_term(i, site_y),
+                        )
     else:
         for site_x in range(site):
             energy += qs.E_c(site_x)
