@@ -89,17 +89,23 @@ def tdcc_differential_equation(
     site, a, p, i = params.site, params.a, params.p, params.i
 
     dTab_ijdB_sol, dTa_idB_sol, T_ai = (
-        comb_flat[: -a - 1],
-        comb_flat[-a - 1 : -1],
+        comb_flat[: -a * i - 1],
+        comb_flat[-a * i - 1 : -1],
         comb_flat[-1],
     )
-    dTab_ijdB = dTab_ijdB_sol.reshape(site, a, a)
+    dTab_ijdB = dTab_ijdB_sol.reshape(site, site, a, a)
     dTa_idB = dTa_idB_sol.reshape(a)
 
-    qs.tensors.t_a_i_tensor = dTa_idB
-
-    for site_1 in range(1, site):
-        qs.tensors.t_ab_ij_tensor[site_1] = dTab_ijdB[site_1]
+    for site_u_1 in range(site):
+        tensors.t_a_i_tensor[site_u_1] = dTa_idB
+        for site_u_2 in range(site):
+            if site_u_1 < site_u_2:
+                tensors.t_ab_ij_tensor[site_u_1, site_u_2] = dTab_ijdB[
+                    site_u_1, site_u_2
+                ]
+                tensors.t_ab_ij_tensor[site_u_2, site_u_1] = dTab_ijdB[
+                    site_u_2, site_u_1
+                ]
 
     t_1_max = tensors.t_a_i_tensor.flat[np.argmax(np.abs(tensors.t_a_i_tensor))]
     t_2_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
@@ -115,54 +121,50 @@ def tdcc_differential_equation(
 
     energy = 0
 
-    for site_x in range(site):
+    for x in range(site):
         energy += qs.terms.h_ip @ qs.terms.b_term
 
-        for site_y in range(site_x + 1, site_x + site):
-            if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
-                V_iipp = qs.terms.V_iipp
-                V_iiaa = qs.terms.V_iiaa
-                T_xy = qs.t_term(site_x, site_y)
+        for y in range(site):
+            if x < y:
+                V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
+                V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
+                T_xy = qs.t_term(x, y)
 
                 # noinspection SpellCheckingInspection
-                energy += np.sum(V_iiaa * (T_xy)) * 0.5
-
+                energy += np.sum(V_iiaa * (T_xy))
                 # noinspection SpellCheckingInspection
-                energy += (V_iipp @ qs.terms.b_term @ qs.terms.b_term) * 0.5
+                energy += V_iipp @ qs.terms.b_term @ qs.terms.b_term
 
     single = np.zeros((a), dtype=complex)
-    double = np.zeros((site, a, a), dtype=complex)
+    double = np.zeros((site, site, a, a), dtype=complex)
 
     single = qs.residual_single()
-    for y_site in range(1, site):
-        double[y_site] = qs.residual_double_total(y_site)
 
-    dTab_ijdB = -1 * (double)
+    for x_site in range(site):
+        for y_site in range(site):
+            if x_site < y_site:
+                double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
+                double[y_site, x_site] = double[x_site, y_site].reshape(a, a).T
+
     dTa_idB = -1 * (single)
-    dT_0dB = [energy]
+    dTab_ijdB = -1 * (double)
+    dT_0dB = [-energy.real]
 
     dTa_idB = dTa_idB.flatten()
     dTab_ijdB = dTab_ijdB.flatten()
     comb_flat = np.concatenate([dTab_ijdB, dTa_idB, dT_0dB])
-    t0_stored.append((t, dT_0dB, t_1_max, t_2_max))
-    tdcc_differential_equation.call_count += 1
+    t0_stored.append((t, [energy], T_ai, np.max(np.abs(single))))
     return comb_flat
-
-
-tdcc_differential_equation.call_count = 0
 
 
 def integration_scheme(
     site: int,
     state: int,
-    g: float = 1,
-    t_init=0.0,
-    t_final=10.0,
-    nof_points=10000,
-    K_import: np.ndarray = [],
-    V_import: np.ndarray = [],
-    v_full_per: np.ndarray = [],
-    Import: bool = False,
+    h_full: np.ndarray,
+    v_full_xy: np.ndarray,
+    v_full_yx: np.ndarray,
+    t_init=0,
+    t_final=10,
     t_0_import: complex = 0,
     t_1_import: np.ndarray = [],
     t_2_import: np.ndarray = [],
@@ -174,22 +176,8 @@ def integration_scheme(
     i = 1
     a = p - i
 
-    if Import:
-        h_full = K_import
-        v_full = V_import
-    else:
-        # Load .npy matrices directly from the package
-        K, V = write_matrix_elements((state - 1) // 2)
-
-        V_tensor = V.reshape(p, p, p, p)  # Adjust if needed
-
-        h_full = basis_m_to_p_matrix_conversion(K, state)
-        v_full = basis_m_to_p_matrix_conversion(V_tensor, state)
-
-        v_full = v_full * g
-
-    t_a_i_tensor = np.full((a), 0, dtype=complex)
-    t_ab_ij_tensor = np.full((site, a, a), 0, dtype=complex)
+    t_a_i_tensor = np.full((site, a), 0, dtype=complex)
+    t_ab_ij_tensor = np.full((site, site, a, a), 0, dtype=complex)
 
     # eigenvalues from h for update
     epsilon = np.diag(h_full)
@@ -200,7 +188,6 @@ def integration_scheme(
         p=p,  # These can be the same as `a + i` or chosen independently
         site=site,
         state=state,
-        i_method=3,
         gap=False,
         gap_site=3,
         epsilon=epsilon,
@@ -211,7 +198,8 @@ def integration_scheme(
         t_a_i_tensor=t_a_i_tensor,
         t_ab_ij_tensor=t_ab_ij_tensor,
         h_full=h_full,
-        v_full=v_full,
+        v_full_xy=v_full_xy,
+        v_full_yx=v_full_yx,
     )
 
     terms = PrecalcalculatedTerms()
@@ -224,25 +212,16 @@ def integration_scheme(
         double = t_2_import
     else:
         t_0 = complex(0)
-        single = np.zeros((a, i), dtype=complex)
-        double = np.zeros((site, a, a, i, i), dtype=complex)
+        single = np.zeros((a), dtype=complex)
+        double = np.zeros((site, site, a, a), dtype=complex)
 
     terms.h_pp = qs.h_term(p, p)
     terms.h_pa = qs.h_term(p, a)
     terms.h_ip = qs.h_term(i, p).reshape(p)
-    terms.V_pppp = qs.v_term(p, p, p, p, 0, 1).reshape(p**2, p**2)
-    terms.V_ppaa = qs.v_term(p, p, a, a, 0, 1).reshape(p**2, a**2)
-    terms.V_iipp = qs.v_term(i, i, p, p, 0, 1).reshape(p, p)
-    terms.V_iiaa = qs.v_term(i, i, a, a, 0, 1).reshape(a, a)
-    terms.V_piaa = qs.v_term(p, i, a, a, 0, 1).reshape(p, a**2)
-    terms.V_pipp = qs.v_term(p, i, p, p, 0, 1).reshape(p, p**2)
-    terms.V_ipap = qs.v_term(i, p, a, p, 0, 1).reshape(p, a, p)
-    terms.V_piap = qs.v_term(p, i, a, p, 0, 1).reshape(p, a, p)
-
     # Concatenate flattened T_ai and T_0 into a single array for the ODE solver
     init_amps = np.concatenate((double.flatten(), single.flatten(), np.array([t_0])))
 
-    step_size = (t_final - t_init) / nof_points
+    step_size = None
 
     # prepare the initial y_tensor
     t0_stored = [(0, 0, 0, 0)]  # time, value
@@ -271,7 +250,7 @@ def integration_scheme(
         ),
         y0=init_amps,  # initial state - shape (n, )
         args=arguments,  # extra args to pass to `rk45_solve_ivp_integration_function`
-        max_step=0.1,  # maximum allowed step size
+        max_step=0.5,  # maximum allowed step size
         rtol=relative_tolerance,  # relative tolerance
         atol=absolute_tolerance,  # absolute tolerance
         store_y_values=False,  # do not store the y values over the integration

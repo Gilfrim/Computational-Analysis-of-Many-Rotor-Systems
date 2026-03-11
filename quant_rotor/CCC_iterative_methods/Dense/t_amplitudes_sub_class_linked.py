@@ -260,7 +260,8 @@ class QuantumSimulation_linked:
                 R_single += self.c2(x, z)
                 for w in range(site):
                     if (w != x) and (w != z):
-                        R_single += self.c3(x, z, w) - self.et1(x) * self.t_term_1(x)
+                        R_single += self.c3(x, z, w)
+        R_single -= self.et1(x) * self.t_term_1(x)
 
         return R_single
 
@@ -332,9 +333,10 @@ class QuantumSimulation_linked:
         return R_double
 
     def residual_double_total(self, x: int, y: int) -> np.ndarray:
+        a, i = self.params.a, self.params.i
 
         return (
             self.residual_double_sym(x, y)
             + self.residual_double_non_sym_1(x, y)
-            + self.residual_double_non_sym_1(y, x)
+            + self.residual_double_non_sym_1(y, x).reshape(a, a).T.reshape(a, a, i, i)
         )

@@ -7,6 +7,18 @@ See: https://en.wikipedia.org/wiki/Boltzmann_constant
 """
 
 
+def Z_new(t_0):
+    return np.exp(t_0)
+
+
+def A_new(t_0, beta_val: float) -> float:
+    return float((-1.0 / beta_val) * np.log(Z_new(t_0)))
+
+
+def S_new(t_0, beta: float, U_val: float):
+    return U_val * beta + t_0
+
+
 def beta_func(t: float) -> float:
     """
     Inverse temperature β = 1 / (k_B * T).

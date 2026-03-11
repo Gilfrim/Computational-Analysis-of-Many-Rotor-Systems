@@ -168,6 +168,7 @@ def write_matrix_elements(
 
     # Generate Potential Energy Matrix
     V = np.zeros((d**2, d**2), dtype=complex)
+
     for i in range(d):
         for j in range(d):
             for k in range(d):
@@ -176,6 +177,15 @@ def write_matrix_elements(
                     V[i * d + j, k * d + l] = interaction_general_angle(
                         i, j, k, l, psi_twist
                     )
+    # else:
+    #     for i in range(d):
+    #         for j in range(d):
+    #             for k in range(d):
+    #                 for l in range(d):
+    #                     if k * d + l >= i * d + j:
+    #                         V[i * d + j, k * d + l] = interaction_general_angle(
+    #                             i, j, k, l, psi_twist
+    #                         )
 
     return K, V
 
@@ -300,80 +310,12 @@ def V_double_xy(state: int, sites: int, V: np.ndarray, periodic: bool) -> np.nda
     return V_H
 
 
-def V_double_yx(state: int, sites: int, V: np.ndarray, periodic: bool) -> np.ndarray:
-
-    # Create a matrix of the shape of Potential energy Hamiltonian filled with zeros.
-    V_H = np.zeros((state**sites, state**sites), dtype=complex)
-
-    if periodic:
-        x = sites - 1
-    else:
-        x = sites // 2 - 1
-
-    # x = sites // 2 - 1
-
-    y = (x + 1) % sites
-
-    # if periodic:
-    #     inter = x
-    #     x = y
-    #     y = inter
-
-    # With x defining the first site of two-body interaction, we define the second dynamically.
-
-    # Define the total number of elements in the matrix operator, which represent the left, right, and center sites that are not interacting
-    # by n_lambda, n_mu, n_nu, respectively.
-    n_lambda = state ** (x % (sites - 1))
-    n_mu = state ** ((sites - y - 1) % (sites - 1))
-    n_nu = state ** (np.abs(y - x) - 1)
-
-    # Iterate through all elements of the Potential energy matrix operator.
-    for q in range(state):
-        for q_prime in range(state):
-            for p in range(state):
-                for p_prime in range(state):
-
-                    # Calculate the flattened indices of the associated element.
-                    row = q * state + p
-                    col = q_prime * state + p_prime
-                    val = V[row, col]
-
-                    # Check if element is non zero.
-                    if val == 0:
-                        continue  # skip writing 0s
-
-                    for Lambda in range(int(n_lambda)):
-                        for mu in range(int(n_mu)):
-                            for nu in range(int(n_nu)):
-
-                                # Calculate the indices in the hamiltonian.
-                                i = (
-                                    mu
-                                    + q * n_mu
-                                    + nu * state * n_mu
-                                    + p * n_nu * n_mu * state
-                                    + Lambda * n_nu * n_mu * state**2
-                                )
-                                j = (
-                                    mu
-                                    + q_prime * n_mu
-                                    + nu * state * n_mu
-                                    + p_prime * n_nu * n_mu * state
-                                    + Lambda * n_nu * n_mu * state**2
-                                )
-
-                                # Assign a values to associated.
-                                V_H[i, j] += val
-    return V_H
-
-
 def H_potential_combined(
     state: int,
     sites: int,
     V: np.ndarray,
     periodic: bool,
     V_periodic: np.ndarray = [],
-    combined: bool = False,
 ) -> np.ndarray:
 
     # Create a matrix of the shape of Potential energy Hamiltonian filled with zeros.
@@ -406,12 +348,8 @@ def H_potential_combined(
                         row = p * state + q
                         col = p_prime * state + q_prime
 
-                        if combined:
-                            if periodic:
-                                if x == sites - 1:
-                                    val = V_periodic[row, col]
-                            else:
-                                val = V[row, col]
+                        if periodic and x == sites - 1:
+                            val = V_periodic[row, col]
                         else:
                             val = V[row, col]
 
@@ -442,6 +380,7 @@ def H_potential_combined(
                                     # Assign a values to associated.
                                     V_H[i, j] += val
     return V_H
+
 
 # def H_potential_combined(
 #     state: int,

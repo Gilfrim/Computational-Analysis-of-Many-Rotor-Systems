@@ -24,7 +24,6 @@ class TensorData:
     h_full: np.ndarray
     v_full_xy: np.ndarray
     v_full_yx: np.ndarray
-    v_full_per: np.ndarray = field(default=None)
 
 class QuantumSimulation:
     def __init__(self, params: SimulationParams, tensors: TensorData):
@@ -97,7 +96,7 @@ class QuantumSimulation:
             else:
                 return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
 
-    def t_term(self, t_site_1, t_site_2):
+    def t_term_2(self, t_site_1, t_site_2):
         return self.tensors.t_ab_ij_tensor[t_site_1, t_site_2]
 
     def update_one(self, r_1_value):
@@ -125,7 +124,12 @@ class QuantumSimulation:
 
         R_single = np.zeros((a, i), dtype = complex)
 
-        R_single += np.einsum("ap, pq, qi->ai", self.A_term(a, x_s), self.h_term(p, p), self.B_term(i, x_s))
+        R_single += np.einsum(
+            "ap, pq, qi->ai",
+            self.A_term(a, x_s),
+            self.h_term(p, p),
+            self.B_term(i, x_s),
+        )
 
         for z_s in range(site):
             if z_s != x_s:
@@ -134,7 +138,7 @@ class QuantumSimulation:
                         "ap, plcd, cdil->ai",
                         self.A_term(a, x_s),
                         self.v_term(p, i, a, a, x_s, z_s),
-                        self.t_term(x_s, z_s),
+                        self.t_term_2(x_s, z_s),
                     )
 
                 R_single += np.einsum(
@@ -150,9 +154,9 @@ class QuantumSimulation:
                 for z_s in range(site):
                     if y_s != x_s and z_s != x_s and abs(z_s - y_s) == 1:
 
-                        R_single -= np.einsum(
+                        R_single += np.einsum(
                             "abij,jkbp,pk->ai",
-                            self.t_term(x_s, y_s),
+                            self.t_term_2(x_s, y_s),
                             self.v_term(i, i, a, p, y_s, z_s),
                             self.B_term(i, z_s),
                         )
@@ -164,18 +168,14 @@ class QuantumSimulation:
         R = np.zeros((a, a, i, i), dtype = complex)
 
         if i_method >= 1:
-            R += np.einsum("ap, bq, pqrs, ri, sj->abij", self.A_term(a, x_d), self.A_term(a, y_d), self.v_term(p, p, p, p, x_d, y_d), self.B_term(i, x_d), self.B_term(i, y_d))
-            # print(
-            #     "T1",
-            #     np.einsum(
-            #         "ap, bq, pqrs, ri, sj->abij",
-            #         self.A_term(a, x_d),
-            #         self.A_term(a, y_d),
-            #         self.v_term(p, p, p, p, x_d, y_d),
-            #         self.B_term(i, x_d),
-            #         self.B_term(i, y_d),
-            #     ),
-            # )
+            R += np.einsum(
+                "ap, bq, pqrs, ri, sj->abij",
+                self.A_term(a, x_d),
+                self.A_term(a, y_d),
+                self.v_term(p, p, p, p, x_d, y_d),
+                self.B_term(i, x_d),
+                self.B_term(i, y_d),
+            )
 
             if i_method >= 2:
                 R += np.einsum(
@@ -183,63 +183,36 @@ class QuantumSimulation:
                     self.A_term(a, x_d),
                     self.A_term(a, y_d),
                     self.v_term(p, p, a, a, x_d, y_d),
-                    self.t_term(x_d, y_d),
+                    self.t_term_2(x_d, y_d),
                 )
-                # print(
-                #     "T2",
-                #     np.allclose(
-                #         np.einsum(
-                #             "ap, bq, pqcd, cdij->abij",
-                #             self.A_term(a, x_d),
-                #             self.A_term(a, x_d),
-                #             self.v_term(p, p, a, a, x_d, y_d),
-                #             self.t_term(x_d, y_d),
-                #         ),
-                #         np.einsum(
-                #             "ap, bq, pqcd, cdij->abij",
-                #             self.A_term(a, x_d),
-                #             self.A_term(a, y_d),
-                #             self.v_term(p, p, a, a, x_d, y_d),
-                #             self.t_term(x_d, y_d),
-                #         ),
-                #     ),
-                # )
-                R -= np.einsum("abkl, klpq, pi, qj->abij", self.t_term(x_d, y_d), self.v_term(i, i, p, p, x_d, y_d), self.B_term(i, x_d), self.B_term(i, y_d))
-                # print(
-                #     "T3",
-                #     np.einsum(
-                #         "abkl, klpq, pi, qj->abij",
-                #         self.t_term(x_d, y_d),
-                #         self.v_term(i, i, p, p, x_d, y_d),
-                #         self.B_term(i, x_d),
-                #         self.B_term(i, y_d),
-                #     ),
-                # )
+
+                R -= np.einsum(
+                    "abkl, klpq, pi, qj->abij",
+                    self.t_term_2(x_d, y_d),
+                    self.v_term(i, i, p, p, x_d, y_d),
+                    self.B_term(i, x_d),
+                    self.B_term(i, y_d),
+                )
+
                 if i_method == 3:
-                    R -= np.einsum("abkl, klcd, cdij->abij", self.t_term(x_d, y_d), self.v_term(i, i, a, a, x_d, y_d), self.t_term(x_d, y_d))
-                    # print(
-                    #     "T4",
-                    #     np.einsum(
-                    #         "abkl, klcd, cdij->abij",
-                    #         self.t_term(x_d, y_d),
-                    #         self.v_term(i, i, a, a, x_d, y_d),
-                    #         self.t_term(x_d, y_d),
-                    #     ),
-                    # )
+                    R -= np.einsum(
+                        "abkl, klcd, cdij->abij",
+                        self.t_term_2(x_d, y_d),
+                        self.v_term(i, i, a, a, x_d, y_d),
+                        self.t_term_2(x_d, y_d),
+                    )
+
                     if site >= 4:
                         for z in range(site):
                             for w in range(site):
                                 if z not in {x_d, y_d} and w not in {x_d, y_d} and z != w:
-                                    R += np.einsum("klcd, acik, bdjl->abij", self.v_term(i, i, a, a, z, w), self.t_term(x_d, z), self.t_term(y_d, w))
-                                    # print(
-                                    #     "T5",
-                                    #     np.einsum(
-                                    #         "klcd, acik, bdjl->abij",
-                                    #         self.v_term(i, i, a, a, z, w),
-                                    #         self.t_term(x_d, z),
-                                    #         self.t_term(y_d, w),
-                                    #     ),
-                                    # )
+                                    R += np.einsum(
+                                        "klcd, acik, bdjl->abij",
+                                        self.v_term(i, i, a, a, z, w),
+                                        self.t_term_2(x_d, z),
+                                        self.t_term_2(y_d, w),
+                                    )
+
         return R
 
     def residual_double_non_sym_1(self, x_d: int, y_d: int) -> np.ndarray:
@@ -247,11 +220,16 @@ class QuantumSimulation:
         R = np.zeros((a, a, i, i), dtype = complex)
 
         if i_method >= 1:
-            R += np.einsum("ap, pc, cbij->abij", self.A_term(a, x_d), self.h_term(p, a), self.t_term(x_d, y_d))
+            R += np.einsum(
+                "ap, pc, cbij->abij",
+                self.A_term(a, x_d),
+                self.h_term(p, a),
+                self.t_term_2(x_d, y_d),
+            )
 
             R -= np.einsum(
                 "abkj, kp, pi->abij",
-                self.t_term(x_d, y_d),
+                self.t_term_2(x_d, y_d),
                 self.h_term(i, p),
                 self.B_term(i, x_d),
             )
@@ -261,7 +239,7 @@ class QuantumSimulation:
                         if z != x_d and z != y_d:
                             R += np.einsum(
                                 "acik, krcs, br, sj->abij",
-                                self.t_term(x_d, z),
+                                self.t_term_2(x_d, z),
                                 self.v_term(i, p, a, p, z, y_d),
                                 self.A_term(a, y_d),
                                 self.B_term(i, y_d),
@@ -271,68 +249,36 @@ class QuantumSimulation:
                                 "bq, qlds, adij, sl->abij",
                                 self.A_term(a, y_d),
                                 self.v_term(p, i, a, p, y_d, z),
-                                self.t_term(x_d, y_d),
+                                self.t_term_2(x_d, y_d),
                                 self.B_term(i, z),
                             )
 
                             R -= np.einsum(
                                 "abkj, lkrp, pi, rl->abij",
-                                self.t_term(x_d, y_d),
+                                self.t_term_2(x_d, y_d),
                                 self.v_term(i, i, p, p, z, x_d),
                                 self.B_term(i, x_d),
                                 self.B_term(i, z),
                             )
 
-        return R
-
-    def residual_double_non_sym_2(self, x_d: int, y_d: int) -> np.ndarray:
-        site, i_method, p, i, a = self.params.site, self.params.i_method, self.params.p, self.params.i, self.params.a
-        R = np.zeros((a, a, i, i), dtype = complex)
-
-        if i_method >= 1:
-            R += np.einsum("bp, pc, caji->baji", self.A_term(a, y_d), self.h_term(p, a), self.t_term(y_d, x_d))
-
-            R -= np.einsum(
-                "baki, kp, pj->baji",
-                self.t_term(y_d, x_d),
-                self.h_term(i, p),
-                self.B_term(i, y_d),
-            )
-            if site >= 3:
-                if i_method >= 2:
-                    for z in range(site):
-                        if z != x_d and z != y_d:
-                            R += np.einsum(
-                                "bcjk, krcs, ar, si->baji",
-                                self.t_term(y_d, z),
-                                self.v_term(i, p, a, p, z, x_d),
-                                self.A_term(a, x_d),
-                                self.B_term(i, x_d),
-                            )
-
-                            R += np.einsum(
-                                "aq, qlds, bdji, sl->baji",
-                                self.A_term(a, x_d),
-                                self.v_term(p, i, a, p, x_d, z),
-                                self.t_term(y_d, x_d),
-                                self.B_term(i, z),
-                            )
-
                             R -= np.einsum(
-                                "baki, lkrp, pj, rl->baji",
-                                self.t_term(y_d, x_d),
-                                self.v_term(i, i, p, p, z, y_d),
-                                self.B_term(i, y_d),
-                                self.B_term(i, z),
+                                "abkj, klcd, cdil->abij",
+                                self.t_term_2(x_d, y_d),
+                                self.v_term(i, i, a, a, x_d, z),
+                                self.t_term_2(x_d, z),
                             )
+
         return R
 
     def residual_double_total(self, x_d: int, y_d: int) -> np.ndarray:
+        a, i = self.params.a, self.params.i
 
         return (
             self.residual_double_sym(x_d, y_d)
             + self.residual_double_non_sym_1(x_d, y_d)
-            + self.residual_double_non_sym_2(x_d, y_d)
+            + self.residual_double_non_sym_1(y_d, x_d)
+            .reshape(a, a)
+            .T.reshape(a, a, i, i)
         )
 
     def transformation_test(self):

@@ -68,13 +68,10 @@ def thermofield_change_of_basis(hamiltonian):
     # Create Uniform state vector 1st diagonal basis vector
     u_vec = (np.ones(physical_hilbert_dim)*physical_hilbert_dim)**-0.5
 
-    print(u_vec)
-
     # Create set of orthogonal vectors from U to define diagonal basis vectors
     # This is the diagonal basis vectors which need to be pruned
     diagonal_vecs = []
     for n in range(physical_hilbert_dim):
-        print(-(1 / np.sqrt(physical_hilbert_dim)) * np.copy(u_vec))
         diagonal_vec = -(1/np.sqrt(physical_hilbert_dim))*np.copy(u_vec)
         diagonal_vec[n] +=  1
         diagonal_vecs.append(diagonal_vec)
@@ -88,7 +85,6 @@ def thermofield_change_of_basis(hamiltonian):
     # Check for eigenvalues that are zero they are linear dependent and can be removed
     # this hardcoded because the there should only be 1 excess basis vector and all other eigenvalues will be 1
     linearly_independent_eigvals = eig_vals_lowdin[1:]
-    print(linearly_independent_eigvals)
 
     # Remove linear dependent vector from set of eigenvectors
     # Columns of eigh output are the eigenvectors
@@ -154,19 +150,27 @@ def orthonormal_basis_from_vector(v):
     v = np.asarray(v, dtype=float)
     d = v.size
 
-    # Normalize the given vector
-    e1 = v / np.linalg.norm(v)
+    # Normalize first vector explicitly
+    e1 = v
 
-    # Create random matrix
-    A = np.random.randn(d, d)
+    basis = np.zeros((d, d))
+    basis[:, 0] = e1
 
-    # Replace first column with e1
-    A[:, 0] = e1
+    # Use Gram-Schmidt for remaining vectors
+    for i in range(1, d):
+        vec = np.random.randn(d)
 
-    # QR decomposition
-    Q, R = np.linalg.qr(A)
+        # Orthogonalize against previous basis vectors
+        for j in range(i):
+            vec -= np.dot(basis[:, j], vec) * basis[:, j]
 
-    return Q
+        norm = np.linalg.norm(vec)
+        if norm < 1e-12:
+            return orthonormal_basis_from_vector(v)  # retry
+
+        basis[:, i] = vec / norm
+
+    return basis
 
 
 def thermofield_change_of_basis_new(hamiltonian, temperature):
@@ -181,12 +185,14 @@ def thermofield_change_of_basis_new(hamiltonian, temperature):
     physical_hilbert_dim = np.shape(hamiltonian)[0]
 
     # Create Uniform state vector 1st diagonal basis vector
-    u_vec = (
-        np.exp((-np.diag(hamiltonian) * temperature) / 2)
-        * (np.ones(physical_hilbert_dim) * physical_hilbert_dim) ** -0.5
-    )
+    u_vec = np.exp((-np.diag(hamiltonian) * temperature) / 2)
 
-    u_vec = u_vec / np.sqrt(u_vec @ u_vec)
+    print(np.sqrt(u_vec @ u_vec))
+    print(u_vec @ u_vec)
+
+    factor_n = np.sqrt(u_vec @ u_vec)
+
+    u_vec = u_vec / factor_n
 
     diagonal_basis = np.zeros((physical_hilbert_dim, physical_hilbert_dim))
     diagonal_basis = orthonormal_basis_from_vector(u_vec)
@@ -235,7 +241,7 @@ def thermofield_change_of_basis_new(hamiltonian, temperature):
                         # displace vector added to new basis per each column
                         counter += 1
 
-    return (change_of_basis_matrix, primitive_hamiltonian, u_vec)
+    return (change_of_basis_matrix, u_vec, factor_n)
 
 
 def depr_H_tilde_maker(hamiltonian):

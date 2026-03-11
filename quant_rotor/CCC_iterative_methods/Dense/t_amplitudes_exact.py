@@ -159,7 +159,6 @@ def amplitute_energy(
     a = p - i
 
     # E_0 = K[0, 0] * site + np.einsum("ijij->", V) * state**site
-    E_0 = 0
     epsilon = np.diag(K)
 
     params = SimulationParams(
@@ -187,55 +186,27 @@ def amplitute_energy(
 
     energy = 0
 
-    if periodic:
-        # energy calculations
-        for site_x in range(site):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
+    for site_x in range(site):
+        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
 
-            for site_y in range(site_x + 1, site_x + site):
-                if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
-                    # noinspection SpellCheckingInspection
-                    energy += (
-                        np.einsum(
-                            "ijab, abij->",
-                            qs.v_term(i, i, a, a, site_x, site_y % site),
-                            qs.t_term(site_x, site_y % site),
-                        )
-                        * 0.5
-                    )
-                    # noinspection SpellCheckingInspection
-                    energy += (
-                        np.einsum(
-                            "ijpq, pi, qj->",
-                            qs.v_term(i, i, p, p, site_x, site_y % site),
-                            qs.B_term(i, site_x),
-                            qs.B_term(i, site_y % site),
-                        )
-                        * 0.5
-                    )
-    else:
-        # energy calculations
-        for site_x in range(site):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
+        for site_y in range(site):
+            if site_x < site_y:
+                # if abs(site_x - site_y) == 1:
+                # noinspection SpellCheckingInspection
+                energy += np.einsum(
+                    "ijab, abij->",
+                    qs.v_term(i, i, a, a, site_x, site_y),
+                    qs.t_term_2(site_x, site_y),
+                )
+                # noinspection SpellCheckingInspection
+                energy += np.einsum(
+                    "ijpq, pi, qj->",
+                    qs.v_term(i, i, p, p, site_x, site_y),
+                    qs.B_term(i, site_x),
+                    qs.B_term(i, site_y),
+                )
 
-            for site_y in range(site):
-                if site_x < site_y:
-                    # if abs(site_x - site_y) == 1:
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum(
-                        "ijab, abij->",
-                        qs.v_term(i, i, a, a, site_x, site_y % site),
-                        qs.t_term(site_x, site_y % site),
-                    )
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum(
-                        "ijpq, pi, qj->",
-                        qs.v_term(i, i, p, p, site_x, site_y % site),
-                        qs.B_term(i, site_x),
-                        qs.B_term(i, site_y % site),
-                    )
-
-    return energy + E_0, E_0, energy
+    return energy
 
 
 def t_1_amplitude_guess_ground_state(
@@ -277,14 +248,19 @@ def t_2_amplitude_guess_ground_state(
 
     for site_a in range(sites):
         for state_a in range(a):
-            for site_b in range(site_a + 1, sites):
+            for site_b in range(sites):
                 for state_b in range(a):
+                    if site_a < site_b:
 
-                    t_2_guess = t_2_amplitutde(
-                        site_a, state_a + 1, site_b, state_b + 1, states, sites, d
-                    )[0]
+                        t_2_guess = t_2_amplitutde(
+                            site_a, state_a + 1, site_b, state_b + 1, states, sites, d
+                        )[0]
 
-                    t_ab_ij_tensor[site_a, site_b, state_a, state_b, 0, 0] = t_2_guess
-                    t_ab_ij_tensor[site_b, site_a, state_b, state_a, 0, 0] = t_2_guess
+                        t_ab_ij_tensor[site_a, site_b, state_a, state_b, 0, 0] = (
+                            t_2_guess
+                        )
+                        t_ab_ij_tensor[site_b, site_a, state_b, state_a, 0, 0] = (
+                            t_2_guess
+                        )
 
     return t_ab_ij_tensor

@@ -12,6 +12,7 @@ from quant_rotor.Hamiltonian_models.Dense.support_ham import (
     write_matrix_elements,
 )
 
+counter = 0
 
 def residual_double():
     return 0
@@ -85,6 +86,8 @@ def tdcc_differential_equation(
     """
     site, a, p, i, periodic = params.site, params.a, params.p, params.i, params.periodic
 
+    global counter
+
     dTab_ijdB_sol, dTa_idB_sol, T_ai = (
         comb_flat[: -a * site * i - 1],
         comb_flat[-a * site * i - 1 : -1],
@@ -93,14 +96,6 @@ def tdcc_differential_equation(
 
     dTab_ijdB = dTab_ijdB_sol.reshape(site, site, a, a, i, i)
     dTa_idB = dTa_idB_sol.reshape(site, a, i)
-
-    # dTab_ijdB_sol, dTa_idB_sol, T_ai = (
-    #     comb_flat[: -a * site - 1],
-    #     comb_flat[-a * site - 1 : -1],
-    #     comb_flat[-1],
-    # )
-    # dTab_ijdB = dTab_ijdB_sol.reshape(site, site, a, a, i, i)
-    # dTa_idB = dTa_idB_sol.reshape(site, a, i)
 
     for site_u_1 in range(site):
         tensors.t_a_i_tensor[site_u_1] = dTa_idB[site_u_1]
@@ -117,53 +112,25 @@ def tdcc_differential_equation(
     t_2_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
 
     energy = 0
+    for site_x in range(site):
+        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
 
-    if periodic:
-        # energy calculations
-        for site_x in range(site):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
-
-            for site_y in range(site_x + 1, site_x + site):
-                if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
-                    # noinspection SpellCheckingInspection
-                    energy += (
-                        np.einsum(
-                            "ijab, abij->",
-                            qs.v_term(i, i, a, a, site_x, site_y % site),
-                            qs.t_term(site_x, site_y % site),
-                        )
-                        * 0.5
-                    )
-                    # noinspection SpellCheckingInspection
-                    energy += (
-                        np.einsum(
-                            "ijpq, pi, qj->",
-                            qs.v_term(i, i, p, p, site_x, site_y % site),
-                            qs.B_term(i, site_x),
-                            qs.B_term(i, site_y % site),
-                        )
-                        * 0.5
-                    )
-    else:
-        # energy calculations
-        for site_x in range(site):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
-
-            for site_y in range(site):
-                if site_x < site_y:
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum(
-                        "ijab, abij->",
-                        qs.v_term(i, i, a, a, site_x, site_y),
-                        qs.t_term(site_x, site_y),
-                    )
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum(
-                        "ijpq, pi, qj->",
-                        qs.v_term(i, i, p, p, site_x, site_y),
-                        qs.B_term(i, site_x),
-                        qs.B_term(i, site_y),
-                    )
+        for site_y in range(site):
+            if site_x < site_y:
+                # if abs(site_x - site_y) == 1:
+                # noinspection SpellCheckingInspection
+                energy += np.einsum(
+                    "ijab, abij->",
+                    qs.v_term(i, i, a, a, site_x, site_y),
+                    qs.t_term_2(site_x, site_y),
+                )
+                # noinspection SpellCheckingInspection
+                energy += np.einsum(
+                    "ijpq, pi, qj->",
+                    qs.v_term(i, i, p, p, site_x, site_y),
+                    qs.B_term(i, site_x),
+                    qs.B_term(i, site_y),
+                )
 
     single = np.zeros((site, a, i), dtype=complex)
     double = np.zeros((site, site, a, a, i, i), dtype=complex)
@@ -173,23 +140,20 @@ def tdcc_differential_equation(
         for y_site in range(site):
             if x_site < y_site:
                 double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
-
-    for site_a in range(site):
-        for state_a in range(a):
-            for site_b in range(site_a + 1, site):
-                for state_b in range(a):
-
-                    double_element = double[site_a, site_b, state_a, state_b, 0, 0]
-                    double[site_b, site_a, state_b, state_a, 0, 0] = double_element
+                double[y_site, x_site] = (
+                    double[x_site, y_site].reshape(a, a).T.reshape(a, a, i, i)
+                )
 
     dTa_idB = -1 * (single)
     dTab_ijdB = -1 * (double)
-    dT_0dB = [energy.real]
+    dT_0dB = [-energy.real]
+
+    counter += 1
 
     dTa_idB = dTa_idB.flatten()
     dTab_ijdB = dTab_ijdB.flatten()
     comb_flat = np.concatenate([dTab_ijdB, dTa_idB, dT_0dB])
-    t0_stored.append((t, dT_0dB, t_1_max, t_2_max))
+    t0_stored.append((t, [energy], T_ai, np.max(np.abs(single))))
     return comb_flat
 
 
@@ -199,9 +163,9 @@ def integration_scheme(
     h_full: np.ndarray,
     v_full_xy: np.ndarray,
     v_full_yx: np.ndarray,
-    t_init=0.0,
-    t_final=10.0,
-    nof_points=10000,
+    t_init=0,
+    t_final=10,
+    nof_points=None,
     t_0_import: complex = 0,
     t_1_import: np.ndarray = [],
     t_2_import: np.ndarray = [],
@@ -258,7 +222,7 @@ def integration_scheme(
         (double.flatten(), single.flatten(), np.array([t_0])),
     )
 
-    step_size = (t_final - t_init) / nof_points
+    step_size = None
 
     # prepare the initial y_tensor
     t0_stored = [(0, 0, 0, 0)]  # time, value
@@ -267,8 +231,8 @@ def integration_scheme(
     arguments = (t0_stored, params, tensors, qs)
 
     # specify the precision of the integrator so that the output for the test models is numerically identical
-    relative_tolerance = 1e-10
-    absolute_tolerance = 1e-12
+    relative_tolerance = 1e-5
+    absolute_tolerance = 1e-7
 
     # ------------------------------------------------------------------------
     # call the integrator
@@ -287,7 +251,7 @@ def integration_scheme(
         ),
         y0=init_amps,  # initial state - shape (n, )
         args=arguments,  # extra args to pass to `rk45_solve_ivp_integration_function`
-        max_step=0.1,  # maximum allowed step size
+        max_step=0.5,  # maximum allowed step size
         rtol=relative_tolerance,  # relative tolerance
         atol=absolute_tolerance,  # absolute tolerance
         store_y_values=False,  # do not store the y values over the integration
@@ -305,5 +269,8 @@ def integration_scheme(
     time, T_0, t_0_sol, two_max = postprocess_rk45_integration_results(
         sol, t0_stored, state, site
     )
+    global counter
+
+    print(counter)
 
     return (time, T_0, t_0_sol, two_max)

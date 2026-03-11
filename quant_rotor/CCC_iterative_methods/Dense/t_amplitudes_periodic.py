@@ -10,6 +10,11 @@ from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class_linked impor
     SimulationParams_linked,
     TensorData_linked,
 )
+from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class_transformed import (
+    QuantumSimulation_Transformed,
+    SimulationParams_Transformed,
+    TensorData_Transformed,
+)
 
 
 def t_periodic(
@@ -86,8 +91,9 @@ def t_periodic(
     # eigenvalues from h for update
     epsilon = np.diag(h_full)
 
+    print(presidure_type)
+
     if presidure_type == "original":
-        print("original")
 
         params = SimulationParams(
             a=a,
@@ -137,6 +143,31 @@ def t_periodic(
 
         qs = QuantumSimulation_linked(params, tensors)
 
+    elif presidure_type == "transformed":
+
+        params = SimulationParams_Transformed(
+            a=a,
+            i=i,
+            p=p,  # These can be the same as `a + i` or chosen independently
+            site=site,
+            state=state,
+            i_method=i_method,
+            gap=gap,
+            gap_site=gap_site,
+            epsilon=epsilon,
+            periodic=periodic,
+        )
+
+        tensors = TensorData_Transformed(
+            t_a_i_tensor=t_a_i_tensor,
+            t_ab_ij_tensor=t_ab_ij_tensor,
+            h_full=h_full,
+            v_full_xy=v_full_xy,
+            v_full_yx=v_full_yx,
+        )
+
+        qs = QuantumSimulation_Transformed(params, tensors)
+
     single = np.zeros((site, a, i), dtype=complex)
     double = np.zeros((site, site, a, a, i, i), dtype=complex)
 
@@ -158,6 +189,25 @@ def t_periodic(
                     double[y_site, x_site] = (
                         double[x_site, y_site].reshape(a, a).T.reshape(a, a, i, i)
                     )
+
+        # for x_site in range(site):
+        #     if not (np.array_equal(single[0], single[1])):
+        #         print(f"R_1 on {x_site}: {np.max(np.abs(single[0] - single[1]))}")
+        #     else:
+        #         print(f"R_1 on {x_site}: {True}")
+        #     for y_site in range(site):
+        #         if x_site < y_site:
+        #             if not (
+        #                 np.array_equal(
+        #                     double[x_site, y_site].reshape(a, a),
+        #                     double[y_site, x_site].reshape(a, a).T,
+        #                 )
+        #             ):
+        #                 print(
+        #                     f"R_2 on {x_site, y_site}: {np.max(np.abs(double[x_site, y_site].reshape(a, a) - double[y_site, x_site].reshape(a, a).T))}"
+        #                 )
+        #             else:
+        #                 print(f"R_2 on {x_site, y_site}: {True}")
 
         if one_cicle:
             return t_a_i_tensor, t_ab_ij_tensor, single, double
@@ -189,52 +239,32 @@ def t_periodic(
 
     energy = 0
 
-    if periodic:
-        # energy calculations
-        for site_x in range(site):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
-
-            for site_y in range(site_x + 1, site_x + site):
-                if abs(site_x - site_y) == 1 or abs(site_x - site_y) == (site - 1):
-                    # noinspection SpellCheckingInspection
-                    energy += (
-                        np.einsum(
-                            "ijab, abij->",
-                            qs.v_term(i, i, a, a, site_x, site_y % site),
-                            qs.t_term_2(site_x, site_y % site),
-                        )
-                        * 0.5
-                    )
-                    # noinspection SpellCheckingInspection
-                    energy += (
-                        np.einsum(
-                            "ijpq, pi, qj->",
-                            qs.v_term(i, i, p, p, site_x, site_y % site),
-                            qs.B_term(i, site_x),
-                            qs.B_term(i, site_y % site),
-                        )
-                        * 0.5
-                    )
-    else:
-        # energy calculations
+    if presidure_type != "transformed":
         for site_x in range(site):
             energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
 
             for site_y in range(site):
                 if site_x < site_y:
+                    # if abs(site_x - site_y) == 1:
                     # noinspection SpellCheckingInspection
                     energy += np.einsum(
                         "ijab, abij->",
-                        qs.v_term(i, i, a, a, site_x, site_y % site),
-                        qs.t_term_2(site_x, site_y % site),
+                        qs.v_term(i, i, a, a, site_x, site_y),
+                        qs.t_term_2(site_x, site_y),
                     )
                     # noinspection SpellCheckingInspection
                     energy += np.einsum(
                         "ijpq, pi, qj->",
-                        qs.v_term(i, i, p, p, site_x, site_y % site),
+                        qs.v_term(i, i, p, p, site_x, site_y),
                         qs.B_term(i, site_x),
-                        qs.B_term(i, site_y % site),
+                        qs.B_term(i, site_y),
                     )
+    else:
+        for site_x in range(site):
+            energy += qs.E_c(site_x)
+            for site_y in range(site):
+                if site_x != site_y:
+                    energy += qs.e_bar_c(site_x, site_y) / 2
 
     return (
         energy,

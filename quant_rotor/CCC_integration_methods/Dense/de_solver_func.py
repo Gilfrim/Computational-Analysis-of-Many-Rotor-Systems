@@ -17,16 +17,13 @@ import inspect
 
 # third party imports
 import numpy as np
-
-from scipy.optimize import OptimizeResult
-
-from scipy.integrate._ivp.bdf import BDF
-from scipy.integrate._ivp.radau import Radau
-from scipy.integrate._ivp.rk import RK23, RK45, DOP853
-from scipy.integrate._ivp.lsoda import LSODA
-from scipy.integrate._ivp.common import EPS, OdeSolution
 from scipy.integrate._ivp.base import OdeSolver
-
+from scipy.integrate._ivp.bdf import BDF
+from scipy.integrate._ivp.common import EPS, OdeSolution
+from scipy.integrate._ivp.lsoda import LSODA
+from scipy.integrate._ivp.radau import Radau
+from scipy.integrate._ivp.rk import DOP853, RK23, RK45
+from scipy.optimize import OptimizeResult
 
 # local imports
 
@@ -608,6 +605,8 @@ def new_solve_ivp(
         elif solver.status == 'failed':
             status = -1
             break
+
+        print(solver.t_old)
 
         t_old = solver.t_old
         t = solver.t
