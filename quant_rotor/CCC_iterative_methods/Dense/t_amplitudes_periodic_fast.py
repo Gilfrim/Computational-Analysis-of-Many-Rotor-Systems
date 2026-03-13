@@ -17,7 +17,7 @@ def t_periodic(
     h_full: np.ndarray,
     v_full_xy: np.ndarray,
     v_full_yx: np.ndarray,
-    threshold: float = 1e-8,
+    threshold: float = 1e-10,
     gap: bool = False,
     gap_site: int = 3,
     low_state: int = 1,
@@ -74,7 +74,7 @@ def t_periodic(
 
     iteration = 0
 
-    single = np.zeros((a), dtype=complex)
+    single = np.zeros((site, a), dtype=complex)
     double = np.zeros((site, site, a, a), dtype=complex)
 
     terms.h_pp = qs.h_term(p, p)
@@ -83,18 +83,17 @@ def t_periodic(
 
     while True:
 
-        terms.a_term = qs.A_term(a)
-        terms.b_term = qs.B_term(i)
-        terms.bb_term = np.einsum("q,s->qs", terms.b_term, terms.b_term).reshape(p**2)
-        terms.aa_term = np.einsum("ap,bq->abpq", terms.a_term, terms.a_term).reshape(
-            a**2, p**2
-        )
+        # terms.a_term = qs.A_term(a)
+        # terms.b_term = qs.B_term(i)
+        # terms.bb_term = np.einsum("q,s->qs", terms.b_term, terms.b_term).reshape(p**2)
+        # terms.aa_term = np.einsum("ap,bq->abpq", terms.a_term, terms.a_term).reshape(
+        #     a**2, p**2
+        # )
 
         energy = 0
 
-        single = qs.residual_single()
-
         for x in range(site):
+            single[x] = qs.residual_single(x)
             for y in range(site):
                 if x < y:
                     double[x, y] = qs.residual_double_total(x, y)
@@ -107,13 +106,16 @@ def t_periodic(
         two_max = double.flat[np.argmax(np.abs(double))]
 
         for x in range(site):
-            tensors.t_a_i_tensor -= qs.update_one(single)
+            tensors.t_a_i_tensor[x] -= qs.update_one(single[x])
 
             for y in range(site):
-                tensors.t_ab_ij_tensor[x, y] -= qs.update_two(double[x, y])
-                tensors.t_ab_ij_tensor[y, x] -= qs.update_two(double[y, x])
+                if x < y:
+                    tensors.t_ab_ij_tensor[x, y] -= qs.update_two(double[x, y])
+                    tensors.t_ab_ij_tensor[y, x] -= qs.update_two(double[y, x])
 
         iteration += 1
+
+        print(one_max, two_max)
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
@@ -123,7 +125,7 @@ def t_periodic(
             raise ValueError("Diverges.")
 
     if periodic:
-        energy += terms.h_ip @ terms.b_term
+        energy += terms.h_ip @ qs.B_term(0)
 
         V_iipp_01 = qs.v_term(i, i, p, p, 0, 1).reshape(p, p)
         V_iiaa_01 = qs.v_term(i, i, a, a, 0, 1).reshape(a, a)
@@ -132,34 +134,36 @@ def t_periodic(
         V_iiaa_10 = qs.v_term(i, i, a, a, 1, 0).reshape(a, a)
         T_yx = qs.t_term(1, 0)
 
-        energy += np.sum(V_iiaa_01 * (T_xy))
-        energy += V_iipp_01 @ terms.b_term @ terms.b_term
-        energy += np.sum(V_iiaa_10 * (T_yx))
-        energy += V_iipp_10 @ terms.b_term @ terms.b_term
+        energy += np.sum(V_iiaa_01 * (T_xy)) / 2
+        energy += V_iipp_01 @ terms.b_term @ terms.b_term / 2
+        energy += np.sum(V_iiaa_10 * (T_yx)) / 2
+        energy += V_iipp_10 @ terms.b_term @ terms.b_term / 2
 
         energy = energy * site
+    else:
+        # energy calculations
+        for x in range(site):
+            energy += terms.h_ip @ qs.B_term(x)
 
-    # energy calculations
-    for x in range(site):
-        energy += terms.h_ip @ terms.b_term
+            for y in range(site):
+                if x < y:
+                    V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
+                    V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
+                    T_xy = qs.t_term(x, y)
 
-        for y in range(site):
-            if x < y:
-                V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
-                V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
-                T_xy = qs.t_term(x, y)
+                    # noinspection SpellCheckingInspection
+                    energy += np.sum(V_iiaa * (T_xy))
+                    # noinspection SpellCheckingInspection
+                    energy += V_iipp @ qs.B_term(x) @ qs.B_term(y)
 
-                # noinspection SpellCheckingInspection
-                energy += np.sum(V_iiaa * (T_xy))
-                # noinspection SpellCheckingInspection
-                energy += V_iipp @ terms.b_term @ terms.b_term
+    print(iteration)
 
     return (
-        one_max,
-        two_max,
         energy,
         tensors.t_a_i_tensor,
         tensors.t_ab_ij_tensor,
+        single,
+        double,
     )
 
 

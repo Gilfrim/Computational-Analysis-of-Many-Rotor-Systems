@@ -114,31 +114,43 @@ def tdcc_differential_equation(
     energy = 0
 
     if periodic:
-        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
-        energy += np.einsum(
-            "ijab, abij->",
-            qs.v_term(i, i, a, a, 0, 1),
-            qs.t_term_2(0, 1),
+        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, 0))
+        # energy += (
+        #     np.einsum(
+        #         "ijab, abij->",
+        #         qs.v_term(i, i, a, a, 0, 1),
+        #         qs.t_term_2(0, 1),
+        #     )
+        #     / 2
+        # )
+        # # noinspection SpellCheckingInspection
+        # energy += (
+        #     np.einsum(
+        #         "ijpq, pi, qj->",
+        #         qs.v_term(i, i, p, p, 0, 1),
+        #         qs.B_term(i, 0),
+        #         qs.B_term(i, 1),
+        #     )
+        #     / 2
+        # )
+        energy += (
+            np.einsum(
+                "ijab, abij->",
+                qs.v_term(i, i, a, a, 1, 0),
+                qs.t_term_2(1, 0),
+            )
+            / 2
         )
         # noinspection SpellCheckingInspection
-        energy += np.einsum(
-            "ijpq, pi, qj->",
-            qs.v_term(i, i, p, p, 0, 1),
-            qs.B_term(i, 0),
-            qs.B_term(i, 1),
-        )
-        energy += np.einsum(
-            "ijab, abij->",
-            qs.v_term(i, i, a, a, 1, 0),
-            qs.t_term_2(1, 0),
-        )
-        # noinspection SpellCheckingInspection
-        energy += np.einsum(
-            "ijpq, pi, qj->",
-            qs.v_term(i, i, p, p, 1, 0),
-            qs.B_term(i, 1),
-            qs.B_term(i, 0),
-        )
+        # energy += (
+        #     np.einsum(
+        #         "ijpq, pi, qj->",
+        #         qs.v_term(i, i, p, p, 1, 0),
+        #         qs.B_term(i, 1),
+        #         qs.B_term(i, 0),
+        #     )
+        #     / 2
+        # )
 
         energy = energy * site
     else:
@@ -303,4 +315,4 @@ def integration_scheme(
 
     print(counter)
 
-    return (time, T_0, t_0_sol, two_max)
+    return (time, T_0, t_0_sol, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor)

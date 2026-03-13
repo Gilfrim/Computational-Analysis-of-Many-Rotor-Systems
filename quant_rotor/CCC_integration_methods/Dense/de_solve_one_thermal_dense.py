@@ -89,15 +89,15 @@ def tdcc_differential_equation(
     site, a, p, i = params.site, params.a, params.p, params.i
 
     dTab_ijdB_sol, dTa_idB_sol, T_ai = (
-        comb_flat[: -a * i - 1],
-        comb_flat[-a * i - 1 : -1],
+        comb_flat[: -site * a * i - 1],
+        comb_flat[-site * a * i - 1 : -1],
         comb_flat[-1],
     )
     dTab_ijdB = dTab_ijdB_sol.reshape(site, site, a, a)
-    dTa_idB = dTa_idB_sol.reshape(a)
+    dTa_idB = dTa_idB_sol.reshape(site, a)
 
     for site_u_1 in range(site):
-        tensors.t_a_i_tensor[site_u_1] = dTa_idB
+        tensors.t_a_i_tensor[site_u_1] = dTa_idB[site_u_1]
         for site_u_2 in range(site):
             if site_u_1 < site_u_2:
                 tensors.t_ab_ij_tensor[site_u_1, site_u_2] = dTab_ijdB[
@@ -107,58 +107,74 @@ def tdcc_differential_equation(
                     site_u_2, site_u_1
                 ]
 
+    # print(dTab_ijdB[0, 1] - dTab_ijdB[1, 0])
+
     t_1_max = tensors.t_a_i_tensor.flat[np.argmax(np.abs(tensors.t_a_i_tensor))]
     t_2_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
 
-    qs.terms.a_term = qs.A_term(a)
-    qs.terms.b_term = qs.B_term(i)
-    qs.terms.bb_term = oe.contract("q,s->qs", qs.terms.b_term, qs.terms.b_term).reshape(
-        p**2
-    )
-    qs.terms.aa_term = oe.contract(
-        "ap,bq->abpq", qs.terms.a_term, qs.terms.a_term
-    ).reshape(a**2, p**2)
+    # qs.terms.a_term = qs.A_term(a)
+    # qs.terms.b_term = qs.B_term(i)
+    # qs.terms.bb_term = oe.contract("q,s->qs", qs.terms.b_term, qs.terms.b_term).reshape(
+    #     p**2
+    # )
+    # qs.terms.aa_term = oe.contract(
+    #     "ap,bq->abpq", qs.terms.a_term, qs.terms.a_term
+    # ).reshape(a**2, p**2)
 
     energy = 0
+    energy_1 = 0
 
     if qs.params.periodic:
-        energy += qs.terms.h_ip @ qs.terms.b_term
+        # for x in range(site):
+        #     energy_1 += qs.terms.h_ip @ qs.B_term(x)
 
-        V_iipp_01 = qs.v_term(i, i, p, p, 0, 1).reshape(p, p)
-        V_iiaa_01 = qs.v_term(i, i, a, a, 0, 1).reshape(a, a)
-        T_xy = qs.t_term(0, 1)
-        V_iipp_10 = qs.v_term(i, i, p, p, 1, 0).reshape(p, p)
-        V_iiaa_10 = qs.v_term(i, i, a, a, 1, 0).reshape(a, a)
-        T_yx = qs.t_term(1, 0)
+        # V_iipp_01 = qs.v_term(i, i, p, p, 0, 1).reshape(p, p)
+        # V_iiaa_01 = qs.v_term(i, i, a, a, 0, 1).reshape(a, a)
+        # T_xy = qs.t_term(0, 1)
+        # V_iipp_10 = qs.v_term(i, i, p, p, 1, 0).reshape(p, p)
+        # V_iiaa_10 = qs.v_term(i, i, a, a, 1, 0).reshape(a, a)
+        # T_yx = qs.t_term(1, 0)
 
-        energy += np.sum(V_iiaa_01 * (T_xy))
-        energy += V_iipp_01 @ qs.terms.b_term @ qs.terms.b_term
-        energy += np.sum(V_iiaa_10 * (T_yx))
-        energy += V_iipp_10 @ qs.terms.b_term @ qs.terms.b_term
+        # energy += np.sum(V_iiaa_01 * (T_xy)) / 2
+        # energy += V_iipp_01 @ qs.terms.b_term @ qs.terms.b_term / 2
+        # energy += np.sum(V_iiaa_10 * (T_yx)) / 2
+        # energy += V_iipp_10 @ qs.terms.b_term @ qs.terms.b_term / 2
 
-        energy = energy * site
+        # energy = energy * site + energy_1
+        for x in range(site):
+            energy += qs.terms.h_ip @ qs.B_term(x)
 
-    # energy calculations
-    for x in range(site):
-        energy += qs.terms.h_ip @ qs.terms.b_term
+            for y in range(site):
+                if x < y:
+                    V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
+                    V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
+                    T_xy = qs.t_term(x, y)
 
-        for y in range(site):
-            if x < y:
-                V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
-                V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
-                T_xy = qs.t_term(x, y)
+                    # noinspection SpellCheckingInspection
+                    energy += np.sum(V_iiaa * (T_xy))
+                    # noinspection SpellCheckingInspection
+                    energy += V_iipp @ qs.B_term(x) @ qs.B_term(y)
+    else:
+        # energy calculations
+        for x in range(site):
+            energy += qs.terms.h_ip @ qs.B_term(x)
 
-                # noinspection SpellCheckingInspection
-                energy += np.sum(V_iiaa * (T_xy))
-                # noinspection SpellCheckingInspection
-                energy += V_iipp @ qs.terms.b_term @ qs.terms.b_term
+            for y in range(site):
+                if x < y:
+                    V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
+                    V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
+                    T_xy = qs.t_term(x, y)
 
-    single = np.zeros((a), dtype=complex)
+                    # noinspection SpellCheckingInspection
+                    energy += np.sum(V_iiaa * (T_xy))
+                    # noinspection SpellCheckingInspection
+                    energy += V_iipp @ qs.B_term(x) @ qs.B_term(y)
+
+    single = np.zeros((site, a), dtype=complex)
     double = np.zeros((site, site, a, a), dtype=complex)
 
-    single = qs.residual_single()
-
     for x_site in range(site):
+        single[x_site] = qs.residual_single(x_site)
         for y_site in range(site):
             if x_site < y_site:
                 double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
@@ -167,6 +183,9 @@ def tdcc_differential_equation(
     dTa_idB = -1 * (single)
     dTab_ijdB = -1 * (double)
     dT_0dB = [-energy.real]
+
+    # print(np.max(np.abs(single)))
+    # print(np.max(np.abs(double)))
 
     dTa_idB = dTa_idB.flatten()
     dTab_ijdB = dTab_ijdB.flatten()
@@ -230,7 +249,7 @@ def integration_scheme(
         double = t_2_import
     else:
         t_0 = complex(0)
-        single = np.zeros((a), dtype=complex)
+        single = np.zeros((site, a), dtype=complex)
         double = np.zeros((site, site, a, a), dtype=complex)
 
     terms.h_pp = qs.h_term(p, p)
@@ -287,4 +306,4 @@ def integration_scheme(
         sol, t0_stored, state, site
     )
 
-    return (time, T_0, t_0_sol, two_max)
+    return (time, T_0, t_0_sol, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor)

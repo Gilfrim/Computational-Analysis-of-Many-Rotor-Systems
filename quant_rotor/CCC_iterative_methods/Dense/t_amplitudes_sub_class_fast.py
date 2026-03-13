@@ -41,19 +41,19 @@ class QuantumSimulation:
         self.tensors = tensors
         self.terms = terms
 
-    def A_term(self, a_upper):
+    def A_term(self, x):
         return np.hstack(
             (
-                -self.tensors.t_a_i_tensor[0].reshape(self.params.a, self.params.i),
-                np.identity(a_upper),
+                -self.tensors.t_a_i_tensor[x].reshape(self.params.a, self.params.i),
+                np.identity(self.params.a),
             )
         )
 
-    def B_term(self, b_lower):
+    def B_term(self, x):
         return np.concatenate(
             (
-                np.ones(b_lower),
-                self.tensors.t_a_i_tensor[0],
+                np.ones(self.params.i),
+                self.tensors.t_a_i_tensor[x],
             )
         )
 
@@ -62,6 +62,47 @@ class QuantumSimulation:
         return self.tensors.h_full[a_h_shift[0]:h_upper + a_h_shift[0], a_h_shift[1]:h_lower + a_h_shift[1]]
 
     def v_term(self, v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2):
+        # if self.params.site == 2:
+        #     if self.params.periodic:
+        #         if v_site_2 == 1 and v_site_1 == 0:
+        #             a_v_shift = [
+        #                 self.params.i if a_check == self.params.a else 0
+        #                 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
+        #             ]
+        #             return self.tensors.v_full_xy[
+        #                 a_v_shift[0] : v_upper_1 + a_v_shift[0],
+        #                 a_v_shift[1] : v_upper_2 + a_v_shift[1],
+        #                 a_v_shift[2] : v_lower_1 + a_v_shift[2],
+        #                 a_v_shift[3] : v_lower_2 + a_v_shift[3],
+        #             ]
+        #         if v_site_2 == 0 and v_site_1 == 1:
+        #             a_v_shift = [
+        #                 self.params.i if a_check == self.params.a else 0
+        #                 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
+        #             ]
+        #             return self.tensors.v_full_yx[
+        #                 a_v_shift[0] : v_upper_1 + a_v_shift[0],
+        #                 a_v_shift[1] : v_upper_2 + a_v_shift[1],
+        #                 a_v_shift[2] : v_lower_1 + a_v_shift[2],
+        #                 a_v_shift[3] : v_lower_2 + a_v_shift[3],
+        #             ]
+        #         else:
+        #             return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
+        #     else:
+        #         if v_site_2 == 1 and v_site_1 == 0:
+        #             a_v_shift = [
+        #                 self.params.i if a_check == self.params.a else 0
+        #                 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
+        #             ]
+        #             return self.tensors.v_full_xy[
+        #                 a_v_shift[0] : v_upper_1 + a_v_shift[0],
+        #                 a_v_shift[1] : v_upper_2 + a_v_shift[1],
+        #                 a_v_shift[2] : v_lower_1 + a_v_shift[2],
+        #                 a_v_shift[3] : v_lower_2 + a_v_shift[3],
+        #             ]
+        #         else:
+        #             return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
+        # else:
         if self.params.periodic:
             if (v_site_2 - v_site_1) == 1 or (v_site_1 - v_site_2) == (
                 self.params.site - 1
@@ -116,7 +157,10 @@ class QuantumSimulation:
                     a_v_shift[3] : v_lower_2 + a_v_shift[3],
                 ]
             elif v_site_1 - v_site_2 == 1:
-                a_v_shift = [self.params.i if a_check == self.params.a else 0 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)]
+                a_v_shift = [
+                    self.params.i if a_check == self.params.a else 0
+                    for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
+                ]
                 return self.tensors.v_full_yx[
                     a_v_shift[0] : v_upper_1 + a_v_shift[0],
                     a_v_shift[1] : v_upper_2 + a_v_shift[1],
@@ -144,7 +188,7 @@ class QuantumSimulation:
                 update[u_a, u_b] = 1 / (eps[u_a + i] + eps[u_b + i] - eps[0] - eps[0])
         return update * r_2_value
 
-    def residual_single(self) -> np.ndarray:
+    def residual_single(self, x) -> np.ndarray:
         """
         Computes the single excitation residual R^{a}_{i} for site x_s = 0
         using optimized einsum contractions.
@@ -154,8 +198,6 @@ class QuantumSimulation:
         R_single : np.ndarray
             Residual tensor of shape (a, i) for the single excitation.
         """
-        # Fixed site index
-        x = 0
 
         # Unpack parameters
         site, a, p, i = self.params.site, self.params.a, self.params.p, self.params.i
@@ -167,7 +209,7 @@ class QuantumSimulation:
 
         # Term 1: A H B
 
-        R_single += A_ap @ (H_pq @ B_qi)
+        R_single += self.A_term(x) @ (H_pq @ self.B_term(x))
 
         # Terms from other sites
         for z in range(site):
@@ -177,16 +219,23 @@ class QuantumSimulation:
                 V_pC = self.v_term(p, i, a, a, x, z).reshape(p, a**2)
 
                 # Term 2: A V T
-                R_single += A_ap @ (V_pC @ T_Ci)
+                R_single += self.A_term(x) @ (V_pC @ T_Ci)
 
                 # Term 3: A V B B
-                R_single += A_ap @ (V_pQ @ BB_Qi)
+                R_single += self.A_term(x) @ (
+                    V_pQ
+                    @ (
+                        np.einsum("q,s->qs", self.B_term(x), self.B_term(z)).reshape(
+                            p**2
+                        )
+                    )
+                )
 
                 for w in range(site):
                     if w not in {x, z}:
                         T_ac = self.t_term(x, w).reshape(a, a)
                         V_cq = self.v_term(i, i, a, p, w, z).reshape(a, p)
-                        R_single += T_ac @ (V_cq @ B_qi)
+                        R_single += T_ac @ (V_cq @ self.B_term(z))
 
         return R_single
 
@@ -203,15 +252,32 @@ class QuantumSimulation:
         V_QR = self.v_term(p, p, p, p, x, y).reshape(p**2, p**2)
         # Term 1: A ⊗ A · V · B ⊗ B
 
-        R = (AA_BQ @ (V_QR @ BB_R)).reshape(a, a)
+        R = (
+            (
+                np.einsum("ap,bq->abpq", self.A_term(x), self.A_term(y)).reshape(
+                    a**2, p**2
+                )
+            )
+            @ (
+                V_QR
+                @ (np.einsum("q,s->qs", self.B_term(x), self.B_term(y)).reshape(p**2))
+            )
+        ).reshape(a, a)
 
         T_C_flat = self.t_term(x, y).reshape(a**2)
         T_C = self.t_term(x, y)
         V_QC = self.v_term(p, p, a, a, x, y).reshape(p**2, a**2)
         V_pq = self.v_term(i, i, p, p, x, y).reshape(p, p)
 
-        R += (AA_BQ @ (V_QC @ T_C_flat)).reshape(a, a)
-        R -= T_C * ((V_pq @ B) @ B)
+        R += (
+            (
+                np.einsum("ap,bq->abpq", self.A_term(x), self.A_term(y)).reshape(
+                    a**2, p**2
+                )
+            )
+            @ (V_QC @ T_C_flat)
+        ).reshape(a, a)
+        R -= T_C * ((V_pq @ self.B_term(x)) @ self.B_term(y))
 
         V_cd = self.v_term(i, i, a, a, x, y).reshape(a, a)
         scalar = np.sum(V_cd * T_C)
@@ -239,8 +305,8 @@ class QuantumSimulation:
 
         T_cb = self.t_term(x, y)
 
-        R = A @ h_pc @ T_cb
-        R -= T_cb * (h_p @ B)
+        R = self.A_term(x) @ h_pc @ T_cb
+        R -= T_cb * (h_p @ self.B_term(x))
 
         for z in range(site):
             if z != x and z != y:
@@ -251,15 +317,16 @@ class QuantumSimulation:
                 V_pap = self.v_term(p, i, a, p, y, z).reshape(p, a, p)
                 V_cd = self.v_term(i, i, a, a, x, y).reshape(a, a)
 
-                R += T_xz @ ((V_ipap @ B).T @ A.T)
-                R += T_cb @ (A @ (V_pap @ B).reshape(p, a)).T
-                R -= T_cb * ((V_pp @ B) @ B)
+                R += T_xz @ ((V_ipap @ self.B_term(y)).T @ self.A_term(y).T)
+                R += T_cb @ (self.A_term(y) @ (V_pap @ self.B_term(z)).reshape(p, a)).T
+                R -= T_cb * ((V_pp @ self.B_term(x)) @ self.B_term(z))
 
                 scalar = np.sum(V_cd * T_xz)
                 R -= T_xy * scalar
         return R
 
     def residual_double_total(self, x: int, y: int) -> np.ndarray:
+
         return (
             self.residual_double_sym(x, y)
             + self.residual_double_non_sym_1(x, y)
