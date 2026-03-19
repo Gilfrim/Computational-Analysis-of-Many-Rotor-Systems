@@ -95,9 +95,10 @@ class QuantumSimulation:
             ):
                 return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
 
-            if (v_site_2 - v_site_1) == 1 or (v_site_1 - v_site_2) == (
-                self.params.site - 1
-            ):
+            # if np.abs(v_site_1 - v_site_2) == (self.params.site - 1):
+            #     print("Periodic")
+
+            if (v_site_2 - v_site_1) == 1:
                 a_v_shift = [
                     self.params.i if a_check == self.params.a else 0
                     for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
@@ -108,9 +109,29 @@ class QuantumSimulation:
                     a_v_shift[2] : v_lower_1 + a_v_shift[2],
                     a_v_shift[3] : v_lower_2 + a_v_shift[3],
                 ]
-            elif v_site_1 - v_site_2 == 1 or (v_site_2 - v_site_1) == (
-                self.params.site - 1
-            ):
+            elif v_site_1 - v_site_2 == 1:
+                a_v_shift = [
+                    self.params.i if a_check == self.params.a else 0
+                    for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
+                ]
+                return self.tensors.v_full_yx[
+                    a_v_shift[0] : v_upper_1 + a_v_shift[0],
+                    a_v_shift[1] : v_upper_2 + a_v_shift[1],
+                    a_v_shift[2] : v_lower_1 + a_v_shift[2],
+                    a_v_shift[3] : v_lower_2 + a_v_shift[3],
+                ]
+            elif (v_site_1 - v_site_2) == (self.params.site - 1):
+                a_v_shift = [
+                    self.params.i if a_check == self.params.a else 0
+                    for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
+                ]
+                return self.tensors.v_full_xy[
+                    a_v_shift[0] : v_upper_1 + a_v_shift[0],
+                    a_v_shift[1] : v_upper_2 + a_v_shift[1],
+                    a_v_shift[2] : v_lower_1 + a_v_shift[2],
+                    a_v_shift[3] : v_lower_2 + a_v_shift[3],
+                ]
+            elif (v_site_2 - v_site_1) == (self.params.site - 1):
                 a_v_shift = [
                     self.params.i if a_check == self.params.a else 0
                     for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
@@ -187,6 +208,9 @@ class QuantumSimulation:
         for z_s in range(site):
             if z_s != x_s:
                 if i_method >= 1:
+                    R_single += np.einsum(
+                        "jb, abij -> ai", self.h_term(i, a), self.t_term_2(x_s, z_s)
+                    )
                     R_single += np.einsum(
                         "ap, plcd, cdil->ai",
                         self.A_term(a, x_s),

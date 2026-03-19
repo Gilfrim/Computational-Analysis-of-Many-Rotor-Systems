@@ -160,15 +160,14 @@ def tdcc_differential_equation(
             energy += qs.terms.h_ip @ qs.B_term(x)
 
             for y in range(site):
-                if x < y:
-                    V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
-                    V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
-                    T_xy = qs.t_term(x, y)
+                V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
+                V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
+                T_xy = qs.t_term(x, y)
 
-                    # noinspection SpellCheckingInspection
-                    energy += np.sum(V_iiaa * (T_xy))
-                    # noinspection SpellCheckingInspection
-                    energy += V_iipp @ qs.B_term(x) @ qs.B_term(y)
+                # noinspection SpellCheckingInspection
+                energy += np.sum(V_iiaa * (T_xy)) / 2
+                # noinspection SpellCheckingInspection
+                energy += V_iipp @ qs.B_term(x) @ qs.B_term(y) / 2
 
     single = np.zeros((site, a), dtype=complex)
     double = np.zeros((site, site, a, a), dtype=complex)
@@ -255,6 +254,7 @@ def integration_scheme(
     terms.h_pp = qs.h_term(p, p)
     terms.h_pa = qs.h_term(p, a)
     terms.h_ip = qs.h_term(i, p).reshape(p)
+    terms.h_ia = qs.h_term(i, a).reshape(a)
     # Concatenate flattened T_ai and T_0 into a single array for the ODE solver
     init_amps = np.concatenate((double.flatten(), single.flatten(), np.array([t_0])))
 

@@ -186,110 +186,114 @@ def amplitute_energy(
 
     energy = 0
 
-    if periodic:
-        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, 0))
+    # if periodic:
+    #     energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, 0))
 
-        print(np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, 0)))
+    #     print(np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, 0)))
 
-        energy += (
-            np.einsum(
-                "ijab, abij->",
-                qs.v_term(i, i, a, a, 0, 1),
-                qs.t_term_2(0, 1),
-            )
-            * 0.5
-        )
-        energy += (
-            np.einsum(
-                "ijpq, pi, qj->",
-                qs.v_term(i, i, p, p, 0, 1),
-                qs.B_term(i, 0),
-                qs.B_term(i, 1),
-            )
-            * 0.5
-        )
-        energy += (
-            np.einsum(
-                "ijab, abij->",
-                qs.v_term(i, i, a, a, 1, 0),
-                qs.t_term_2(1, 0),
-            )
-            * 0.5
-        )
-        energy += (
-            np.einsum(
-                "ijpq, pi, qj->",
-                qs.v_term(i, i, p, p, 1, 0),
-                qs.B_term(i, 1),
-                qs.B_term(i, 0),
-            )
-            * 0.5
-        )
+    #     energy += (
+    #         np.einsum(
+    #             "ijab, abij->",
+    #             qs.v_term(i, i, a, a, 0, 1),
+    #             qs.t_term_2(0, 1),
+    #         )
+    #         * 0.5
+    #     )
+    #     energy += (
+    #         np.einsum(
+    #             "ijpq, pi, qj->",
+    #             qs.v_term(i, i, p, p, 0, 1),
+    #             qs.B_term(i, 0),
+    #             qs.B_term(i, 1),
+    #         )
+    #         * 0.5
+    #     )
+    #     energy += (
+    #         np.einsum(
+    #             "ijab, abij->",
+    #             qs.v_term(i, i, a, a, 1, 0),
+    #             qs.t_term_2(1, 0),
+    #         )
+    #         * 0.5
+    #     )
+    #     energy += (
+    #         np.einsum(
+    #             "ijpq, pi, qj->",
+    #             qs.v_term(i, i, p, p, 1, 0),
+    #             qs.B_term(i, 1),
+    #             qs.B_term(i, 0),
+    #         )
+    #         * 0.5
+    #     )
 
-        print(
-            "01 t_2",
-            np.einsum(
-                "ijab, abij->",
-                qs.v_term(i, i, a, a, 0, 1),
-                qs.t_term_2(0, 1),
-            )
-            / 2,
-        )
-        print(
-            "01 BB",
-            np.einsum(
-                "ijpq, pi, qj->",
-                qs.v_term(i, i, p, p, 0, 1),
-                qs.B_term(i, 0),
-                qs.B_term(i, 1),
-            )
-            / 2,
-        )
-        print(
-            "10 t_2",
-            np.einsum(
-                "ijab, abij->",
-                qs.v_term(i, i, a, a, 1, 0),
-                qs.t_term_2(1, 0),
-            )
-            / 2,
-        )
-        print(
-            "10 BB",
-            np.einsum(
-                "ijpq, pi, qj->",
-                qs.v_term(i, i, p, p, 1, 0),
-                qs.B_term(i, 1),
-                qs.B_term(i, 0),
-            )
-            / 2,
-        )
+    #     print(
+    #         "01 t_2",
+    #         np.einsum(
+    #             "ijab, abij->",
+    #             qs.v_term(i, i, a, a, 0, 1),
+    #             qs.t_term_2(0, 1),
+    #         )
+    #         / 2,
+    #     )
+    #     print(
+    #         "01 BB",
+    #         np.einsum(
+    #             "ijpq, pi, qj->",
+    #             qs.v_term(i, i, p, p, 0, 1),
+    #             qs.B_term(i, 0),
+    #             qs.B_term(i, 1),
+    #         )
+    #         / 2,
+    #     )
+    #     print(
+    #         "10 t_2",
+    #         np.einsum(
+    #             "ijab, abij->",
+    #             qs.v_term(i, i, a, a, 1, 0),
+    #             qs.t_term_2(1, 0),
+    #         )
+    #         / 2,
+    #     )
+    #     print(
+    #         "10 BB",
+    #         np.einsum(
+    #             "ijpq, pi, qj->",
+    #             qs.v_term(i, i, p, p, 1, 0),
+    #             qs.B_term(i, 1),
+    #             qs.B_term(i, 0),
+    #         )
+    #         / 2,
+    #     )
 
-        print(energy)
+    #     print(energy)
 
-        energy = energy * site
+    #     energy = energy * site
+    # else:
+    for site_x in range(site):
+        energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
 
-        print(energy)
-    else:
-        for site_x in range(site):
-            energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, site_x))
+        for site_y in range(site):
 
-            for site_y in range(site):
-                if site_x < site_y:
-                    # if abs(site_x - site_y) == 1:
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum(
-                        "ijab, abij->",
-                        qs.v_term(i, i, a, a, site_x, site_y),
-                        qs.t_term_2(site_x, site_y),
-                    )
-                    # noinspection SpellCheckingInspection
-                    energy += np.einsum(
-                        "ijpq, pi, qj->",
-                        qs.v_term(i, i, p, p, site_x, site_y),
-                        qs.B_term(i, site_x),
-                        qs.B_term(i, site_y),
-                    )
+            # if abs(site_x - site_y) == 1:
+            # noinspection SpellCheckingInspection
+            energy += (
+                np.einsum(
+                    "ijab, abij->",
+                    qs.v_term(i, i, a, a, site_x, site_y),
+                    qs.t_term_2(site_x, site_y),
+                )
+                / 2
+            )
+            # noinspection SpellCheckingInspection
+            energy += (
+                np.einsum(
+                    "ijpq, pi, qj->",
+                    qs.v_term(i, i, p, p, site_x, site_y),
+                    qs.B_term(i, site_x),
+                    qs.B_term(i, site_y),
+                )
+                / 2
+            )
 
     return energy
 
@@ -344,6 +348,9 @@ def t_2_amplitude_guess_ground_state(
                         t_ab_ij_tensor[site_a, site_b, state_a, state_b, 0, 0] = (
                             t_2_guess
                         )
+                        t_2_guess_2 = t_2_amplitutde(
+                            site_b, state_b + 1, site_a, state_a + 1, states, sites, d
+                        )[0]
                         t_ab_ij_tensor[site_b, site_a, state_b, state_a, 0, 0] = (
                             t_2_guess
                         )

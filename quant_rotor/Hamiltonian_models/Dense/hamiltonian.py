@@ -16,6 +16,10 @@ def hamiltonian_dense(
 
     state = K.shape[0]
 
+    if periodic:
+        V_xy = V_xy
+        V_yx = V_yx
+
     # Construct a Kinetic and Potential hamiltonian.
     K_final = H_kinetic(state, site, K)
 

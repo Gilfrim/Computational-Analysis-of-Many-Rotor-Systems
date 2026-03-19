@@ -45,13 +45,13 @@ def rotor_operators(
 
 
 def heisenberg_operators(
-    J_x: int,
-    J_y: int,
-    J_z: int,
-    h_x: int,
-    h_y: int,
-    h_z: int,
-    g_val: float,
+    J_x: int = 1,
+    J_y: int = 1,
+    J_z: int = 0,
+    h_x: int = 0,
+    h_y: int = 0,
+    h_z: int = -1,
+    g_val: float = 1,
     lambda_val: int = 1,
     D: float = 1,
     field: bool = False,

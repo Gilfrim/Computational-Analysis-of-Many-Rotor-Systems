@@ -80,6 +80,7 @@ def t_periodic(
     terms.h_pp = qs.h_term(p, p)
     terms.h_pa = qs.h_term(p, a)
     terms.h_ip = qs.h_term(i, p).reshape(p)
+    terms.h_ia = qs.h_term(i, a).reshape(a)
 
     while True:
 
@@ -124,37 +125,36 @@ def t_periodic(
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
 
-    if periodic:
-        energy += terms.h_ip @ qs.B_term(0)
+    # if periodic:
+    #     energy += terms.h_ip @ qs.B_term(0)
 
-        V_iipp_01 = qs.v_term(i, i, p, p, 0, 1).reshape(p, p)
-        V_iiaa_01 = qs.v_term(i, i, a, a, 0, 1).reshape(a, a)
-        T_xy = qs.t_term(0, 1)
-        V_iipp_10 = qs.v_term(i, i, p, p, 1, 0).reshape(p, p)
-        V_iiaa_10 = qs.v_term(i, i, a, a, 1, 0).reshape(a, a)
-        T_yx = qs.t_term(1, 0)
+    #     V_iipp_01 = qs.v_term(i, i, p, p, 0, 1).reshape(p, p)
+    #     V_iiaa_01 = qs.v_term(i, i, a, a, 0, 1).reshape(a, a)
+    #     T_xy = qs.t_term(0, 1)
+    #     V_iipp_10 = qs.v_term(i, i, p, p, 1, 0).reshape(p, p)
+    #     V_iiaa_10 = qs.v_term(i, i, a, a, 1, 0).reshape(a, a)
+    #     T_yx = qs.t_term(1, 0)
 
-        energy += np.sum(V_iiaa_01 * (T_xy)) / 2
-        energy += V_iipp_01 @ terms.b_term @ terms.b_term / 2
-        energy += np.sum(V_iiaa_10 * (T_yx)) / 2
-        energy += V_iipp_10 @ terms.b_term @ terms.b_term / 2
+    #     energy += np.sum(V_iiaa_01 * (T_xy)) / 2
+    #     energy += V_iipp_01 @ terms.b_term @ terms.b_term / 2
+    #     energy += np.sum(V_iiaa_10 * (T_yx)) / 2
+    #     energy += V_iipp_10 @ terms.b_term @ terms.b_term / 2
 
-        energy = energy * site
-    else:
-        # energy calculations
-        for x in range(site):
-            energy += terms.h_ip @ qs.B_term(x)
+    #     energy = energy * site
+    # else:
+    # energy calculations
+    for x in range(site):
+        energy += terms.h_ip @ qs.B_term(x)
 
-            for y in range(site):
-                if x < y:
-                    V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
-                    V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
-                    T_xy = qs.t_term(x, y)
+        for y in range(site):
+            V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
+            V_iiaa = qs.v_term(i, i, a, a, x, y).reshape(a, a)
+            T_xy = qs.t_term(x, y)
 
-                    # noinspection SpellCheckingInspection
-                    energy += np.sum(V_iiaa * (T_xy))
-                    # noinspection SpellCheckingInspection
-                    energy += V_iipp @ qs.B_term(x) @ qs.B_term(y)
+            # noinspection SpellCheckingInspection
+            energy += np.sum(V_iiaa * (T_xy)) / 2
+            # noinspection SpellCheckingInspection
+            energy += V_iipp @ qs.B_term(x) @ qs.B_term(y) / 2
 
     print(iteration)
 

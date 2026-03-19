@@ -72,6 +72,7 @@ def combine_transform(
     n_sites_combined: int,
     K: np.ndarray,
     V: np.ndarray,
+    periodic: np.ndarray = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     state_original = K.shape[0]

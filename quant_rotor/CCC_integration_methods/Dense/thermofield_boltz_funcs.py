@@ -187,8 +187,8 @@ def thermofield_change_of_basis_new(hamiltonian, temperature):
     # Create Uniform state vector 1st diagonal basis vector
     u_vec = np.exp((-np.diag(hamiltonian) * temperature) / 2)
 
-    print(np.sqrt(u_vec @ u_vec))
-    print(u_vec @ u_vec)
+    # print(np.sqrt(u_vec @ u_vec))
+    # print(u_vec @ u_vec)
 
     factor_n = np.sqrt(u_vec @ u_vec)
 

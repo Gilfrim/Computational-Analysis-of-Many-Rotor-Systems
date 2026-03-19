@@ -34,6 +34,7 @@ class PrecalcalculatedTerms:
     h_pp: np.ndarray = None
     h_pa: np.ndarray = None
     h_ip: np.ndarray = None
+    h_ia: np.ndarray = None
 
 class QuantumSimulation:
     def __init__(self, params: SimulationParams, tensors: TensorData, terms: PrecalcalculatedTerms):
@@ -205,7 +206,7 @@ class QuantumSimulation:
         A_ap, B_qi, BB_Qi = self.terms.a_term, self.terms.b_term, self.terms.bb_term
         R_single = np.zeros((a), dtype=complex)
 
-        H_pq = self.terms.h_pp
+        H_pq, H_ia = self.terms.h_pp, self.terms.h_ia
 
         # Term 1: A H B
 
@@ -220,6 +221,7 @@ class QuantumSimulation:
 
                 # Term 2: A V T
                 R_single += self.A_term(x) @ (V_pC @ T_Ci)
+                # R_single += np.einsum("b, ab -> a", H_ia, self.t_term(x, z))
 
                 # Term 3: A V B B
                 R_single += self.A_term(x) @ (

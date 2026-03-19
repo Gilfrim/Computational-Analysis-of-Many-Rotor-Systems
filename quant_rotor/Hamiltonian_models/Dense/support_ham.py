@@ -174,18 +174,10 @@ def write_matrix_elements(
             for k in range(d):
                 for l in range(d):
                     # if k * d + l >= i * d + j:
+
                     V[i * d + j, k * d + l] = interaction_general_angle(
                         i, j, k, l, psi_twist
                     )
-    # else:
-    #     for i in range(d):
-    #         for j in range(d):
-    #             for k in range(d):
-    #                 for l in range(d):
-    #                     if k * d + l >= i * d + j:
-    #                         V[i * d + j, k * d + l] = interaction_general_angle(
-    #                             i, j, k, l, psi_twist
-    #                         )
 
     return K, V
 
