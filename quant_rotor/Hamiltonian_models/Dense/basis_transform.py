@@ -8,17 +8,66 @@ from quant_rotor.Hamiltonian_models.Dense.hamiltonian import hamiltonian_dense
 from quant_rotor.Hamiltonian_models.Dense.support_ham import V_double_xy
 
 
+def min_non_zero(values, mask, tol=1e-5):
+
+    values = np.asarray(values)
+    mask = np.asarray(mask)
+
+    if values.shape != mask.shape:
+        raise ValueError("Input arrays must have the same shape.")
+
+    # Sort values and apply the same ordering to mask
+    sort_idx = np.argsort(values)
+    values_sorted = values[sort_idx]
+    mask_sorted = mask[sort_idx]
+
+    # Find the first value where mask is approximately zero
+    for i in range(values_sorted.shape[0]):
+        if np.abs(mask_sorted[i]) > tol and np.abs(mask_sorted[i]) != 1:
+            return i
+
+    return None  # if no match found
+
+
+def is_trivial(v, tol=1e-10):
+    v = np.asarray(v)
+
+    # Count entries close to 1
+    ones = np.sum(np.abs(v - 1) < tol)
+
+    # Count entries close to 0
+    zeros = np.sum(np.abs(v) < tol)
+
+    return ones == 1 and zeros == len(v) - 1
+
+
+def first_nontrivial_index(vectors):
+    for i, v in enumerate(vectors.T):
+        if not is_trivial(v):
+            return i
+    return None
+
+
 def energy_transform(
     K: np.ndarray, V_xy: np.ndarray, V_yx: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     _, energy_basis = np.linalg.eigh(K)
+
+    idx = first_nontrivial_index(energy_basis)
+
+    energy_basis_copy = np.copy(energy_basis)
+
+    energy_basis[:, 0], energy_basis[:, idx] = (
+        energy_basis_copy[:, idx],
+        energy_basis_copy[:, 0],
+    )
 
     # Apply the change of basis to Kinetic energy matrix.
     K_e = energy_basis.T.conj() @ K @ energy_basis
 
     # Create a change of basis matrix for a reshaped potential.
     energy_basis_V = np.kron(energy_basis, energy_basis)
-
+    print("check")
     # Apply the change of basis to Potential energy matrix.
     V_e_xy = energy_basis_V.conj().T @ V_xy @ energy_basis_V
     V_e_yx = energy_basis_V.conj().T @ V_yx @ energy_basis_V
