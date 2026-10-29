@@ -1,6 +1,6 @@
 import numpy as np
 
-from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class_fast import (
+from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class_fast_unique import (
     PrecalcalculatedTerms,
     QuantumSimulation,
     SimulationParams,
@@ -13,7 +13,6 @@ np.set_printoptions(suppress=True, linewidth=1500, threshold=10000, precision=12
 
 def t_periodic(
     site: int,
-    state: int,
     h_full: np.ndarray,
     v_full_xy: np.ndarray,
     v_full_yx: np.ndarray,
@@ -24,8 +23,8 @@ def t_periodic(
     Import_t: bool = False,
     t_1_import: np.ndarray = [],
     t_2_import: np.ndarray = [],
-    periodic: bool = True,
     one_cicle: bool = False,
+    periodic: bool = True,
 ):
     """
     Create SimulationParams from raw input arguments.
@@ -34,6 +33,8 @@ def t_periodic(
     # state variables
     # could just use p, i, a
     # makes checking einsums and such a bit easier
+
+    state = h_full.shape[0]
     p = state
     i = low_state
     a = p - i
@@ -93,8 +94,8 @@ def t_periodic(
 
     while True:
 
-        terms.a_term = qs.A_term(a)
-        terms.b_term = qs.B_term(i)
+        terms.a_term = qs.A_term()
+        terms.b_term = qs.B_term()
         terms.bb_term = np.einsum("q,s->qs", terms.b_term, terms.b_term).reshape(p**2)
         terms.aa_term = np.einsum("ap,bq->abpq", terms.a_term, terms.a_term).reshape(
             a**2, p**2
@@ -102,7 +103,7 @@ def t_periodic(
 
         single = qs.residual_single()
 
-        for y in range(site):
+        for y in range(1, site):
             double[y] = qs.residual_double_total(y)
 
         if one_cicle:
@@ -111,25 +112,24 @@ def t_periodic(
         one_max = single.flat[np.argmax(np.abs(single))]
         two_max = double.flat[np.argmax(np.abs(double))]
 
+        print(one_max, two_max)
+
         tensors.t_a_i_tensor -= qs.update_one(single)
 
-        for y in range(site):
-            tensors.t_ab_ij_tensor[x, y] -= qs.update_two(double[x, y])
-            tensors.t_ab_ij_tensor[y, x] -= qs.update_two(double[y, x])
+        for y in range(1, site):
+            tensors.t_ab_ij_tensor[y] -= qs.update_two(double[y])
 
         iteration += 1
 
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
-
-        # CHANGE BACK TO 10
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
 
     energy = 0
 
     for x in range(site):
-        energy += terms.h_ip @ qs.B_term(x)
+        energy += terms.h_ip @ qs.B_term()
 
         for y in range(site):
             V_iipp = qs.v_term(i, i, p, p, x, y).reshape(p, p)
@@ -137,7 +137,7 @@ def t_periodic(
             T_xy = qs.t_term(x, y)
 
             energy += np.sum(V_iiaa * (T_xy)) / 2
-            energy += V_iipp @ qs.B_term(x) @ qs.B_term(y) / 2
+            energy += V_iipp @ qs.B_term() @ qs.B_term() / 2
 
     print(iteration)
 

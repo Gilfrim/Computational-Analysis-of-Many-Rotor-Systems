@@ -15,6 +15,7 @@ from quant_rotor.Hamiltonian_models.Dense.support_ham import (
     write_matrix_elements,
 )
 
+counter = 0
 
 def residual_double():
     return 0
@@ -58,8 +59,6 @@ def tdcc_differential_equation(
     t: float,
     comb_flat: np.ndarray,
     t0_stored,
-    params: SimulationParams,
-    tensors: TensorData,
     qs: QuantumSimulation,
 ) -> np.ndarray:
     """Set of coupled odes for a given time step numerically for the 1 electron hamiltonian_dict for the T_ai and T_0 equation for use
@@ -86,7 +85,9 @@ def tdcc_differential_equation(
         the flattened array containing the derivative of the T_ai and T_0 for a given time step, the 2 derivatives are concatenated
         to make a 1d array
     """
-    site, a, p, i = params.site, params.a, params.p, params.i
+    site, a, p, i = qs.params.site, qs.params.a, qs.params.p, qs.params.i
+
+    global counter
 
     dTab_ijdB_sol, dTa_idB_sol, T_ai = (
         comb_flat[: -site * a * i - 1],
@@ -97,20 +98,22 @@ def tdcc_differential_equation(
     dTa_idB = dTa_idB_sol.reshape(site, a)
 
     for site_u_1 in range(site):
-        tensors.t_a_i_tensor[site_u_1] = dTa_idB[site_u_1]
+        qs.tensors.t_a_i_tensor[site_u_1] = dTa_idB[site_u_1]
         for site_u_2 in range(site):
             if site_u_1 < site_u_2:
-                tensors.t_ab_ij_tensor[site_u_1, site_u_2] = dTab_ijdB[
+                qs.tensors.t_ab_ij_tensor[site_u_1, site_u_2] = dTab_ijdB[
                     site_u_1, site_u_2
                 ]
-                tensors.t_ab_ij_tensor[site_u_2, site_u_1] = dTab_ijdB[
+                qs.tensors.t_ab_ij_tensor[site_u_2, site_u_1] = dTab_ijdB[
                     site_u_2, site_u_1
                 ]
 
     # print(dTab_ijdB[0, 1] - dTab_ijdB[1, 0])
 
-    t_1_max = tensors.t_a_i_tensor.flat[np.argmax(np.abs(tensors.t_a_i_tensor))]
-    t_2_max = tensors.t_ab_ij_tensor.flat[np.argmax(np.abs(tensors.t_ab_ij_tensor))]
+    t_1_max = qs.tensors.t_a_i_tensor.flat[np.argmax(np.abs(qs.tensors.t_a_i_tensor))]
+    t_2_max = qs.tensors.t_ab_ij_tensor.flat[
+        np.argmax(np.abs(qs.tensors.t_ab_ij_tensor))
+    ]
 
     # qs.terms.a_term = qs.A_term(a)
     # qs.terms.b_term = qs.B_term(i)
@@ -179,12 +182,17 @@ def tdcc_differential_equation(
                 double[x_site, y_site] = qs.residual_double_total(x_site, y_site)
                 double[y_site, x_site] = double[x_site, y_site].reshape(a, a).T
 
+    # print("R_1", np.max(np.abs(single)))
+    # print("R_2", np.max(np.abs(double)))
+
     dTa_idB = -1 * (single)
     dTab_ijdB = -1 * (double)
     dT_0dB = [-energy.real]
 
     # print(np.max(np.abs(single)))
     # print(np.max(np.abs(double)))
+
+    counter += 1
 
     dTa_idB = dTa_idB.flatten()
     dTab_ijdB = dTab_ijdB.flatten()
@@ -264,7 +272,7 @@ def integration_scheme(
     t0_stored = [(0, 0, 0, 0)]  # time, value
 
     # Arguments to pass to the ODE function
-    arguments = (t0_stored, params, tensors, qs)
+    arguments = (t0_stored, qs)
 
     # specify the precision of the integrator so that the output for the test models is numerically identical
     relative_tolerance = 1e-10
@@ -287,7 +295,7 @@ def integration_scheme(
         ),
         y0=init_amps,  # initial state - shape (n, )
         args=arguments,  # extra args to pass to `rk45_solve_ivp_integration_function`
-        max_step=0.5,  # maximum allowed step size
+        max_step=0.001,  # maximum allowed step size
         rtol=relative_tolerance,  # relative tolerance
         atol=absolute_tolerance,  # absolute tolerance
         store_y_values=False,  # do not store the y values over the integration
@@ -305,5 +313,8 @@ def integration_scheme(
     time, T_0, t_0_sol, two_max = postprocess_rk45_integration_results(
         sol, t0_stored, state, site
     )
+    global counter
+
+    print(counter)
 
     return (time, T_0, t_0_sol, tensors.t_a_i_tensor, tensors.t_ab_ij_tensor)

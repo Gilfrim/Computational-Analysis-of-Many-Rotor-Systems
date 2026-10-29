@@ -11,13 +11,9 @@ from quant_rotor.Hamiltonian_models.Dense.support_ham import (
 )
 
 
-def intermediate_normalisation(eig_val: np.ndarray, eig_vec: np.ndarray) -> np.ndarray:
+def intermediate_normalisation(eig_vec: np.ndarray) -> np.ndarray:
 
-    min_index = np.argmin(eig_val)
-
-    reference_ground_state = eig_vec[:, min_index]
-
-    d = reference_ground_state / reference_ground_state[0]
+    d = eig_vec / eig_vec[0]
 
     return d
 
@@ -302,7 +298,6 @@ def t_1_amplitude_guess_ground_state(
     states: int,
     sites: int,
     eig_vec: np.ndarray,
-    eig_val: np.ndarray,
     low_states: int = 1,
 ):
 
@@ -310,7 +305,7 @@ def t_1_amplitude_guess_ground_state(
     a = states - low_states
     t_a_i_tensor = np.full((sites, a, i), 0, dtype=complex)
 
-    d = intermediate_normalisation(eig_val, eig_vec)
+    d = intermediate_normalisation(eig_vec)
 
     for site in range(sites):
         for state in range(states - 1):
@@ -325,7 +320,6 @@ def t_2_amplitude_guess_ground_state(
     states: int,
     sites: int,
     eig_vec: np.ndarray,
-    eig_val: np.ndarray,
     low_states: int = 1,
 ):
 
@@ -333,7 +327,7 @@ def t_2_amplitude_guess_ground_state(
     a = states - low_states
     t_ab_ij_tensor = np.full((sites, sites, a, a, i, i), 0, dtype=complex)
 
-    d = intermediate_normalisation(eig_val, eig_vec)
+    d = intermediate_normalisation(eig_vec)
 
     for site_a in range(sites):
         for state_a in range(a):
@@ -348,9 +342,6 @@ def t_2_amplitude_guess_ground_state(
                         t_ab_ij_tensor[site_a, site_b, state_a, state_b, 0, 0] = (
                             t_2_guess
                         )
-                        t_2_guess_2 = t_2_amplitutde(
-                            site_b, state_b + 1, site_a, state_a + 1, states, sites, d
-                        )[0]
                         t_ab_ij_tensor[site_b, site_a, state_b, state_a, 0, 0] = (
                             t_2_guess
                         )

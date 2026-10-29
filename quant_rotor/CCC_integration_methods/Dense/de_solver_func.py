@@ -596,8 +596,17 @@ def new_solve_ivp(
         t_events = None
         y_events = None
 
+    qs = args[-1]
+
+    site, a, p, i = qs.params.site, qs.params.a, qs.params.p, qs.params.i
+
     status = None
     while status is None:
+
+        y_before = solver.y.copy()
+        t_before = solver.t
+        rhs_before = fun(t_before, y_before).copy()
+
         message = solver.step()
 
         if solver.status == 'finished':
@@ -606,7 +615,71 @@ def new_solve_ivp(
             status = -1
             break
 
-        print(solver.t_old)
+        y_after = solver.y.copy()
+        t_after = solver.t
+        rhs_after = fun(t_after, y_after).copy()
+        n_amplitudes = site * a + site**2 * a**2
+        residual_before = -rhs_before[:n_amplitudes]
+        residual_after = -rhs_after[:n_amplitudes]
+
+        r_1_before = rhs_before[-site * a - 1 : -1].reshape(site, a)
+        r_2_before = rhs_before[: -site * a - 1].reshape(site, site, a, a)
+        r_1_after = rhs_after[-site * a - 1 : -1].reshape(site, a)
+        r_2_after = rhs_after[: -site * a - 1].reshape(site, site, a, a)
+
+        inx_r_2_before = np.argwhere(np.abs(r_2_before[0]) > 1e-5)
+        inx_r_2_after = np.argwhere(np.abs(r_2_after[0]) > 1e-5)
+
+        r_2_val_before = r_2_before[0][tuple(inx_r_2_before.T)].real
+        r_2_val_after = r_2_after[0][tuple(inx_r_2_after.T)].real
+
+        width = 20
+
+        delta_y = y_after - y_before
+
+        # print("t:", t_before)
+        # print("state change max:", np.max(np.abs(delta_y)))
+        # print("state change norm:", np.linalg.norm(delta_y))
+        # print("residual before max:", np.max(np.abs(residual_before)))
+        # print("residual after max:", np.max(np.abs(residual_after)))
+
+        before_norm = np.linalg.norm(residual_before)
+        after_norm = np.linalg.norm(residual_after)
+
+        # print("residual before norm:", before_norm)
+        # print("residual after norm:", after_norm)
+        # print("residual ratio:", after_norm / before_norm)
+
+        # print("r_1 before:", r_1_before[0][r_1_before[0] != 0])
+        # print("r_1 after:", r_1_after[0][r_1_after[0] != 0])
+        # print(
+        #     "max r_2 before:",
+        #     "".join(
+        #         f"{value:>{width}.10e}"
+        #         for value in np.sort(np.abs(r_2_val_before))[::-1][:3]
+        #     ),
+        # )
+        # print(
+        #     "max r_2 after:",
+        #     "".join(
+        #         f"{value:>{width}.10e}"
+        #         for value in np.sort(np.abs(r_2_val_after))[::-1][:3]
+        #     ),
+        # )
+        # print("r_2 before:")
+
+        # print("".join(f"{value:>{width}.10e}" for value in np.abs(r_2_val_before)))
+        # print(
+        #     "".join(f"{str(tuple(map(int, idx))):>{width}}" for idx in inx_r_2_before)
+        # )
+
+        # print("r_2 after:")
+
+        # print("".join(f"{value:>{width}.10e}" for value in np.abs(r_2_val_after)))
+        # print("".join(f"{str(tuple(map(int, idx))):>{width}}" for idx in inx_r_2_after))
+        # print(
+        #     "------------------------------------------------------------------------------------"
+        # )
 
         t_old = solver.t_old
         t = solver.t

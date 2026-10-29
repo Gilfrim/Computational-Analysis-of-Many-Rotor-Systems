@@ -63,47 +63,6 @@ class QuantumSimulation:
         return self.tensors.h_full[a_h_shift[0]:h_upper + a_h_shift[0], a_h_shift[1]:h_lower + a_h_shift[1]]
 
     def v_term(self, v_upper_1, v_upper_2, v_lower_1, v_lower_2, v_site_1, v_site_2):
-        # if self.params.site == 2:
-        #     if self.params.periodic:
-        #         if v_site_2 == 1 and v_site_1 == 0:
-        #             a_v_shift = [
-        #                 self.params.i if a_check == self.params.a else 0
-        #                 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
-        #             ]
-        #             return self.tensors.v_full_xy[
-        #                 a_v_shift[0] : v_upper_1 + a_v_shift[0],
-        #                 a_v_shift[1] : v_upper_2 + a_v_shift[1],
-        #                 a_v_shift[2] : v_lower_1 + a_v_shift[2],
-        #                 a_v_shift[3] : v_lower_2 + a_v_shift[3],
-        #             ]
-        #         if v_site_2 == 0 and v_site_1 == 1:
-        #             a_v_shift = [
-        #                 self.params.i if a_check == self.params.a else 0
-        #                 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
-        #             ]
-        #             return self.tensors.v_full_yx[
-        #                 a_v_shift[0] : v_upper_1 + a_v_shift[0],
-        #                 a_v_shift[1] : v_upper_2 + a_v_shift[1],
-        #                 a_v_shift[2] : v_lower_1 + a_v_shift[2],
-        #                 a_v_shift[3] : v_lower_2 + a_v_shift[3],
-        #             ]
-        #         else:
-        #             return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
-        #     else:
-        #         if v_site_2 == 1 and v_site_1 == 0:
-        #             a_v_shift = [
-        #                 self.params.i if a_check == self.params.a else 0
-        #                 for a_check in (v_upper_1, v_upper_2, v_lower_1, v_lower_2)
-        #             ]
-        #             return self.tensors.v_full_xy[
-        #                 a_v_shift[0] : v_upper_1 + a_v_shift[0],
-        #                 a_v_shift[1] : v_upper_2 + a_v_shift[1],
-        #                 a_v_shift[2] : v_lower_1 + a_v_shift[2],
-        #                 a_v_shift[3] : v_lower_2 + a_v_shift[3],
-        #             ]
-        #         else:
-        #             return np.zeros((v_upper_1, v_upper_2, v_lower_1, v_lower_2))
-        # else:
         if self.params.periodic:
             if (v_site_2 - v_site_1) == 1 or (v_site_1 - v_site_2) == (
                 self.params.site - 1
@@ -221,7 +180,7 @@ class QuantumSimulation:
 
                 # Term 2: A V T
                 R_single += self.A_term(x) @ (V_pC @ T_Ci)
-                # R_single += np.einsum("b, ab -> a", H_ia, self.t_term(x, z))
+                R_single += np.einsum("b, ab -> a", H_ia, self.t_term(x, z))
 
                 # Term 3: A V B B
                 R_single += self.A_term(x) @ (
@@ -234,7 +193,7 @@ class QuantumSimulation:
                 )
 
                 for w in range(site):
-                    if w not in {x, z}:
+                    if w not in {x, z} and abs(w - z) == 1:
                         T_ac = self.t_term(x, w).reshape(a, a)
                         V_cq = self.v_term(i, i, a, p, w, z).reshape(a, p)
                         R_single += T_ac @ (V_cq @ self.B_term(z))
@@ -328,7 +287,6 @@ class QuantumSimulation:
         return R
 
     def residual_double_total(self, x: int, y: int) -> np.ndarray:
-
         return (
             self.residual_double_sym(x, y)
             + self.residual_double_non_sym_1(x, y)

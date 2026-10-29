@@ -53,7 +53,9 @@ def energy_transform(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     _, energy_basis = np.linalg.eigh(K)
 
-    idx = first_nontrivial_index(energy_basis)
+    idx = first_nontrivial_index(energy_basis[:, :])
+
+    print(idx)
 
     energy_basis_copy = np.copy(energy_basis)
 
@@ -67,7 +69,6 @@ def energy_transform(
 
     # Create a change of basis matrix for a reshaped potential.
     energy_basis_V = np.kron(energy_basis, energy_basis)
-    print("check")
     # Apply the change of basis to Potential energy matrix.
     V_e_xy = energy_basis_V.conj().T @ V_xy @ energy_basis_V
     V_e_yx = energy_basis_V.conj().T @ V_yx @ energy_basis_V
@@ -151,6 +152,7 @@ def NO_transform(
     K: np.ndarray,
     V_xy: np.ndarray,
     V_yx: np.ndarray,
+    ground_state_vec: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Takes in a system of rotors and scales it to a specified larger system. The approximation is taken from assuming the ground state of the
@@ -193,13 +195,14 @@ def NO_transform(
     state_orig = K.shape[0]
     site_orig = int(np.log(H.shape[0]) / np.log(state_orig))
 
-    # Extract eigenstate and eigenvectors from the original system hamiltonian.
-    eig_val, eig_vec = np.linalg.eigh(H)
+    # # Extract eigenstate and eigenvectors from the original system hamiltonian.
+    # eig_val, eig_vec = np.linalg.eigh(H)
 
-    # Find the index associated with the smallest eigenstate.
+    # # Find the index associated with the smallest eigenstate.
 
-    index = np.argmin(eig_val)
-    ground_state_vec = eig_vec[:, index]
+    # index = first_nontrivial_index(eig_vec)
+    # print(index)
+    # ground_state_vec = eig_vec[:, 1]
 
     # Make a one site dencity matrix associated with the ground state.
     ground_state_dencity_matrix = density_matrix_1(
@@ -208,8 +211,6 @@ def NO_transform(
 
     # Extract eigenstates and eigenvalues.
     eig_val_D, matrix_p_to_NO_full = np.linalg.eigh(ground_state_dencity_matrix)
-
-    print(eig_val_D)
 
     # Create a list of indecies associated to eigenstates in decreasing order.
     index_d = np.argsort(-eig_val_D)

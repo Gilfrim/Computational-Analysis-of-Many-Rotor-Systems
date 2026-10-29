@@ -19,7 +19,6 @@ from quant_rotor.CCC_iterative_methods.Dense.t_amplitudes_sub_class_transformed 
 
 def t_periodic(
     site: int,
-    state: int,
     h_full: np.ndarray,
     v_full_xy: np.ndarray,
     v_full_yx: np.ndarray,
@@ -77,6 +76,7 @@ def t_periodic(
     # state variables
     # could just use p, i, a
     # makes checking einsums and such a bit easier
+    state = h_full.shape[0]
     p = state
     i = low_state
     a = p - i
@@ -194,8 +194,6 @@ def t_periodic(
         one_max = single.flat[np.argmax(np.abs(single))]
         two_max = double.flat[np.argmax(np.abs(double))]
 
-        # print("Before", one_max, two_max)
-
         for site_u_1 in range(site):
             tensors.t_a_i_tensor[site_u_1] -= qs.update_one(single[site_u_1])
             for site_u_2 in range(site):
@@ -211,11 +209,9 @@ def t_periodic(
         if np.all(abs(single) <= threshold) and np.all(abs(double) <= threshold):
             break
 
-        # CHANGE BACK TO 10
+        # # CHANGE BACK TO 10
         if abs(one_max) >= 100 or abs(two_max) >= 100:
             raise ValueError("Diverges.")
-
-    print(counter)
 
     energy = 0
 

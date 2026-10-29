@@ -115,24 +115,24 @@ def tdcc_differential_equation(
 
     if periodic:
         energy += np.einsum("ip, pi->", qs.h_term(i, p), qs.B_term(i, 0))
-        # energy += (
-        #     np.einsum(
-        #         "ijab, abij->",
-        #         qs.v_term(i, i, a, a, 0, 1),
-        #         qs.t_term_2(0, 1),
-        #     )
-        #     / 2
-        # )
-        # # noinspection SpellCheckingInspection
-        # energy += (
-        #     np.einsum(
-        #         "ijpq, pi, qj->",
-        #         qs.v_term(i, i, p, p, 0, 1),
-        #         qs.B_term(i, 0),
-        #         qs.B_term(i, 1),
-        #     )
-        #     / 2
-        # )
+        energy += (
+            np.einsum(
+                "ijab, abij->",
+                qs.v_term(i, i, a, a, 0, 1),
+                qs.t_term_2(0, 1),
+            )
+            / 2
+        )
+        # noinspection SpellCheckingInspection
+        energy += (
+            np.einsum(
+                "ijpq, pi, qj->",
+                qs.v_term(i, i, p, p, 0, 1),
+                qs.B_term(i, 0),
+                qs.B_term(i, 1),
+            )
+            / 2
+        )
         energy += (
             np.einsum(
                 "ijab, abij->",
@@ -142,15 +142,15 @@ def tdcc_differential_equation(
             / 2
         )
         # noinspection SpellCheckingInspection
-        # energy += (
-        #     np.einsum(
-        #         "ijpq, pi, qj->",
-        #         qs.v_term(i, i, p, p, 1, 0),
-        #         qs.B_term(i, 1),
-        #         qs.B_term(i, 0),
-        #     )
-        #     / 2
-        # )
+        energy += (
+            np.einsum(
+                "ijpq, pi, qj->",
+                qs.v_term(i, i, p, p, 1, 0),
+                qs.B_term(i, 1),
+                qs.B_term(i, 0),
+            )
+            / 2
+        )
 
         energy = energy * site
     else:
@@ -273,8 +273,8 @@ def integration_scheme(
     arguments = (t0_stored, params, tensors, qs)
 
     # specify the precision of the integrator so that the output for the test models is numerically identical
-    relative_tolerance = 1e-5
-    absolute_tolerance = 1e-7
+    relative_tolerance = 1e-10
+    absolute_tolerance = 1e-12
 
     # ------------------------------------------------------------------------
     # call the integrator
